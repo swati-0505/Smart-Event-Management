@@ -1,0 +1,28 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Swati Swagatika Sahoo", email = "swatiswagatikasahoo32@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "alembic>=1.19.1",
+    "bcrypt>=5.0.0",
+    "fastapi>=0.141.1",
+    "passlib>=1.7.4",
+    "psycopg2-binary>=2.9.12",
+    "pydantic>=2.13.5",
+    "python-dotenv>=1.2.3",
+    "python-jose>=3.5.0",
+    "sqlalchemy>=2.0.52",
+    "uvicorn>=0.52.4",
+]
+
+[project.scripts]
+backend = "backend:main"
+
+[build-system]
+requires = ["uv_build>=0.12.9,<0.13.0"]
+build-backend = "uv_build"
