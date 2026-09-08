@@ -71,24 +71,24 @@ function AgentActivity() {
     <div>
       {/* Page header */}
       <header className="mb-7 sm:mb-8">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#d7a63a]">
+        <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-theme-accent">
           Intelligence
         </p>
 
         <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-white sm:text-[34px]">
+            <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-theme-primary sm:text-[34px]">
               Agent Activity
             </h1>
 
-            <p className="mt-2 max-w-xl text-sm leading-6 text-white/40">
+            <p className="mt-2 max-w-xl text-sm leading-6 text-theme-muted">
               Monitor AI agent activities and tool executions.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 rounded-md border border-white/[0.08] bg-white/[0.02] px-3 py-2">
-            <Activity size={14} className="text-[#d7a63a]" />
-            <span className="text-xs text-white/60">Live Activity</span>
+          <div className="flex items-center gap-2 rounded-md border border-theme bg-theme-primary/5 px-3 py-2">
+            <Activity size={14} className="text-theme-accent" />
+            <span className="text-xs text-theme-secondary">Live Activity</span>
           </div>
         </div>
       </header>
@@ -98,26 +98,26 @@ function AgentActivity() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px]">
             <thead>
-              <tr className="border-b border-white/[0.07] text-left">
-                <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
+              <tr className="border-b border-theme text-left">
+                <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
                   Request ID
                 </th>
-                <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
+                <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
                   User
                 </th>
-                <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
+                <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
                   Intent
                 </th>
-                <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
+                <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
                   Tool
                 </th>
-                <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
+                <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
                   Status
                 </th>
-                <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
+                <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
                   Latency
                 </th>
-                <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
+                <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
                   Timestamp
                 </th>
               </tr>
@@ -128,20 +128,20 @@ function AgentActivity() {
                 activities.map((activity) => (
                   <tr
                     key={activity.id}
-                    className="border-b border-white/[0.055] transition hover:bg-white/[0.02] last:border-b-0"
+                    className="border-b border-theme transition hover:bg-theme-primary/5 last:border-b-0"
                   >
-                    <td className="px-6 py-4 text-sm text-white/60">
+                    <td className="px-6 py-4 text-sm text-theme-secondary">
                       {activity.request_id}
                     </td>
-                    <td className="px-6 py-4 text-sm text-white/50">
+                    <td className="px-6 py-4 text-sm text-theme-muted">
                       {activity.user}
                     </td>
-                    <td className="px-6 py-4 text-sm text-white/70">
+                    <td className="px-6 py-4 text-sm text-theme-secondary">
                       {activity.intent}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 rounded-md bg-white/[0.05] px-2 py-1 text-xs text-white/60">
-                        <Bot size={12} className="text-[#d7a63a]" />
+                      <span className="inline-flex items-center gap-1.5 rounded-md bg-theme-primary/5 px-2 py-1 text-xs text-theme-secondary">
+                        <Bot size={12} className="text-theme-accent" />
                         {activity.tool}
                       </span>
                     </td>
@@ -150,17 +150,17 @@ function AgentActivity() {
                         {activity.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-white/40">
+                    <td className="px-6 py-4 text-sm text-theme-muted">
                       {activity.latency}
                     </td>
-                    <td className="px-6 py-4 text-sm text-white/40">
+                    <td className="px-6 py-4 text-sm text-theme-muted">
                       {new Date(activity.timestamp).toLocaleTimeString()}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-sm text-white/30">
+                  <td colSpan="7" className="px-6 py-12 text-center text-sm text-theme-muted">
                     No agent activity found.
                   </td>
                 </tr>

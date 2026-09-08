@@ -58,19 +58,19 @@ function UpcomingEvents({ searchQuery = "" }) {
 
   return (
     <section className="admin-section overflow-hidden">
-      <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4">
+      <div className="flex items-center justify-between border-b border-theme px-5 py-4">
         <div>
-          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#d7a63a]">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-theme-accent">
             Schedule
           </p>
-          <h2 className="mt-1 text-lg font-semibold text-white">
+          <h2 className="mt-1 text-lg font-semibold text-theme-primary">
             Upcoming Events
           </h2>
         </div>
 
         <button
           type="button"
-          className="text-xs text-white/40 transition hover:text-[#d7a63a]"
+          className="text-xs text-theme-muted transition hover:text-theme-accent"
         >
           View all
         </button>
@@ -79,20 +79,20 @@ function UpcomingEvents({ searchQuery = "" }) {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[600px]">
           <thead>
-            <tr className="border-b border-white/[0.07] text-left">
-              <th className="px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
+            <tr className="border-b border-theme text-left">
+              <th className="px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
                 Event
               </th>
-              <th className="px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
+              <th className="px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
                 Date
               </th>
-              <th className="px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
+              <th className="px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
                 Venue
               </th>
-              <th className="px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
+              <th className="px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
                 Capacity
               </th>
-              <th className="px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
+              <th className="px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
                 Status
               </th>
             </tr>
@@ -101,7 +101,7 @@ function UpcomingEvents({ searchQuery = "" }) {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan="5" className="px-5 py-8 text-center text-sm text-white/30">
+                <td colSpan="5" className="px-5 py-8 text-center text-sm text-theme-muted">
                   Loading upcoming events...
                 </td>
               </tr>
@@ -119,20 +119,20 @@ function UpcomingEvents({ searchQuery = "" }) {
               events.map((event) => (
                 <tr
                   key={event.event_id}
-                  className="border-b border-white/[0.055] transition hover:bg-white/[0.02] last:border-b-0"
+                  className="border-b border-theme transition hover:bg-theme-primary/5 last:border-b-0"
                 >
                   <td className="px-5 py-4">
-                    <p className="text-sm font-medium text-white/85">
+                    <p className="text-sm font-medium text-theme-primary">
                       {event.title}
                     </p>
                   </td>
-                  <td className="px-5 py-4 text-sm text-white/55">
+                  <td className="px-5 py-4 text-sm text-theme-muted">
                     {new Date(event.start_time).toLocaleDateString()}
                   </td>
-                  <td className="px-5 py-4 text-sm text-white/45">
+                  <td className="px-5 py-4 text-sm text-theme-muted">
                     {event.venue_name}
                   </td>
-                  <td className="px-5 py-4 text-sm text-white/50">
+                  <td className="px-5 py-4 text-sm text-theme-secondary">
                     {event.capacity}
                   </td>
                   <td className="px-5 py-4">
@@ -146,7 +146,7 @@ function UpcomingEvents({ searchQuery = "" }) {
 
             {!loading && !error && events.length === 0 && (
               <tr>
-                <td colSpan="5" className="px-5 py-8 text-center text-sm text-white/30">
+                <td colSpan="5" className="px-5 py-8 text-center text-sm text-theme-muted">
                   No upcoming events found.
                 </td>
               </tr>

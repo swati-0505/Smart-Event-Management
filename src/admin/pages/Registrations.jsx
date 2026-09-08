@@ -77,17 +77,17 @@ function Registrations() {
     <div>
       {/* Page header */}
       <header className="mb-7 sm:mb-8">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#d7a63a]">
+        <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-theme-accent">
           Operations
         </p>
 
         <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-white sm:text-[34px]">
+            <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-theme-primary sm:text-[34px]">
               Registrations
             </h1>
 
-            <p className="mt-2 max-w-xl text-sm leading-6 text-white/40">
+            <p className="mt-2 max-w-xl text-sm leading-6 text-theme-muted">
               Manage participant registrations and their status.
             </p>
           </div>
@@ -96,23 +96,23 @@ function Registrations() {
 
       {/* Search and filter bar */}
       <section className="admin-section overflow-hidden">
-        <div className="flex flex-col gap-3 border-b border-white/[0.07] p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <div className="flex w-full max-w-sm items-center gap-2 rounded-md border border-[#d7a63a]/20 bg-[#d7a63a]/[0.05] px-3 py-2.5">
-            <Search size={15} strokeWidth={1.7} className="shrink-0 text-[#d7a63a]/75" />
+        <div className="flex flex-col gap-3 border-b border-theme p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div className="flex w-full max-w-sm items-center gap-2 rounded-md border border-theme-accent/20 bg-theme-accent/5 px-3 py-2.5">
+            <Search size={15} strokeWidth={1.7} className="shrink-0 text-theme-accent/75" />
 
             <input
               type="text"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search by user or event..."
-              className="min-w-0 flex-1 bg-transparent text-xs text-white outline-none placeholder:text-white/30"
+              className="min-w-0 flex-1 bg-transparent text-xs text-theme-secondary outline-none placeholder:text-theme-dim"
             />
           </div>
 
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="w-full rounded-md border border-white/[0.08] bg-[#151515] px-3 py-2.5 text-xs text-white/65 outline-none transition focus:border-[#d7a63a]/40 sm:w-auto"
+            className="w-full rounded-md border border-theme bg-theme-tertiary px-3 py-2.5 text-xs text-theme-secondary outline-none transition focus:border-theme-accent/40 sm:w-auto"
           >
             <option value="ALL">All Status</option>
             <option value="CONFIRMED">Confirmed</option>
@@ -123,7 +123,7 @@ function Registrations() {
 
         {/* Loading state */}
         {loading && (
-          <div className="px-6 py-12 text-center text-sm text-white/30">
+          <div className="px-6 py-12 text-center text-sm text-theme-muted">
             Loading registrations...
           </div>
         )}
@@ -140,20 +140,20 @@ function Registrations() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px]">
               <thead>
-                <tr className="border-b border-white/[0.07] text-left">
-                  <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
+                <tr className="border-b border-theme text-left">
+                  <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
                     User
                   </th>
-                  <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
+                  <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
                     Event
                   </th>
-                  <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
+                  <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
                     Registration Date
                   </th>
-                  <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
+                  <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-right text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
+                  <th className="px-6 py-4 text-right text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
                     Action
                   </th>
                 </tr>
@@ -164,17 +164,17 @@ function Registrations() {
                   filteredRegistrations.map((reg) => (
                     <tr
                       key={reg.registration_id}
-                      className="border-b border-white/[0.055] transition hover:bg-white/[0.02] last:border-b-0"
+                      className="border-b border-theme transition hover:bg-theme-primary/5 last:border-b-0"
                     >
                       <td className="px-6 py-5">
-                        <p className="text-sm font-medium text-white/85">
+                        <p className="text-sm font-medium text-theme-primary">
                           {reg.user_name}
                         </p>
                       </td>
-                      <td className="px-6 py-5 text-sm text-white/55">
+                      <td className="px-6 py-5 text-sm text-theme-muted">
                         {reg.event_title}
                       </td>
-                      <td className="px-6 py-5 text-sm text-white/45">
+                      <td className="px-6 py-5 text-sm text-theme-muted">
                         {new Date(reg.registration_date).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-5">
@@ -193,7 +193,7 @@ function Registrations() {
                           <button
                             type="button"
                             onClick={() => handleStatusUpdate(reg.registration_id, "CONFIRMED")}
-                            className="inline-flex items-center gap-1 text-xs text-green-400/80 transition hover:text-green-400"
+                            className="inline-flex items-center gap-1 text-xs text-green-500/80 transition hover:text-green-500"
                           >
                             <CheckCircle2 size={14} />
                             Confirm
@@ -210,14 +210,14 @@ function Registrations() {
                           </button>
                         )}
                         {reg.status === "CANCELLED" && (
-                          <span className="text-xs text-white/25">N/A</span>
+                          <span className="text-xs text-theme-dim">N/A</span>
                         )}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center text-sm text-white/30">
+                    <td colSpan="5" className="px-6 py-12 text-center text-sm text-theme-muted">
                       No registrations match your search.
                     </td>
                   </tr>

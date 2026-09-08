@@ -9,8 +9,8 @@ import apiRequest from "./api";
 const mockUsers = [
   {
     user_id: 1,
-    name: "Yugant",
-    email: "yugant@smartevent.com",
+    name: "Admin",
+    email: "Admin@smartevent.com",
     role: "ADMIN",
     created_at: "2026-01-01T10:00:00",
   },

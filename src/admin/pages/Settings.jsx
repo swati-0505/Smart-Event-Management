@@ -37,17 +37,17 @@ function Settings() {
     <div>
       {/* Page header */}
       <header className="mb-7 sm:mb-8">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#d7a63a]">
+        <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-theme-accent">
           System
         </p>
 
         <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-white sm:text-[34px]">
+            <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-theme-primary sm:text-[34px]">
               Settings
             </h1>
 
-            <p className="mt-2 max-w-xl text-sm leading-6 text-white/40">
+            <p className="mt-2 max-w-xl text-sm leading-6 text-theme-muted">
               Configure system settings and preferences.
             </p>
           </div>
@@ -57,14 +57,14 @@ function Settings() {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* General Settings */}
         <section className="admin-section p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
-            <Globe size={16} className="text-[#d7a63a]" />
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-theme-primary">
+            <Globe size={16} className="text-theme-accent" />
             General Settings
           </h2>
 
           <form onSubmit={handleSave} className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/60">
+              <label className="mb-1.5 block text-xs font-medium text-theme-secondary">
                 Site Name
               </label>
               <input
@@ -72,12 +72,12 @@ function Settings() {
                 name="siteName"
                 value={settings.siteName}
                 onChange={handleChange}
-                className="w-full rounded-md border border-white/[0.08] bg-[#151515] px-3 py-2.5 text-sm text-white outline-none transition focus:border-[#d7a63a]/40"
+                className="w-full rounded-md border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none transition focus:border-theme-accent/40"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/60">
+              <label className="mb-1.5 block text-xs font-medium text-theme-secondary">
                 Site URL
               </label>
               <input
@@ -85,21 +85,21 @@ function Settings() {
                 name="siteUrl"
                 value={settings.siteUrl}
                 onChange={handleChange}
-                className="w-full rounded-md border border-white/[0.08] bg-[#151515] px-3 py-2.5 text-sm text-white outline-none transition focus:border-[#d7a63a]/40"
+                className="w-full rounded-md border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none transition focus:border-theme-accent/40"
               />
             </div>
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white/70">Maintenance Mode</p>
-                <p className="text-xs text-white/30">Temporarily disable site access</p>
+                <p className="text-sm text-theme-secondary">Maintenance Mode</p>
+                <p className="text-xs text-theme-muted">Temporarily disable site access</p>
               </div>
               <input
                 type="checkbox"
                 name="maintenanceMode"
                 checked={settings.maintenanceMode}
                 onChange={handleChange}
-                className="h-4 w-4 accent-[#d7a63a]"
+                className="h-4 w-4 accent-theme-accent"
               />
             </div>
           </form>
@@ -107,37 +107,37 @@ function Settings() {
 
         {/* Notification Settings */}
         <section className="admin-section p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
-            <Bell size={16} className="text-[#d7a63a]" />
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-theme-primary">
+            <Bell size={16} className="text-theme-accent" />
             Notification Settings
           </h2>
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white/70">Email Notifications</p>
-                <p className="text-xs text-white/30">Receive email updates</p>
+                <p className="text-sm text-theme-secondary">Email Notifications</p>
+                <p className="text-xs text-theme-muted">Receive email updates</p>
               </div>
               <input
                 type="checkbox"
                 name="emailNotifications"
                 checked={settings.emailNotifications}
                 onChange={handleChange}
-                className="h-4 w-4 accent-[#d7a63a]"
+                className="h-4 w-4 accent-theme-accent"
               />
             </div>
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white/70">Push Notifications</p>
-                <p className="text-xs text-white/30">Receive browser notifications</p>
+                <p className="text-sm text-theme-secondary">Push Notifications</p>
+                <p className="text-xs text-theme-muted">Receive browser notifications</p>
               </div>
               <input
                 type="checkbox"
                 name="pushNotifications"
                 checked={settings.pushNotifications}
                 onChange={handleChange}
-                className="h-4 w-4 accent-[#d7a63a]"
+                className="h-4 w-4 accent-theme-accent"
               />
             </div>
           </div>
@@ -145,21 +145,21 @@ function Settings() {
 
         {/* Appearance Settings */}
         <section className="admin-section p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
-            <Moon size={16} className="text-[#d7a63a]" />
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-theme-primary">
+            <Moon size={16} className="text-theme-accent" />
             Appearance
           </h2>
 
           <div className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/60">
+              <label className="mb-1.5 block text-xs font-medium text-theme-secondary">
                 Theme
               </label>
               <select
                 name="theme"
                 value={settings.theme}
                 onChange={handleChange}
-                className="w-full rounded-md border border-white/[0.08] bg-[#151515] px-3 py-2.5 text-sm text-white outline-none transition focus:border-[#d7a63a]/40"
+                className="w-full rounded-md border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none transition focus:border-theme-accent/40"
               >
                 <option value="dark">Dark Mode</option>
                 <option value="light">Light Mode</option>
@@ -167,14 +167,14 @@ function Settings() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/60">
+              <label className="mb-1.5 block text-xs font-medium text-theme-secondary">
                 Language
               </label>
               <select
                 name="language"
                 value={settings.language}
                 onChange={handleChange}
-                className="w-full rounded-md border border-white/[0.08] bg-[#151515] px-3 py-2.5 text-sm text-white outline-none transition focus:border-[#d7a63a]/40"
+                className="w-full rounded-md border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none transition focus:border-theme-accent/40"
               >
                 <option value="en">English</option>
                 <option value="hi">Hindi</option>
@@ -187,30 +187,30 @@ function Settings() {
 
         {/* Security Settings */}
         <section className="admin-section p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
-            <Shield size={16} className="text-[#d7a63a]" />
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-theme-primary">
+            <Shield size={16} className="text-theme-accent" />
             Security Settings
           </h2>
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white/70">Two-Factor Authentication</p>
-                <p className="text-xs text-white/30">Extra security layer</p>
+                <p className="text-sm text-theme-secondary">Two-Factor Authentication</p>
+                <p className="text-xs text-theme-muted">Extra security layer</p>
               </div>
               <input
                 type="checkbox"
                 name="twoFactorAuth"
                 checked={settings.twoFactorAuth}
                 onChange={handleChange}
-                className="h-4 w-4 accent-[#d7a63a]"
+                className="h-4 w-4 accent-theme-accent"
               />
             </div>
 
             <div>
               <button
                 type="button"
-                className="inline-flex items-center gap-2 rounded-md border border-white/[0.08] px-3 py-2 text-xs text-white/60 transition hover:bg-white/[0.05]"
+                className="inline-flex items-center gap-2 rounded-md border border-theme px-3 py-2 text-xs text-theme-secondary transition hover:bg-theme-primary/5"
               >
                 <Lock size={14} />
                 Change Password
@@ -225,7 +225,7 @@ function Settings() {
         <button
           type="button"
           onClick={handleSave}
-          className="inline-flex items-center gap-2 rounded-md bg-[#d7a63a] px-6 py-3 text-sm font-semibold text-[#0b0b0b] transition hover:bg-[#e3b957]"
+          className="inline-flex items-center gap-2 rounded-md bg-theme-accent px-6 py-3 text-sm font-semibold text-theme-primary transition hover:bg-theme-accent-hover"
         >
           <Save size={16} />
           Save Settings

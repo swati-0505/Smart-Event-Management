@@ -1,8 +1,8 @@
 // AdminApp.jsx
 // Main admin application component.
-// Manages page navigation and search state.
+// Manages page navigation, search state, and theme.
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "./components/layout/AdminLayout";
 import Dashboard from "./pages/Dashboard";
 import Events from "./pages/Events";
@@ -19,6 +19,24 @@ function AdminApp() {
   // State for current page and search query
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Theme state (dark is default)
+  const [theme, setTheme] = useState(() => {
+    // Check localStorage for saved theme
+    const savedTheme = localStorage.getItem("admin-theme");
+    return savedTheme || "dark";
+  });
+
+  // Apply theme class to document
+  useEffect(() => {
+    document.documentElement.classList.toggle("light-mode", theme === "light");
+    localStorage.setItem("admin-theme", theme);
+  }, [theme]);
+
+  // Toggle theme function
+  function toggleTheme() {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  }
 
   // Function to render the current page
   function renderPage() {
@@ -62,6 +80,8 @@ function AdminApp() {
       onPageChange={setCurrentPage}
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
+      theme={theme}
+      onToggleTheme={toggleTheme}
     >
       {renderPage()}
     </AdminLayout>

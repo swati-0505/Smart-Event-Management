@@ -45,16 +45,17 @@ function Dashboard({ searchQuery = "" }) {
 
   return (
     <div>
+      {/* Page header */}
       <header className="mb-7 sm:mb-9">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#d7a63a]">
+        <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-theme-accent">
           Overview
         </p>
 
-        <h1 className="admin-page-title mt-2 text-[28px] font-semibold text-white sm:text-[34px]">
+        <h1 className="admin-page-title mt-2 text-[28px] font-semibold text-theme-primary sm:text-[34px]">
           Dashboard
         </h1>
 
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/40">
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-theme-muted">
           Overview of your event operations and recent activity.
         </p>
       </header>
@@ -63,7 +64,7 @@ function Dashboard({ searchQuery = "" }) {
       {loading && (
         <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
           {[1, 2, 3, 4].map((item) => (
-            <div key={item} className="admin-metric h-[100px] animate-pulse bg-white/[0.03]" />
+            <div key={item} className="admin-metric h-[100px] animate-pulse bg-theme-primary/5" />
           ))}
         </div>
       )}
