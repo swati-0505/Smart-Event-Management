@@ -100,6 +100,7 @@ function Sidebar({
   onPageChange,
   sidebarOpen,
   onClose,
+  theme,
 }) {
   function handlePageChange(page) {
     onPageChange(page);
@@ -126,7 +127,7 @@ function Sidebar({
       <aside
         className={[
           "fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col",
-          "border-r border-white/[0.08] bg-[#090909]",
+          "border-r border-theme bg-theme-secondary",
           "transition-transform duration-300 ease-out",
           sidebarOpen
             ? "translate-x-0"
@@ -134,11 +135,11 @@ function Sidebar({
         ].join(" ")}
       >
         {/* Logo Section */}
-        <div className="flex h-[72px] items-center justify-center border-b border-white/[0.08] px-5">
+        <div className="flex h-[72px] items-center justify-center border-b border-theme px-5">
           <img
             src={logo}
             alt="SmartEvent"
-            className="h-30 w-auto object-contain"
+            className="h-26 w-auto object-contain"
           />
         </div>
 
@@ -146,7 +147,7 @@ function Sidebar({
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-3 top-3 rounded-md p-2 text-white/35 transition hover:bg-white/[0.05] hover:text-white lg:hidden"
+          className="absolute right-3 top-3 rounded-md p-2 text-theme-muted transition hover:bg-white/[0.05] hover:text-theme-primary lg:hidden"
           aria-label="Close sidebar"
         >
           <X size={18} strokeWidth={1.7} />
@@ -159,7 +160,7 @@ function Sidebar({
               key={section.title}
               className="mb-7"
             >
-              <p className="mb-2 px-3 text-[9px] font-semibold tracking-[0.2em] text-[#d7a63a]/70">
+              <p className="mb-2 px-3 text-[9px] font-semibold tracking-[0.2em] text-theme-accent/70">
                 {section.title}
               </p>
 
@@ -178,8 +179,8 @@ function Sidebar({
                         "px-3 py-2.5 text-left text-[13px]",
                         "transition-all duration-200",
                         isActive
-                          ? "border-[#d7a63a] bg-[#d7a63a]/10 text-[#e0ad3c]"
-                          : "border-transparent text-white/45 hover:bg-white/[0.045] hover:text-white",
+                          ? "border-theme-accent bg-theme-accent/10 text-theme-accent"
+                          : "border-transparent text-theme-muted hover:bg-theme-primary/5 hover:text-theme-primary",
                       ].join(" ")}
                     >
                       <Icon
@@ -198,18 +199,18 @@ function Sidebar({
         </nav>
 
         {/* User Profile Section */}
-        <div className="border-t border-white/[0.08] p-4">
+        <div className="border-t border-theme p-4">
           <div className="flex items-center gap-3 rounded-md px-2 py-2">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d7a63a]/15 text-sm font-semibold text-[#d7a63a]">
-              T
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-theme-accent/15 text-sm font-semibold text-theme-accent">
+              Y
             </div>
 
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-white/85">
-                Thangrasu
+              <p className="truncate text-sm font-medium text-theme-secondary">
+                Admin
               </p>
 
-              <p className="mt-0.5 text-[10px] text-white/30">
+              <p className="mt-0.5 text-[10px] text-theme-dim">
                 Administrator
               </p>
             </div>

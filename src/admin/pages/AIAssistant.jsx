@@ -66,24 +66,24 @@ function AIAssistant() {
     <div>
       {/* Page header */}
       <header className="mb-7 sm:mb-8">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#d7a63a]">
+        <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-theme-accent">
           Intelligence
         </p>
 
         <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-white sm:text-[34px]">
+            <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-theme-primary sm:text-[34px]">
               AI Assistant
             </h1>
 
-            <p className="mt-2 max-w-xl text-sm leading-6 text-white/40">
+            <p className="mt-2 max-w-xl text-sm leading-6 text-theme-muted">
               Chat with the SmartEvent AI assistant to manage events, venues, and registrations.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 rounded-md border border-[#d7a63a]/20 bg-[#d7a63a]/[0.05] px-3 py-2">
-            <Sparkles size={14} className="text-[#d7a63a]" />
-            <span className="text-xs text-[#d7a63a]/80">Powered by SmartEvent AI</span>
+          <div className="flex items-center gap-2 rounded-md border border-theme-accent/20 bg-theme-accent/5 px-3 py-2">
+            <Sparkles size={14} className="text-theme-accent" />
+            <span className="text-xs text-theme-accent/80">Powered by SmartEvent AI</span>
           </div>
         </div>
       </header>
@@ -91,14 +91,14 @@ function AIAssistant() {
       {/* Chat interface */}
       <section className="admin-section flex h-[600px] flex-col overflow-hidden">
         {/* Chat header */}
-        <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d7a63a]/15">
-            <Bot size={20} className="text-[#d7a63a]" />
+        <div className="flex items-center gap-3 border-b border-theme px-5 py-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-theme-accent/15">
+            <Bot size={20} className="text-theme-accent" />
           </div>
 
           <div>
-            <h2 className="text-sm font-semibold text-white">SmartEvent Assistant</h2>
-            <p className="text-xs text-green-400/80">● Online</p>
+            <h2 className="text-sm font-semibold text-theme-primary">SmartEvent Assistant</h2>
+            <p className="text-xs text-green-500/80">● Online</p>
           </div>
         </div>
 
@@ -112,27 +112,27 @@ function AIAssistant() {
               }`}
             >
               {message.role === "assistant" && (
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#d7a63a]/15">
-                  <Bot size={16} className="text-[#d7a63a]" />
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-theme-accent/15">
+                  <Bot size={16} className="text-theme-accent" />
                 </div>
               )}
 
               <div
                 className={`max-w-[75%] rounded-lg px-4 py-3 text-sm leading-relaxed ${
                   message.role === "user"
-                    ? "bg-[#d7a63a]/15 text-white/90"
-                    : "bg-white/[0.05] text-white/80"
+                    ? "bg-theme-accent/15 text-theme-primary"
+                    : "bg-theme-primary/5 text-theme-secondary"
                 }`}
               >
                 <p>{message.content}</p>
-                <p className="mt-2 text-[10px] text-white/30">
+                <p className="mt-2 text-[10px] text-theme-dim">
                   {formatTime(message.timestamp)}
                 </p>
               </div>
 
               {message.role === "user" && (
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10">
-                  <User size={16} className="text-white/60" />
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-theme-primary/10">
+                  <User size={16} className="text-theme-secondary" />
                 </div>
               )}
             </div>
@@ -140,11 +140,11 @@ function AIAssistant() {
 
           {isTyping && (
             <div className="flex gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#d7a63a]/15">
-                <Bot size={16} className="text-[#d7a63a]" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-theme-accent/15">
+                <Bot size={16} className="text-theme-accent" />
               </div>
 
-              <div className="rounded-lg bg-white/[0.05] px-4 py-3 text-sm text-white/50">
+              <div className="rounded-lg bg-theme-primary/5 px-4 py-3 text-sm text-theme-muted">
                 <span className="animate-pulse">Typing...</span>
               </div>
             </div>
@@ -152,23 +152,20 @@ function AIAssistant() {
         </div>
 
         {/* Input area */}
-        <form
-          onSubmit={handleSendMessage}
-          className="border-t border-white/[0.07] p-4"
-        >
+        <form onSubmit={handleSendMessage} className="border-t border-theme p-4">
           <div className="flex items-center gap-3">
             <input
               type="text"
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder="Ask about events, venues, registrations..."
-              className="flex-1 rounded-md border border-white/[0.08] bg-[#151515] px-4 py-3 text-sm text-white outline-none transition focus:border-[#d7a63a]/40"
+              className="flex-1 rounded-md border border-theme bg-theme-tertiary px-4 py-3 text-sm text-theme-primary outline-none transition focus:border-theme-accent/40"
             />
 
             <button
               type="submit"
               disabled={!input.trim() || isTyping}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#d7a63a] text-[#0b0b0b] transition hover:bg-[#e3b957] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-theme-accent text-theme-primary transition hover:bg-theme-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Send message"
             >
               <Send size={18} />

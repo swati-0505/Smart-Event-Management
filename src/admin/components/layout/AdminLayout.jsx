@@ -1,3 +1,6 @@
+// AdminLayout.jsx
+// Main layout wrapper for admin panel.
+
 import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
@@ -8,6 +11,8 @@ function AdminLayout({
   children,
   searchQuery,
   onSearchChange,
+  theme,
+  onToggleTheme,
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -17,18 +22,21 @@ function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#0b0b0b] text-white">
+    <div className="min-h-screen overflow-x-hidden bg-theme-primary text-theme-primary">
       <Sidebar
         currentPage={currentPage}
         onPageChange={handlePageChange}
         sidebarOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        theme={theme}
       />
 
       <Navbar
         searchQuery={searchQuery}
         onSearchChange={onSearchChange}
         onMenuClick={() => setSidebarOpen(true)}
+        theme={theme}
+        onToggleTheme={onToggleTheme}
       />
 
       <main className="min-h-screen pt-[72px] lg:ml-64">

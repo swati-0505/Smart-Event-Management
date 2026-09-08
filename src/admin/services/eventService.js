@@ -18,7 +18,7 @@ const mockEvents = [
     end_time: "2026-09-12T16:00:00",
     venue_id: 1,
     venue_name: "Main Auditorium", // joined from venues table
-    created_by: "Yugant",
+    created_by: "Admin",
     status: "UPCOMING",
     created_at: "2026-08-01T10:00:00",
   },
@@ -31,7 +31,7 @@ const mockEvents = [
     end_time: "2026-09-18T14:00:00",
     venue_id: 2,
     venue_name: "Innovation Hall",
-    created_by: "Yugant",
+    created_by: "Admin",
     status: "ACTIVE",
     created_at: "2026-08-05T10:00:00",
   },
@@ -44,7 +44,7 @@ const mockEvents = [
     end_time: "2026-09-24T20:00:00",
     venue_id: 3,
     venue_name: "Conference Room A",
-    created_by: "Yugant",
+    created_by: "Admin",
     status: "PENDING",
     created_at: "2026-08-10T10:00:00",
   },
@@ -84,7 +84,7 @@ export async function createEvent(eventData) {
   const newEvent = {
     event_id: Date.now(), // temporary ID
     ...eventData,
-    created_by: "Yugant",
+    created_by: "Admin",
     created_at: new Date().toISOString(),
   };
 
