@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #0b0b0b;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body {
+  font-family:
+    "Trebuchet MS",
+    "Segoe UI",
+    Arial,
+    sans-serif;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* Hide scrollbar for all elements */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Keep the main content scrollable but without visible scrollbar */
+main {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+main::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for any inner scrollable containers */
+.admin-sidebar-scroll,
+.notification-scroll,
+.overflow-x-auto,
+.overflow-y-auto {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar,
+.notification-scroll::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar {
+  display: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.admin-page-title {
+  letter-spacing: -0.03em;
+}
+
+.admin-muted {
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.admin-section {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #111111;
+}
+
+.admin-metric {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: #131313;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.admin-metric:hover {
+  border-color: rgba(215, 166, 58, 0.22);
+  background: #161616;
+  transform: translateY(-1px);
+}
+
+.admin-status {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  padding: 4px 9px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1;
+}
+
+.admin-status-upcoming {
+  border-color: rgba(215, 166, 58, 0.25);
+  background: rgba(215, 166, 58, 0.09);
+  color: #d7a63a;
+}
+
+.admin-status-confirmed {
+  border-color: rgba(91, 180, 122, 0.24);
+  background: rgba(91, 180, 122, 0.08);
+  color: #7bc995;
+}
+
+.admin-status-pending {
+  border-color: rgba(220, 70, 70, 0.28);
+  background: rgba(220, 70, 70, 0.1);
+  color: #f07b7b;
+}
+
+.admin-status-cancelled {
+  border-color: rgba(201, 96, 96, 0.24);
+  background: rgba(201, 96, 96, 0.08);
+  color: #db8585;
+}
