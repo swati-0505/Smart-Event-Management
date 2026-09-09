@@ -167,8 +167,10 @@ body {
   z-index: 2;
 
   max-width: 850px;
+  margin: 0 auto;
 
   padding: 155px 7% 100px;
+  text-align: center;
 }
 
 .eyebrow {
@@ -200,8 +202,7 @@ body {
 .description {
   max-width: 570px;
 
-  margin-top: 30px;
-  margin-bottom: 38px;
+  margin: 30px auto 38px;
 
   color: #929292;
 
@@ -213,6 +214,7 @@ body {
 
 .hero-actions {
   display: flex;
+  justify-content: center;
   gap: 15px;
 }
 
@@ -303,8 +305,10 @@ body {
     padding: 25px 6%;
   }
 
-  .hero-content {
+ .hero-content {
+    margin: 0 auto;
     padding: 130px 6% 100px;
+    text-align: center;
   }
 
   .hero-content h1 {
@@ -318,7 +322,7 @@ body {
 
   .hero-actions {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
   }
 
 }
@@ -331,7 +335,9 @@ body {
 }
 
 .section-heading {
-  margin-bottom: 55px;
+  max-width: 850px;
+  margin: 0 auto 55px;
+  text-align: center;
 }
 
 .section-heading h2 {
@@ -531,6 +537,8 @@ body {
 
 .discover-content {
   max-width: 850px;
+  margin: 0 auto;
+  text-align: center;
 }
 
 .discover-content h2 {
@@ -556,6 +564,8 @@ body {
   display: flex;
   width: 100%;
   max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
 
   border: 1px solid rgba(196, 154, 58, 0.35);
   background: #101010;
@@ -604,6 +614,7 @@ body {
 .category-list {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 10px;
 
   margin-top: 20px;
@@ -913,6 +924,7 @@ body {
   padding: 120px 7%;
   background: #080808;
   color: #d5d5d5;
+  text-align: center;
 }
 
 .events-page h1 {
@@ -921,12 +933,20 @@ body {
   font-weight: 500;
   letter-spacing: -2px;
   margin-bottom: 18px;
+  text-align: center;
 }
 
 .events-page > p {
+  max-width: 900px;
+  margin: 0 auto;
   color: #777;
   font-size: 16px;
   line-height: 1.8;
+  text-align: center;
+}
+
+.events-page .eyebrow {
+  text-align: center;
 }
 /* =========================
    FINAL NAVBAR FIX
