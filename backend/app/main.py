@@ -1,8 +1,29 @@
 from fastapi import FastAPI
 
-app = FastAPI(title="Smart Event Management System")
+from app.db.database import Base, engine
+from app.models import User, Event, Registration
+
+from app.routers.event import router as event_router
+from app.routers.registration import router as registration_router
+
+
+# Create tables if they do not already exist
+Base.metadata.create_all(bind=engine)
+
+
+app = FastAPI(
+    title="Smart Event Management System",
+    version="1.0.0"
+)
+
+
+# Register API routers
+app.include_router(event_router)
+app.include_router(registration_router)
 
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok"}
+    return {
+        "status": "ok"
+    }
