@@ -1,0 +1,270 @@
+* {
+  box-sizing: border-box;
+}
+
+.register-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  background: #080808;
+  color: #d5d5d5;
+}
+
+/* LEFT SIDE */
+
+.register-left {
+  position: relative;
+  min-height: 100vh;
+  padding: 45px 7%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(5, 5, 5, 0.96),
+      rgba(5, 5, 5, 0.68)
+    ),
+    url("https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1600&q=85")
+    center / cover no-repeat;
+}
+
+.register-left::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 70% 50%,
+    rgba(196, 154, 58, 0.12),
+    transparent 45%
+  );
+  pointer-events: none;
+}
+
+.register-brand {
+  position: relative;
+  z-index: 1;
+  color: #e7c76b;
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.register-brand span {
+  color: #b58a2b;
+}
+
+.register-content {
+  position: relative;
+  z-index: 1;
+  max-width: 650px;
+  padding-bottom: 80px;
+}
+
+.register-eyebrow {
+  margin-bottom: 22px;
+  color: #c49a3a;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+}
+
+.register-content h1 {
+  margin: 0;
+  color: #eeeeee;
+  font-size: clamp(48px, 5vw, 75px);
+  line-height: 1.05;
+  font-weight: 500;
+  letter-spacing: -2px;
+}
+
+.register-content h1 span {
+  color: #d2aa4d;
+}
+
+.register-content > p:last-child {
+  max-width: 500px;
+  margin-top: 28px;
+  color: #858585;
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+/* RIGHT SIDE */
+
+.register-right {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 50px;
+  background: #0b0b0b;
+  border-left: 1px solid rgba(196, 154, 58, 0.12);
+}
+
+.register-box {
+  width: 100%;
+  max-width: 430px;
+}
+
+.register-back-btn {
+  margin-bottom: 45px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 12px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.register-back-btn:hover {
+  color: #c49a3a;
+  transform: translateX(-3px);
+}
+
+.register-label {
+  margin-bottom: 15px;
+  color: #c49a3a;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 3px;
+}
+
+.register-box h2 {
+  margin: 0;
+  color: #eeeeee;
+  font-size: 42px;
+  font-weight: 500;
+  letter-spacing: -1px;
+}
+
+.register-subtitle {
+  margin: 12px 0 35px;
+  color: #666;
+  font-size: 14px;
+}
+
+/* FORM */
+
+.register-field {
+  margin-bottom: 19px;
+}
+
+.register-field label {
+  display: block;
+  margin-bottom: 9px;
+  color: #999;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.register-field input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid rgba(196, 154, 58, 0.18);
+  outline: none;
+  background: #080808;
+  color: #d5d5d5;
+  font-family: inherit;
+  font-size: 13px;
+  transition: 0.3s ease;
+}
+
+.register-field input::placeholder {
+  color: #555;
+}
+
+.register-field input:focus {
+  border-color: rgba(196, 154, 58, 0.7);
+  box-shadow: 0 0 20px rgba(196, 154, 58, 0.05);
+}
+
+/* SUBMIT */
+
+.register-submit {
+  width: 100%;
+  margin-top: 8px;
+  padding: 16px;
+  border: 1px solid #c49a3a;
+  background: #c49a3a;
+  color: #080808;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.register-submit:hover {
+  background: #e0bd62;
+  border-color: #e0bd62;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(196, 154, 58, 0.18);
+}
+
+/* LOGIN LINK */
+
+.login-account-text {
+  margin-top: 28px;
+  text-align: center;
+  color: #666;
+  font-size: 12px;
+}
+
+.login-account-text button {
+  margin-left: 6px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #c49a3a;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.login-account-text button:hover {
+  color: #e0bd62;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 900px) {
+  .register-page {
+    grid-template-columns: 1fr;
+  }
+
+  .register-left {
+    min-height: 45vh;
+    padding: 35px 7%;
+  }
+
+  .register-content {
+    padding-bottom: 20px;
+  }
+
+  .register-content h1 {
+    font-size: 52px;
+  }
+
+  .register-right {
+    min-height: auto;
+    padding: 70px 7%;
+    border-left: none;
+    border-top: 1px solid rgba(196, 154, 58, 0.12);
+  }
+}
+
+@media (max-width: 500px) {
+  .register-content h1 {
+    font-size: 43px;
+  }
+
+  .register-right {
+    padding: 55px 6%;
+  }
+
+  .register-box h2 {
+    font-size: 36px;
+  }
+}

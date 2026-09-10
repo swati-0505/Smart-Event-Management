@@ -1,0 +1,318 @@
+* {
+  box-sizing: border-box;
+}
+
+.event-registration-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  background: #080808;
+  color: #d5d5d5;
+}
+
+/* LEFT */
+
+.registration-left {
+  position: relative;
+  min-height: 100vh;
+  padding: 45px 7%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(5, 5, 5, 0.97),
+      rgba(5, 5, 5, 0.7)
+    ),
+    url("https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1600&q=85")
+    center / cover no-repeat;
+}
+
+.registration-left::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 75% 50%,
+    rgba(196, 154, 58, 0.13),
+    transparent 45%
+  );
+  pointer-events: none;
+}
+
+.registration-brand {
+  position: relative;
+  z-index: 1;
+  color: #e7c76b;
+  font-size: 25px;
+  font-weight: 700;
+}
+
+.registration-brand span {
+  color: #b58a2b;
+}
+
+.registration-event-info {
+  position: relative;
+  z-index: 1;
+  max-width: 600px;
+  padding-bottom: 70px;
+}
+
+.registration-eyebrow {
+  margin-bottom: 22px;
+  color: #c49a3a;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 3px;
+}
+
+.registration-event-info h1 {
+  margin: 0;
+  color: #eeeeee;
+  font-size: clamp(52px, 5vw, 76px);
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -3px;
+}
+
+.registration-event-info h1 span {
+  color: #d2aa4d;
+}
+
+.registration-event-info > p {
+  max-width: 480px;
+  margin-top: 28px;
+  color: #858585;
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+/* EVENT META */
+
+.registration-event-meta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 560px;
+  margin-top: 45px;
+  border-top: 1px solid rgba(196, 154, 58, 0.2);
+  border-bottom: 1px solid rgba(196, 154, 58, 0.2);
+}
+
+.registration-event-meta div {
+  padding: 20px 14px;
+  border-right: 1px solid rgba(196, 154, 58, 0.12);
+}
+
+.registration-event-meta div:last-child {
+  border-right: none;
+}
+
+.registration-event-meta span {
+  display: block;
+  margin-bottom: 8px;
+  color: #555;
+  font-size: 9px;
+  letter-spacing: 2px;
+}
+
+.registration-event-meta strong {
+  color: #cfcfcf;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* RIGHT */
+
+.registration-right {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 50px;
+  background: #0b0b0b;
+  border-left: 1px solid rgba(196, 154, 58, 0.12);
+}
+
+.registration-box {
+  width: 100%;
+  max-width: 450px;
+}
+
+.registration-back-btn {
+  margin-bottom: 42px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 12px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.registration-back-btn:hover {
+  color: #c49a3a;
+  transform: translateX(-4px);
+}
+
+.registration-label {
+  margin-bottom: 15px;
+  color: #c49a3a;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 3px;
+}
+
+.registration-box h2 {
+  margin: 0;
+  color: #eeeeee;
+  font-size: 40px;
+  font-weight: 500;
+  letter-spacing: -1px;
+}
+
+.registration-subtitle {
+  margin: 12px 0 34px;
+  color: #666;
+  font-size: 13px;
+}
+
+/* FORM */
+
+.registration-field {
+  margin-bottom: 19px;
+}
+
+.registration-field label {
+  display: block;
+  margin-bottom: 9px;
+  color: #999;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.registration-field input,
+.registration-field select {
+  width: 100%;
+  padding: 14px 15px;
+  border: 1px solid rgba(196, 154, 58, 0.18);
+  outline: none;
+  background: #080808;
+  color: #d5d5d5;
+  font-family: inherit;
+  font-size: 13px;
+  transition: 0.3s ease;
+}
+
+.registration-field input::placeholder {
+  color: #555;
+}
+
+.registration-field input:focus,
+.registration-field select:focus {
+  border-color: rgba(196, 154, 58, 0.7);
+  box-shadow: 0 0 20px rgba(196, 154, 58, 0.05);
+}
+
+.registration-field select {
+  cursor: pointer;
+}
+
+/* TWO COLUMNS */
+
+.registration-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* SUBMIT */
+
+.registration-submit {
+  width: 100%;
+  margin-top: 8px;
+  padding: 16px;
+  border: 1px solid #c49a3a;
+  background: #c49a3a;
+  color: #080808;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.registration-submit:hover {
+  background: #e0bd62;
+  border-color: #e0bd62;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(196, 154, 58, 0.18);
+}
+
+/* REGISTRATION NOTE */
+
+.registration-note {
+  max-width: 390px;
+  margin: 16px auto 0;
+  color: #505050;
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.1px;
+  text-align: center;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 950px) {
+  .event-registration-page {
+    grid-template-columns: 1fr;
+  }
+
+  .registration-left {
+    min-height: 50vh;
+    padding: 35px 7%;
+  }
+
+  .registration-right {
+    min-height: auto;
+    padding: 70px 7%;
+    border-left: none;
+    border-top: 1px solid rgba(196, 154, 58, 0.12);
+  }
+}
+
+@media (max-width: 600px) {
+  .registration-event-info h1 {
+    font-size: 48px;
+  }
+
+  .registration-event-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .registration-event-meta div {
+    border-right: none;
+    border-bottom: 1px solid rgba(196, 154, 58, 0.12);
+  }
+
+  .registration-event-meta div:last-child {
+    border-bottom: none;
+  }
+
+  .registration-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .registration-right {
+    padding: 55px 6%;
+  }
+
+  .registration-note {
+    max-width: 330px;
+    font-size: 9px;
+  }
+}
