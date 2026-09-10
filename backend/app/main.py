@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from app.db.database import Base, engine
-from app.models import User, Event, Registration
+from app.models import User, Event, Registration, Venue
 
 from app.routers.event import router as event_router
 from app.routers.registration import router as registration_router
