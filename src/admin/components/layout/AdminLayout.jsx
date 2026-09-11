@@ -69,9 +69,6 @@ function AdminLayout({
         isOpen={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
         onPageChange={onPageChange}
-        onAction={(action) => {
-          console.log("Action:", action);
-        }}
       />
     </div>
   );

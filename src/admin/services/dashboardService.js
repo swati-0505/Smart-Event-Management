@@ -12,16 +12,21 @@ const mockDashboardData = {
   upcoming_events: 8,
 };
 
+// 👇 TOGGLE: Set to false when backend is ready
+const USE_MOCK_DATA = true;
+
 /**
  * Fetch dashboard metrics.
- * Later: return apiRequest("/api/admin/dashboard");
  */
 export async function getDashboardMetrics() {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  // ✅ MOCK MODE (when backend not ready)
+  if (USE_MOCK_DATA) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return mockDashboardData;
+  }
 
-  // For development, return mock data
-  return mockDashboardData;
+  // ✅ REAL API CALL (when backend ready)
+  return apiRequest("/api/admin/dashboard");
 }
 
 export default {

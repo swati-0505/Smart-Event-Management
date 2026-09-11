@@ -1,7 +1,5 @@
 // eventService.js
 // Handles all event-related API calls.
-// Currently using mock data for development.
-// Later, replace mock data with real API calls.
 
 import apiRequest from "./api";
 
@@ -50,82 +48,117 @@ const mockEvents = [
   },
 ];
 
+// 👇 TOGGLE: Set to false when backend is ready
+const USE_MOCK_DATA = true;
+
 /**
  * Fetch all events.
- * Later: return apiRequest("/api/admin/events");
  */
 export async function getEvents() {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  if (USE_MOCK_DATA) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return mockEvents;
+  }
 
-  // For development, return mock data
-  return mockEvents;
+  return apiRequest("/api/admin/events");
 }
 
 /**
  * Fetch a single event by ID.
  */
 export async function getEventById(eventId) {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  if (USE_MOCK_DATA) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return mockEvents.find((event) => event.event_id === eventId);
+  }
 
-  // For development, return from mock data
-  return mockEvents.find((event) => event.event_id === eventId);
+  return apiRequest(`/api/admin/events/${eventId}`);
 }
 
 /**
  * Create a new event.
  */
 export async function createEvent(eventData) {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  if (USE_MOCK_DATA) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
-  // For development, create a mock event
-  const newEvent = {
-    event_id: Date.now(), // temporary ID
-    ...eventData,
-    created_by: "Admin",
-    created_at: new Date().toISOString(),
-  };
+    const newEvent = {
+      event_id: Date.now(),
+      ...eventData,
+      created_by: "Admin",
+      created_at: new Date().toISOString(),
+    };
 
-  // Add to mock array (in real app, backend will handle this)
-  mockEvents.push(newEvent);
+    mockEvents.push(newEvent);
+    return newEvent;
+  }
 
-  return newEvent;
+  return apiRequest("/api/admin/events", {
+    method: "POST",
+    body: JSON.stringify(eventData),
+  });
 }
 
 /**
  * Update an existing event.
  */
 export async function updateEvent(eventId, eventData) {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  if (USE_MOCK_DATA) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
-  // For development, update mock data
-  const index = mockEvents.findIndex((event) => event.event_id === eventId);
-  if (index !== -1) {
-    mockEvents[index] = { ...mockEvents[index], ...eventData };
-    return mockEvents[index];
+    const index = mockEvents.findIndex((event) => event.event_id === eventId);
+    if (index !== -1) {
+      mockEvents[index] = { ...mockEvents[index], ...eventData };
+      return mockEvents[index];
+    }
+
+    throw new Error("Event not found");
   }
 
-  throw new Error("Event not found");
+  return apiRequest(`/api/admin/events/${eventId}`, {
+    method: "PUT",
+    body: JSON.stringify(eventData),
+  });
 }
 
 /**
  * Cancel an event (change status to CANCELLED).
  */
 export async function cancelEvent(eventId) {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  if (USE_MOCK_DATA) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
-  // For development, update mock data
-  const event = mockEvents.find((event) => event.event_id === eventId);
-  if (event) {
-    event.status = "CANCELLED";
-    return event;
+    const event = mockEvents.find((event) => event.event_id === eventId);
+    if (event) {
+      event.status = "CANCELLED";
+      return event;
+    }
+
+    throw new Error("Event not found");
   }
 
-  throw new Error("Event not found");
+  return apiRequest(`/api/admin/events/${eventId}/cancel`, {
+    method: "PATCH",
+  });
+}
+
+/**
+ * Delete an event.
+ */
+export async function deleteEvent(eventId) {
+  if (USE_MOCK_DATA) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const index = mockEvents.findIndex((event) => event.event_id === eventId);
+    if (index !== -1) {
+      mockEvents.splice(index, 1);
+    }
+    return { success: true };
+  }
+
+  return apiRequest(`/api/admin/events/${eventId}`, {
+    method: "DELETE",
+  });
 }
 
 export default {
@@ -134,4 +167,5 @@ export default {
   createEvent,
   updateEvent,
   cancelEvent,
+  deleteEvent,
 };

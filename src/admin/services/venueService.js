@@ -32,37 +32,64 @@ const mockVenues = [
   },
 ];
 
+// 👇 TOGGLE: Set to false when backend is ready
+const USE_MOCK_DATA = true;
+
 /**
  * Fetch all venues.
- * Later: return apiRequest("/api/admin/venues");
  */
 export async function getVenues() {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  if (USE_MOCK_DATA) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return mockVenues;
+  }
 
-  // For development, return mock data
-  return mockVenues;
+  return apiRequest("/api/admin/venues");
 }
 
 /**
  * Create a new venue.
  */
 export async function createVenue(venueData) {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  if (USE_MOCK_DATA) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
-  // For development, create a mock venue
-  const newVenue = {
-    venue_id: Date.now(),
-    ...venueData,
-    created_at: new Date().toISOString(),
-  };
+    const newVenue = {
+      venue_id: Date.now(),
+      ...venueData,
+      created_at: new Date().toISOString(),
+    };
 
-  mockVenues.push(newVenue);
-  return newVenue;
+    mockVenues.push(newVenue);
+    return newVenue;
+  }
+
+  return apiRequest("/api/admin/venues", {
+    method: "POST",
+    body: JSON.stringify(venueData),
+  });
+}
+
+/**
+ * Delete a venue.
+ */
+export async function deleteVenue(venueId) {
+  if (USE_MOCK_DATA) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const index = mockVenues.findIndex((v) => v.venue_id === venueId);
+    if (index !== -1) mockVenues.splice(index, 1);
+
+    return { success: true };
+  }
+
+  return apiRequest(`/api/admin/venues/${venueId}`, {
+    method: "DELETE",
+  });
 }
 
 export default {
   getVenues,
   createVenue,
+  deleteVenue,
 };

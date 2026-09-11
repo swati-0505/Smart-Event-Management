@@ -39,35 +39,44 @@ const mockRegistrations = [
   },
 ];
 
+// 👇 TOGGLE: Set to false when backend is ready
+const USE_MOCK_DATA = true;
+
 /**
  * Fetch all registrations.
- * Later: return apiRequest("/api/admin/registrations");
  */
 export async function getRegistrations() {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  if (USE_MOCK_DATA) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return mockRegistrations;
+  }
 
-  // For development, return mock data
-  return mockRegistrations;
+  return apiRequest("/api/admin/registrations");
 }
 
 /**
  * Update registration status.
  */
 export async function updateRegistrationStatus(registrationId, status) {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  if (USE_MOCK_DATA) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
-  // For development, update mock data
-  const registration = mockRegistrations.find(
-    (reg) => reg.registration_id === registrationId
-  );
-  if (registration) {
-    registration.status = status;
-    return registration;
+    const registration = mockRegistrations.find(
+      (reg) => reg.registration_id === registrationId
+    );
+
+    if (registration) {
+      registration.status = status;
+      return registration;
+    }
+
+    throw new Error("Registration not found");
   }
 
-  throw new Error("Registration not found");
+  return apiRequest(`/api/admin/registrations/${registrationId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
 }
 
 export default {

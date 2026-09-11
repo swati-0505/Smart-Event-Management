@@ -30,16 +30,19 @@ const mockUsers = [
   },
 ];
 
+// 👇 TOGGLE: Set to false when backend is ready
+const USE_MOCK_DATA = true;
+
 /**
  * Fetch all users.
- * Later: return apiRequest("/api/admin/users");
  */
 export async function getUsers() {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  if (USE_MOCK_DATA) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return mockUsers;
+  }
 
-  // For development, return mock data
-  return mockUsers;
+  return apiRequest("/api/admin/users");
 }
 
 export default {

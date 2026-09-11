@@ -29,16 +29,19 @@ const mockFeedback = [
   },
 ];
 
+// 👇 TOGGLE: Set to false when backend is ready
+const USE_MOCK_DATA = true;
+
 /**
  * Fetch all feedback.
- * Later: return apiRequest("/api/admin/feedback");
  */
 export async function getFeedback() {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  if (USE_MOCK_DATA) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return mockFeedback;
+  }
 
-  // For development, return mock data
-  return mockFeedback;
+  return apiRequest("/api/admin/feedback");
 }
 
 export default {

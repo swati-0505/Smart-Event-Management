@@ -24,7 +24,6 @@ function CommandPalette({
   isOpen,
   onClose,
   onPageChange,
-  onAction,
 }) {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -125,7 +124,6 @@ function CommandPalette({
         icon: Plus,
         action: () => {
           onPageChange("events");
-          if (onAction) onAction("create-event");
         },
         keywords: "create new add event",
       },
@@ -136,12 +134,11 @@ function CommandPalette({
         icon: Plus,
         action: () => {
           onPageChange("venues");
-          if (onAction) onAction("add-venue");
         },
         keywords: "add new venue",
       },
     ],
-    [onPageChange, onAction]
+    [onPageChange]
   );
 
   // Filter commands based on query

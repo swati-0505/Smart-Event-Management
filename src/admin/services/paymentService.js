@@ -45,16 +45,19 @@ const mockPayments = [
   },
 ];
 
+// 👇 TOGGLE: Set to false when backend is ready
+const USE_MOCK_DATA = true;
+
 /**
  * Fetch all payments.
- * Later: return apiRequest("/api/admin/payments");
  */
 export async function getPayments() {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  if (USE_MOCK_DATA) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return mockPayments;
+  }
 
-  // For development, return mock data
-  return mockPayments;
+  return apiRequest("/api/admin/payments");
 }
 
 export default {
