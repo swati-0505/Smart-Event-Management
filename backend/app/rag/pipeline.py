@@ -6,7 +6,7 @@ from app.rag.database import insert_chunk
 
 def process_document(file_path):
     # Step 1: Load PDF
-    text = load_pdf(file_path)
+    text, document_id = load_pdf(file_path)
 
     # Step 2: Split text into chunks
     chunks = chunk_text(text)
@@ -21,6 +21,7 @@ def process_document(file_path):
         chunk,
         embedding,
         file_path.name,
+        document_id,
     )
     return len(chunks)
 
