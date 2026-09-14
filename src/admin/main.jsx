@@ -1,3 +1,7 @@
+// main.jsx
+// Admin application entry point.
+// Mounts the React app to the DOM.
+
 import React from "react";
 import { createRoot } from "react-dom/client";
 import AdminApp from "./AdminApp";

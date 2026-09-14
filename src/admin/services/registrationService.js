@@ -1,76 +1,55 @@
 // registrationService.js
-// Handles all registration-related API calls.
-// Database fields: registration_id, user_id, event_id,
-// registration_date, status, created_at
+// Registrations — backend-ready.
 
-import apiRequest from "./api";
+import { apiGet, apiPatch, buildQuery } from "./api";
 
-// Mock data based on database schema
-const mockRegistrations = [
-  {
-    registration_id: 1,
-    user_id: 101,
-    user_name: "Rahul Sharma",
-    event_id: 1,
-    event_title: "Tech Summit 2026",
-    registration_date: "2026-08-15T10:00:00",
-    status: "CONFIRMED",
-    created_at: "2026-08-15T10:00:00",
-  },
-  {
-    registration_id: 2,
-    user_id: 102,
-    user_name: "Ananya Verma",
-    event_id: 2,
-    event_title: "Design Workshop",
-    registration_date: "2026-08-18T10:00:00",
-    status: "CONFIRMED",
-    created_at: "2026-08-18T10:00:00",
-  },
-  {
-    registration_id: 3,
-    user_id: 103,
-    user_name: "Arjun Mehta",
-    event_id: 3,
-    event_title: "Startup Meetup",
-    registration_date: "2026-08-20T10:00:00",
-    status: "PENDING",
-    created_at: "2026-08-20T10:00:00",
-  },
+/* ---------------- Mock ---------------- */
+let MOCK_REGISTRATIONS = [
+  { id: 1, user: "Rahul Sharma", email: "rahul@example.com", event: "Tech Fest 2025", date: "02 Jul 2025", status: "Confirmed" },
+  { id: 2, user: "Ananya Verma", email: "ananya@example.com", event: "Cultural Fest", date: "03 Jul 2025", status: "Confirmed" },
+  { id: 3, user: "Arjun Mehta", email: "arjun@example.com", event: "Tech Fest 2025", date: "04 Jul 2025", status: "Pending" },
+  { id: 4, user: "Priya Singh", email: "priya@example.com", event: "Workshop on Web Dev", date: "05 Jul 2025", status: "Confirmed" },
+  { id: 5, user: "Karan Kumar", email: "karan@example.com", event: "College Annual Day", date: "06 Jul 2025", status: "Cancelled" },
+  { id: 6, user: "Sneha Patel", email: "sneha@example.com", event: "Startup Pitch Night", date: "07 Jul 2025", status: "Pending" },
 ];
 
 /**
- * Fetch all registrations.
- * Later: return apiRequest("/api/admin/registrations");
+ * Get registrations with filters.
+ * 🚀 Backend: GET /admin/registrations
  */
-export async function getRegistrations() {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
+export async function getRegistrations(filters = {}) {
+  await new Promise((r) => setTimeout(r, 300));
 
-  // For development, return mock data
-  return mockRegistrations;
+  let result = [...MOCK_REGISTRATIONS];
+  if (filters.search) {
+    const s = filters.search.toLowerCase();
+    result = result.filter(
+      (r) => r.user.toLowerCase().includes(s) || r.event.toLowerCase().includes(s)
+    );
+  }
+  if (filters.status && filters.status !== "All") {
+    result = result.filter((r) => r.status === filters.status);
+  }
+  return result;
+
+  // 🚀 PRODUCTION
+  // return apiGet(`/admin/registrations${buildQuery(filters)}`);
 }
 
 /**
  * Update registration status.
+ * 🚀 Backend: PATCH /admin/registrations/:id
  */
-export async function updateRegistrationStatus(registrationId, status) {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+export async function updateRegistrationStatus(id, status) {
+  await new Promise((r) => setTimeout(r, 300));
 
-  // For development, update mock data
-  const registration = mockRegistrations.find(
-    (reg) => reg.registration_id === registrationId
+  MOCK_REGISTRATIONS = MOCK_REGISTRATIONS.map((r) =>
+    r.id === id ? { ...r, status } : r
   );
-  if (registration) {
-    registration.status = status;
-    return registration;
-  }
+  return MOCK_REGISTRATIONS.find((r) => r.id === id);
 
-  throw new Error("Registration not found");
+  // 🚀 PRODUCTION
+  // return apiPatch(`/admin/registrations/${id}`, { status });
 }
 
-export default {
-  getRegistrations,
-  updateRegistrationStatus,
-};
+export default { getRegistrations, updateRegistrationStatus };

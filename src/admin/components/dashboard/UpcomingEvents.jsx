@@ -1,124 +1,135 @@
 // UpcomingEvents.jsx
-// Shows upcoming events in a clean table format.
+// Upcoming events list — proper 44px touch targets, better hierarchy.
 
-import { useState, useEffect } from "react";
-import { ArrowRight, Calendar } from "lucide-react";
-import { getEvents } from "../../services/eventService";
+import {
+  Clock,
+  MapPin,
+  MoreVertical,
+  ArrowRight,
+  Calendar,
+} from "lucide-react";
 
-function UpcomingEvents({ searchQuery = "" }) {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const events = [
+  {
+    day: "08",
+    month: "Jul",
+    title: "Tech Fest 2025",
+    time: "10:00 AM - 4:00 PM",
+    venue: "Auditorium",
+    status: "Upcoming",
+    statusVariant: "success",
+  },
+  {
+    day: "12",
+    month: "Jul",
+    title: "Cultural Fest",
+    time: "2:00 PM - 6:00 PM",
+    venue: "Main Ground",
+    status: "Upcoming",
+    statusVariant: "success",
+  },
+  {
+    day: "15",
+    month: "Jul",
+    title: "Workshop on Web Development",
+    time: "9:00 AM - 12:00 PM",
+    venue: "Computer Lab 1",
+    status: "Upcoming",
+    statusVariant: "warning",
+  },
+  {
+    day: "20",
+    month: "Jul",
+    title: "College Annual Day",
+    time: "5:00 PM - 10:00 PM",
+    venue: "Main Auditorium",
+    status: "Today",
+    statusVariant: "info",
+  },
+];
 
-  useEffect(() => {
-    loadEvents();
-  }, []);
+const dayColorMap = {
+  0: "bg-indigo-100 text-indigo-600",
+  1: "bg-purple-100 text-purple-600",
+  2: "bg-orange-100 text-orange-600",
+  3: "bg-rose-100 text-rose-600",
+};
 
-  async function loadEvents() {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const data = await getEvents();
-      const upcoming = data.filter(
-        (event) => event.status === "UPCOMING" || event.status === "ACTIVE"
-      );
-
-      setEvents(upcoming);
-    } catch (err) {
-      setError("Failed to load upcoming events.");
-      console.error("Error loading upcoming events:", err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function getStatusClass(status) {
-    switch (status) {
-      case "UPCOMING":
-        return "admin-status admin-status-upcoming";
-      case "ACTIVE":
-      case "CONFIRMED":
-        return "admin-status admin-status-confirmed";
-      case "PENDING":
-        return "admin-status admin-status-pending";
-      case "CANCELLED":
-        return "admin-status admin-status-cancelled";
-      default:
-        return "admin-status admin-status-pending";
-    }
-  }
-
+function UpcomingEvents({ onViewAll }) {
   return (
-    <section className="dash-panel">
+    <div className="card animate-fade-in-up p-5">
       {/* Header */}
-      <div className="dash-panel-header">
-        <div>
-          <p className="dash-panel-tag">Schedule</p>
-          <h2 className="dash-panel-title">Upcoming Events</h2>
-        </div>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-base font-bold text-theme-primary">
+          Upcoming Events
+        </h2>
 
-        <button type="button" className="dash-panel-action">
-          <span>View all</span>
-          <ArrowRight size={14} />
+        {/* ✅ 44px touch target */}
+        <button
+          type="button"
+          onClick={onViewAll}
+          className="flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-50 hover:text-indigo-700"
+        >
+          View All <ArrowRight size={13} />
         </button>
       </div>
 
-      {/* Body */}
-      {loading && (
-        <div className="dash-empty">
-          <p>Loading events...</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="dash-empty">
-          <p className="text-red-400">{error}</p>
-        </div>
-      )}
-
-      {!loading && !error && events.length === 0 && (
-        <div className="dash-empty">
-          <Calendar size={24} className="mx-auto mb-2 opacity-40" />
-          <p>No upcoming events</p>
-        </div>
-      )}
-
-      {!loading && !error && events.length > 0 && (
-        <div className="events-list">
-          {events.map((event) => (
-            <div key={event.event_id} className="event-row">
-              <div className="event-date-box">
-                <span className="event-day">
-                  {new Date(event.start_time).toLocaleDateString("en-GB", {
-                    day: "2-digit",
-                  })}
-                </span>
-                <span className="event-month">
-                  {new Date(event.start_time).toLocaleDateString("en-GB", {
-                    month: "short",
-                  })}
-                </span>
-              </div>
-
-              <div className="event-info">
-                <p className="event-title">{event.title}</p>
-                <p className="event-venue">{event.venue_name}</p>
-              </div>
-
-              <div className="event-capacity">
-                <span className="event-capacity-num">{event.capacity}</span>
-                <span className="event-capacity-label">seats</span>
-              </div>
-
-              <span className={getStatusClass(event.status)}>
-                {event.status}
+      {/* Events list */}
+      <div className="space-y-3">
+        {events.map((event, idx) => (
+          <div
+            key={idx}
+            className="group flex items-center gap-3 rounded-xl border border-theme p-3 transition hover:border-indigo-300 hover:bg-theme-hover sm:gap-4"
+          >
+            {/* Date badge */}
+            <div
+              className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl ${
+                dayColorMap[idx] || dayColorMap[0]
+              }`}
+            >
+              <span className="text-lg font-bold leading-none">
+                {event.day}
+              </span>
+              <span className="text-[10px] font-semibold uppercase">
+                {event.month}
               </span>
             </div>
-          ))}
-        </div>
-      )}
-    </section>
+
+            {/* Event info */}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-theme-primary">
+                {event.title}
+              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-theme-muted">
+                <span className="flex items-center gap-1">
+                  <Clock size={12} /> {event.time}
+                </span>
+                <span className="flex items-center gap-1">
+                  <MapPin size={12} /> {event.venue}
+                </span>
+              </div>
+            </div>
+
+            {/* Status badge + menu (hidden on very small, visible on sm+) */}
+            <div className="flex items-center gap-1">
+              <span
+                className={`badge badge-${event.statusVariant} hidden sm:inline-flex`}
+              >
+                {event.status}
+              </span>
+
+              <button
+                type="button"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-theme-muted transition hover:bg-theme-hover hover:text-theme-primary"
+                aria-label="More options"
+              >
+                <MoreVertical size={16} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

@@ -1,194 +1,300 @@
 // Users.jsx
-// This component displays the users management page.
-// It handles search and role filtering.
+// Fully responsive users page with proper touch targets.
 
 import { useState, useEffect, useMemo } from "react";
-import { Search } from "lucide-react";
-import { getUsers } from "../services/userService";
+import {
+  Search, Mail, MoreVertical, UserPlus, RefreshCw, Check,
+  Shield, Calendar, Trash2, Edit2, User as UserIcon,
+} from "lucide-react";
+import Badge from "../components/common/Badge";
+import Modal from "../components/common/Modal";
+import { getUsers, createUser } from "../services/userService";
+
+const ROLE_VARIANT = {
+  Admin: "danger",
+  Organizer: "warning",
+  User: "info",
+};
+
+const ROLE_ICON = {
+  Admin: Shield,
+  Organizer: UserPlus,
+  User: UserIcon,
+};
 
 function Users() {
-  // State for users list
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("All");
 
-  // State for search and role filter
-  const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState("ALL");
+  const [showModal, setShowModal] = useState(false);
+  const [openMenu, setOpenMenu] = useState(null);
+  const [form, setForm] = useState({ name: "", email: "", role: "User" });
 
-  // Load users on component mount
   useEffect(() => {
-    loadUsers();
+    load();
   }, []);
 
-  // Function to load users from service
-  async function loadUsers() {
+  async function load() {
     try {
       setLoading(true);
       setError(null);
-
-      // Call service to get users
       const data = await getUsers();
       setUsers(data);
     } catch (err) {
-      setError("Failed to load users. Please try again.");
-      console.error("Error loading users:", err);
+      setError("Failed to load users.");
+      console.error(err);
     } finally {
       setLoading(false);
     }
   }
 
-  // Filter users based on search and role
-  const filteredUsers = useMemo(() => {
-    const search = searchQuery.trim().toLowerCase();
-
-    return users.filter((user) => {
-      const matchesSearch =
-        !search ||
-        user.name.toLowerCase().includes(search) ||
-        user.email.toLowerCase().includes(search);
-
-      const matchesRole =
-        roleFilter === "ALL" || user.role === roleFilter;
-
-      return matchesSearch && matchesRole;
+  const filtered = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    return users.filter((u) => {
+      const matchS =
+        !s ||
+        u.name.toLowerCase().includes(s) ||
+        u.email.toLowerCase().includes(s);
+      const matchR = roleFilter === "All" || u.role === roleFilter;
+      return matchS && matchR;
     });
-  }, [users, searchQuery, roleFilter]);
+  }, [users, search, roleFilter]);
 
-  // Helper to get role badge class
-  function getRoleClass(role) {
-    switch (role) {
-      case "ADMIN":
-        return "admin-status-upcoming";
-      case "USER":
-        return "admin-status-confirmed";
-      case "ORGANIZER":
-        return "admin-status-pending";
-      default:
-        return "admin-status-pending";
+  async function handleSubmit(e) {
+    e.preventDefault();
+    try {
+      const created = await createUser(form);
+      setUsers((prev) => [created, ...prev]);
+      setShowModal(false);
+      setForm({ name: "", email: "", role: "User" });
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create user.");
     }
   }
 
   return (
-    <div>
-      {/* Page header */}
-      <header className="mb-7 sm:mb-8">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-theme-accent">
-          System
-        </p>
-
-        <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-theme-primary sm:text-[34px]">
-              Users
-            </h1>
-
-            <p className="mt-2 max-w-xl text-sm leading-6 text-theme-muted">
-              Manage system users and their roles.
-            </p>
-          </div>
+    <div className="space-y-4 sm:space-y-6">
+      {/* ============ HEADER ============ */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-theme-primary sm:text-3xl">
+            Users
+          </h1>
+          <p className="mt-1 text-xs text-theme-muted sm:text-sm">
+            Manage system users and their roles.
+          </p>
         </div>
-      </header>
+        <button
+          type="button"
+          onClick={() => setShowModal(true)}
+          className="btn-primary w-full text-xs sm:w-auto sm:text-sm"
+        >
+          <UserPlus size={16} />
+          Add User
+        </button>
+      </div>
 
-      {/* Search and filter bar */}
-      <section className="admin-section overflow-hidden">
-        <div className="flex flex-col gap-3 border-b border-theme p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <div className="flex w-full max-w-sm items-center gap-2 rounded-md border border-theme-accent/20 bg-theme-accent/5 px-3 py-2.5">
-            <Search size={15} strokeWidth={1.7} className="shrink-0 text-theme-accent/75" />
+      {/* ============ FILTERS ============ */}
+      <div className="card flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+        <div className="flex w-full items-center gap-2 rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 sm:max-w-sm">
+          <Search size={15} className="text-theme-muted" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search users..."
+            className="min-w-0 flex-1 bg-transparent text-sm text-theme-primary outline-none placeholder:text-theme-dim"
+          />
+        </div>
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          className="w-full rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none sm:w-auto"
+        >
+          <option>All</option>
+          <option>Admin</option>
+          <option>Organizer</option>
+          <option>User</option>
+        </select>
+      </div>
 
+      {/* ============ LOADING ============ */}
+      {loading && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <div key={i} className="card animate-pulse p-5">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full bg-theme-tertiary" />
+                <div className="flex-1">
+                  <div className="h-4 w-3/4 rounded bg-theme-tertiary" />
+                  <div className="mt-2 h-3 w-1/2 rounded bg-theme-tertiary" />
+                </div>
+              </div>
+              <div className="mt-4 h-3 w-1/3 rounded bg-theme-tertiary" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ============ ERROR ============ */}
+      {error && (
+        <div className="card flex flex-col items-center gap-3 p-12 text-center">
+          <p className="text-sm text-red-500">{error}</p>
+          <button type="button" onClick={load} className="btn-primary">
+            <RefreshCw size={14} /> Retry
+          </button>
+        </div>
+      )}
+
+      {/* ============ EMPTY ============ */}
+      {!loading && !error && filtered.length === 0 && (
+        <div className="card p-12 text-center">
+          <UserIcon size={40} className="mx-auto text-theme-dim" />
+          <p className="mt-3 text-sm text-theme-muted">No users found.</p>
+        </div>
+      )}
+
+      {/* ============ USERS GRID ============ */}
+      {!loading && !error && filtered.length > 0 && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          {filtered.map((user, idx) => {
+            const RoleIcon = ROLE_ICON[user.role] || UserIcon;
+            return (
+              <div
+                key={user.id}
+                className={`card card-interactive animate-fade-in-up stagger-${(idx % 6) + 1} relative p-4 sm:p-5`}
+              >
+                {/* ✅ 40px touch target */}
+                <div className="absolute right-2 top-2">
+                  <button
+                    type="button"
+                    onClick={() => setOpenMenu(openMenu === user.id ? null : user.id)}
+                    className="flex h-10 w-10 items-center justify-center rounded-lg text-theme-muted transition hover:bg-theme-hover hover:text-theme-primary"
+                    aria-label="More options"
+                  >
+                    <MoreVertical size={16} />
+                  </button>
+                  {openMenu === user.id && (
+                    <>
+                      <button
+                        type="button"
+                        className="fixed inset-0 z-10 cursor-default"
+                        onClick={() => setOpenMenu(null)}
+                        aria-label="Close menu"
+                      />
+                      <div className="animate-scale-in absolute right-0 top-full z-20 mt-1 w-36 overflow-hidden rounded-xl border border-theme bg-theme-secondary shadow-lg">
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 px-3 py-3 text-xs text-theme-secondary transition hover:bg-theme-hover"
+                        >
+                          <Edit2 size={12} /> Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 border-t border-theme px-3 py-3 text-xs text-red-500 transition hover:bg-red-50"
+                        >
+                          <Trash2 size={12} /> Remove
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Avatar */}
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-lg font-bold text-white shadow-md">
+                  {user.name.charAt(0)}
+                </div>
+
+                <h3 className="mt-3 line-clamp-1 text-sm font-bold text-theme-primary sm:text-base">
+                  {user.name}
+                </h3>
+                <p className="mt-0.5 flex items-center gap-1 text-xs text-theme-muted">
+                  <Mail size={11} className="shrink-0" />
+                  <span className="truncate">{user.email}</span>
+                </p>
+
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <Badge variant={ROLE_VARIANT[user.role] || "neutral"}>
+                    {user.role}
+                  </Badge>
+                  <span className="flex items-center gap-1 text-[10px] text-theme-dim">
+                    <Calendar size={10} />
+                    {user.joined}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ============ ADD USER MODAL ============ */}
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title="Add New User"
+        maxWidth="max-w-lg"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">
+              Full Name
+            </label>
             <input
               type="text"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search by name or email..."
-              className="min-w-0 flex-1 bg-transparent text-xs text-theme-secondary outline-none placeholder:text-theme-dim"
+              required
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="e.g., Rahul Sharma"
+              className="w-full rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none focus:border-indigo-400"
             />
           </div>
-
-          <select
-            value={roleFilter}
-            onChange={(event) => setRoleFilter(event.target.value)}
-            className="w-full rounded-md border border-theme bg-theme-tertiary px-3 py-2.5 text-xs text-theme-secondary outline-none transition focus:border-theme-accent/40 sm:w-auto"
-          >
-            <option value="ALL">All Roles</option>
-            <option value="ADMIN">Admin</option>
-            <option value="ORGANIZER">Organizer</option>
-            <option value="USER">User</option>
-          </select>
-        </div>
-
-        {/* Loading state */}
-        {loading && (
-          <div className="px-6 py-12 text-center text-sm text-theme-muted">
-            Loading users...
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">
+              Email
+            </label>
+            <input
+              type="email"
+              required
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              placeholder="user@example.com"
+              className="w-full rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none focus:border-indigo-400"
+            />
           </div>
-        )}
-
-        {/* Error state */}
-        {error && (
-          <div className="px-6 py-12 text-center text-sm text-red-400">
-            {error}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">
+              Role
+            </label>
+            <select
+              value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
+              className="w-full rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none focus:border-indigo-400"
+            >
+              <option>User</option>
+              <option>Organizer</option>
+              <option>Admin</option>
+            </select>
           </div>
-        )}
 
-        {/* Users table */}
-        {!loading && !error && (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px]">
-              <thead>
-                <tr className="border-b border-theme text-left">
-                  <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
-                    Name
-                  </th>
-                  <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
-                    Email
-                  </th>
-                  <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
-                    Role
-                  </th>
-                  <th className="px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-theme-dim">
-                    Created At
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredUsers.length > 0 ? (
-                  filteredUsers.map((user) => (
-                    <tr
-                      key={user.user_id}
-                      className="border-b border-theme transition hover:bg-theme-primary/5 last:border-b-0"
-                    >
-                      <td className="px-6 py-5">
-                        <p className="text-sm font-medium text-theme-primary">
-                          {user.name}
-                        </p>
-                      </td>
-                      <td className="px-6 py-5 text-sm text-theme-muted">
-                        {user.email}
-                      </td>
-                      <td className="px-6 py-5">
-                        <span className={`admin-status ${getRoleClass(user.role)}`}>
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="px-6 py-5 text-sm text-theme-muted">
-                        {new Date(user.created_at).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="px-6 py-12 text-center text-sm text-theme-muted">
-                      No users match your search.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end sm:gap-3">
+            <button
+              type="button"
+              onClick={() => setShowModal(false)}
+              className="btn-secondary w-full sm:w-auto"
+            >
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary w-full sm:w-auto">
+              <Check size={14} /> Add User
+            </button>
           </div>
-        )}
-      </section>
+        </form>
+      </Modal>
     </div>
   );
 }

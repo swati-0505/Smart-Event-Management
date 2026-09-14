@@ -1,223 +1,104 @@
 // Sidebar.jsx
-// Left navigation sidebar with sections and navigation items.
+// Left navigation — no toggle button (moved to Navbar).
 
 import {
-  Activity,
-  Bot,
-  Building2,
-  CalendarDays,
-  CreditCard,
   LayoutDashboard,
-  MessageSquare,
-  Settings,
+  Calendar,
   Users,
+  BarChart3,
+  Bot,
+  Settings,
+  Plus,
   ClipboardList,
-  X,
+  FileText,
+  Sparkles,
 } from "lucide-react";
 
-import logo from "../../../assets/smartevent-logo.png.png";
-
-const sections = [
-  {
-    title: "OVERVIEW",
-    items: [
-      {
-        label: "Dashboard",
-        page: "dashboard",
-        icon: LayoutDashboard,
-      },
-    ],
-  },
-  {
-    title: "EVENT MANAGEMENT",
-    items: [
-      {
-        label: "Events",
-        page: "events",
-        icon: CalendarDays,
-      },
-    ],
-  },
-  {
-    title: "OPERATIONS",
-    items: [
-      {
-        label: "Venues",
-        page: "venues",
-        icon: Building2,
-      },
-      {
-        label: "Registrations",
-        page: "registrations",
-        icon: ClipboardList,
-      },
-      {
-        label: "Payments",
-        page: "payments",
-        icon: CreditCard,
-      },
-      {
-        label: "Feedback",
-        page: "feedback",
-        icon: MessageSquare,
-      },
-    ],
-  },
-  {
-    title: "INTELLIGENCE",
-    items: [
-      {
-        label: "AI Assistant",
-        page: "ai-assistant",
-        icon: Bot,
-      },
-      {
-        label: "Agent Activity",
-        page: "agent-activity",
-        icon: Activity,
-      },
-    ],
-  },
-  {
-    title: "SYSTEM",
-    items: [
-      {
-        label: "Users",
-        page: "users",
-        icon: Users,
-      },
-      {
-        label: "Settings",
-        page: "settings",
-        icon: Settings,
-      },
-    ],
-  },
+const mainNav = [
+  { label: "Home", page: "home", icon: LayoutDashboard },
+  { label: "Calendar", page: "calendar", icon: Calendar },
+  { label: "Events", page: "events", icon: Calendar },
+  { label: "Registrations", page: "registrations", icon: ClipboardList },
+  { label: "Users", page: "users", icon: Users },
+  { label: "Reports & Analytics", page: "reports", icon: BarChart3 },
+  { label: "AI Assistant", page: "ai-assistant", icon: Bot },
+  { label: "Settings", page: "settings", icon: Settings },
 ];
 
-function Sidebar({
-  currentPage,
-  onPageChange,
-  sidebarOpen,
-  onClose,
-  theme,
-}) {
-  function handlePageChange(page) {
-    onPageChange(page);
+const quickActions = [
+  { label: "Create Event", page: "events", icon: Plus },
+  { label: "View Registrations", page: "registrations", icon: Users },
+  { label: "Generate Report", page: "reports", icon: FileText },
+];
 
-    // Close the mobile sidebar after selecting a page.
-    if (onClose) {
-      onClose();
-    }
-  }
-
+function Sidebar({ currentPage, onPageChange, sidebarOpen }) {
   return (
-    <>
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <button
-          type="button"
-          aria-label="Close menu"
-          onClick={onClose}
-          className="fixed inset-0 z-40 bg-black/65 lg:hidden"
-        />
-      )}
+    <aside
+      className={[
+        "fixed inset-y-0 left-0 z-40 flex w-[260px] flex-col",
+        "border-r border-theme bg-theme-secondary",
+        "transition-transform duration-300 ease-in-out",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full",
+      ].join(" ")}
+    >
+      {/* Logo */}
+      <div className="flex h-[72px] items-center gap-3 border-b border-theme px-5">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg">
+          <Sparkles size={20} className="text-white" />
+        </div>
+        <div>
+          <h1 className="text-[15px] font-bold leading-tight text-theme-primary">
+            Smart Event
+          </h1>
+          <p className="text-[11px] font-medium text-theme-muted">Management</p>
+        </div>
+      </div>
 
-      {/* Sidebar */}
-      <aside
-        className={[
-          "fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col",
-          "border-r border-theme bg-theme-secondary",
-          "transition-transform duration-300 ease-out",
-          sidebarOpen
-            ? "translate-x-0"
-            : "-translate-x-full lg:translate-x-0",
-        ].join(" ")}
-      >
-        {/* Logo Section */}
-        <div className="flex h-[72px] items-center justify-center border-b border-theme px-5">
-          <img
-            src={logo}
-            alt="SmartEvent"
-            className="h-26 w-auto object-contain"
-          />
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 py-5">
+        <div className="space-y-1">
+          {mainNav.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentPage === item.page;
+            return (
+              <button
+                key={item.page}
+                type="button"
+                onClick={() => onPageChange(item.page)}
+                className={`nav-item ${isActive ? "active" : ""}`}
+              >
+                <Icon size={18} strokeWidth={1.9} />
+                <span className="flex-1">{item.label}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Mobile close button */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-3 top-3 rounded-md p-2 text-theme-muted transition hover:bg-white/[0.05] hover:text-theme-primary lg:hidden"
-          aria-label="Close sidebar"
-        >
-          <X size={18} strokeWidth={1.7} />
-        </button>
+        <div className="my-5 border-t border-theme" />
 
-        {/* Navigation Sections */}
-        <nav className="admin-sidebar-scroll flex-1 overflow-y-auto px-3 py-6">
-          {sections.map((section) => (
-            <div
-              key={section.title}
-              className="mb-7"
-            >
-              <p className="mb-2 px-3 text-[9px] font-semibold tracking-[0.2em] text-theme-accent/70">
-                {section.title}
-              </p>
-
-              <div className="space-y-1">
-                {section.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = currentPage === item.page;
-
-                  return (
-                    <button
-                      key={item.page}
-                      type="button"
-                      onClick={() => handlePageChange(item.page)}
-                      className={[
-                        "flex w-full items-center gap-3 rounded-md border-l-2",
-                        "px-3 py-2.5 text-left text-[13px]",
-                        "transition-all duration-200",
-                        isActive
-                          ? "border-theme-accent bg-theme-accent/10 text-theme-accent"
-                          : "border-transparent text-theme-muted hover:bg-theme-primary/5 hover:text-theme-primary",
-                      ].join(" ")}
-                    >
-                      <Icon
-                        size={16}
-                        strokeWidth={1.7}
-                        className="shrink-0"
-                      />
-
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </nav>
-
-        {/* User Profile Section */}
-        <div className="border-t border-theme p-4">
-          <div className="flex items-center gap-3 rounded-md px-2 py-2">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-theme-accent/15 text-sm font-semibold text-theme-accent">
-              Y
-            </div>
-
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-theme-secondary">
-                Admin
-              </p>
-
-              <p className="mt-0.5 text-[10px] text-theme-dim">
-                Administrator
-              </p>
-            </div>
+        <div>
+          <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-theme-dim">
+            Quick Actions
+          </p>
+          <div className="space-y-1">
+            {quickActions.map((item, idx) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => onPageChange(item.page)}
+                  className="nav-item"
+                >
+                  <Icon size={17} strokeWidth={1.9} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
-      </aside>
-    </>
+      </nav>
+    </aside>
   );
 }
 

@@ -1,29 +1,35 @@
 // dashboardService.js
-// Handles all dashboard-related API calls.
-// Returns metrics for the dashboard page.
+// Dashboard metrics — backend-ready.
 
-import apiRequest from "./api";
+import { apiGet } from "./api";
 
-// Mock data based on database counts
-const mockDashboardData = {
-  total_events: 24,
-  total_registrations: 486,
-  total_venues: 12,
-  upcoming_events: 8,
+/* ---------------- Mock ---------------- */
+const MOCK = {
+  total_events: 12,
+  total_registrations: 1248,
+  active_users: 956,
+  ai_queries: 24,
+  trends: {
+    total_events: "+20%",
+    total_registrations: "+15%",
+    active_users: "+32%",
+    ai_queries: "Queries this week",
+  },
 };
+
+/* ---------------- Service ---------------- */
 
 /**
- * Fetch dashboard metrics.
- * Later: return apiRequest("/api/admin/dashboard");
+ * Fetch dashboard KPI metrics.
+ * 🚀 Backend: GET /admin/dashboard/metrics
  */
 export async function getDashboardMetrics() {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  // ✅ MOCK
+  await new Promise((r) => setTimeout(r, 300));
+  return MOCK;
 
-  // For development, return mock data
-  return mockDashboardData;
+  // 🚀 PRODUCTION
+  // return apiGet("/admin/dashboard/metrics");
 }
 
-export default {
-  getDashboardMetrics,
-};
+export default { getDashboardMetrics };

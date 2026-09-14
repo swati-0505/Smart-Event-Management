@@ -1,614 +1,320 @@
 // Settings.jsx
-// Admin settings page for configuration.
+// Fully responsive settings page.
+// Mobile: stacked cards + sticky save | Desktop: 2-col grid
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import {
-  Bell,
-  Globe,
-  Lock,
-  Moon,
-  Save,
-  Shield,
+  Globe, Bell, Lock, Save, Shield, Palette,
+  Mail, Smartphone, AlertTriangle, RefreshCw, Check,
 } from "lucide-react";
+import { getSettings, updateSettings } from "../services/settingsService";
 
-function Settings({
-  theme,
-  onThemeChange,
-  settings,
-  onSettingsChange,
-}) {
-  // =========================================================
-  // LOCAL FORM STATE
-  // =========================================================
-
-  const [formSettings, setFormSettings] = useState(settings);
-
-  // =========================================================
-  // SAVE STATUS
-  // =========================================================
-
-  const [saveMessage, setSaveMessage] = useState("");
-
-  // =========================================================
-  // KEEP FORM IN SYNC WITH GLOBAL SETTINGS
-  // =========================================================
+function Settings() {
+  const [settings, setSettings] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    setFormSettings(settings);
-  }, [settings]);
+    load();
+  }, []);
 
-  // =========================================================
-  // HANDLE INPUT CHANGES
-  // =========================================================
+  async function load() {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getSettings();
+      setSettings(data);
+    } catch (err) {
+      setError("Failed to load settings.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  function handleChange(event) {
-    const { name, value, type, checked } = event.target;
-
-    setFormSettings((previousSettings) => ({
-      ...previousSettings,
+  function handleChange(e) {
+    const { name, value, type, checked } = e.target;
+    setSettings((prev) => ({
+      ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
   }
 
-  // =========================================================
-  // HANDLE THEME CHANGE
-  // =========================================================
-
-  function handleThemeChange(event) {
-    const newTheme = event.target.value;
-
-    onThemeChange(newTheme);
+  async function handleSave() {
+    try {
+      setSaving(true);
+      await updateSettings(settings);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save settings.");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  // =========================================================
-  // HANDLE SAVE
-  // =========================================================
-
-  function handleSave(event) {
-    event.preventDefault();
-
-    onSettingsChange(formSettings);
-
-    setSaveMessage("Settings saved successfully!");
-
-    window.setTimeout(() => {
-      setSaveMessage("");
-    }, 2500);
+  /* ---------- Reusable toggle ---------- */
+  function Toggle({ name, checked, onChange, variant = "" }) {
+    return (
+      <label className={`toggle-switch ${variant}`}>
+        <input type="checkbox" name={name} checked={checked} onChange={onChange} />
+        <span className="toggle-slider" />
+      </label>
+    );
   }
 
-  // =========================================================
-  // MAINTENANCE MODE TOGGLE
-  // =========================================================
-
-  function handleMaintenanceToggle(event) {
-    const enabled = event.target.checked;
-
-    setFormSettings((previousSettings) => ({
-      ...previousSettings,
-      maintenanceMode: enabled,
-    }));
+  /* ---------- Loading ---------- */
+  if (loading) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-theme-primary sm:text-3xl">
+            Settings
+          </h1>
+          <p className="mt-1 text-xs text-theme-muted sm:text-sm">
+            Loading settings...
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="card animate-pulse p-5 sm:p-6">
+              <div className="h-5 w-32 rounded bg-theme-tertiary" />
+              <div className="mt-4 space-y-3">
+                <div className="h-10 w-full rounded-xl bg-theme-tertiary" />
+                <div className="h-10 w-full rounded-xl bg-theme-tertiary" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
-  // =========================================================
-  // TWO FACTOR AUTHENTICATION TOGGLE
-  // =========================================================
-
-  function handleTwoFactorToggle(event) {
-    const enabled = event.target.checked;
-
-    setFormSettings((previousSettings) => ({
-      ...previousSettings,
-      twoFactorAuth: enabled,
-    }));
+  /* ---------- Error ---------- */
+  if (error) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <h1 className="text-2xl font-bold text-theme-primary sm:text-3xl">
+          Settings
+        </h1>
+        <div className="card flex flex-col items-center gap-3 p-12 text-center">
+          <p className="text-sm text-red-500">{error}</p>
+          <button type="button" onClick={load} className="btn-primary">
+            <RefreshCw size={14} /> Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div>
-      {/* =====================================================
-          PAGE HEADER
-      ====================================================== */}
-
-      <header className="mb-7 sm:mb-8">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-theme-accent">
-          System
+    <div className="space-y-4 sm:space-y-6">
+      {/* ============ HEADER ============ */}
+      <div>
+        <h1 className="text-2xl font-bold text-theme-primary sm:text-3xl">
+          Settings
+        </h1>
+        <p className="mt-1 text-xs text-theme-muted sm:text-sm">
+          Manage system preferences and configuration.
         </p>
+      </div>
 
-        <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      {/* ============ GRID ============ */}
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
+        {/* ---- Preferences ---- */}
+        <div className="card p-4 sm:p-6">
+          <div className="mb-4 flex items-center gap-2 sm:mb-5">
+            <Palette size={16} className="text-indigo-600 sm:hidden" />
+            <Palette size={18} className="hidden text-indigo-600 sm:block" />
+            <h2 className="text-sm font-bold text-theme-primary sm:text-base">
+              Preferences
+            </h2>
+          </div>
           <div>
-            <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-theme-primary sm:text-[34px]">
-              Settings
-            </h1>
-
-            <p className="mt-2 max-w-xl text-sm leading-6 text-theme-muted">
-              Configure system settings and preferences.
-            </p>
+            <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">
+              Language
+            </label>
+            <select
+              name="language"
+              value={settings.language}
+              onChange={handleChange}
+              className="w-full rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none focus:border-indigo-400"
+            >
+              <option value="en">English</option>
+              <option value="hi">हिन्दी (Hindi)</option>
+              <option value="te">తెలుగు (Telugu)</option>
+              <option value="ta">தமிழ் (Tamil)</option>
+            </select>
           </div>
         </div>
-      </header>
 
-      {/* =====================================================
-          SETTINGS GRID
-      ====================================================== */}
-
-      <div className="grid gap-6 lg:grid-cols-2">
-
-        {/* ===================================================
-            GENERAL SETTINGS
-        ==================================================== */}
-
-        <section className="admin-section p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-theme-primary">
-            <Globe size={16} className="text-theme-accent" />
-
-            General Settings
-          </h2>
-
-          <form onSubmit={handleSave} className="space-y-4">
-
-            {/* Site Name */}
-
+        {/* ---- General ---- */}
+        <div className="card p-4 sm:p-6">
+          <div className="mb-4 flex items-center gap-2 sm:mb-5">
+            <Globe size={16} className="text-indigo-600 sm:hidden" />
+            <Globe size={18} className="hidden text-indigo-600 sm:block" />
+            <h2 className="text-sm font-bold text-theme-primary sm:text-base">
+              General
+            </h2>
+          </div>
+          <div className="space-y-3 sm:space-y-4">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-theme-secondary">
+              <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">
                 Site Name
               </label>
-
               <input
                 type="text"
                 name="siteName"
-                value={formSettings.siteName}
+                value={settings.siteName}
                 onChange={handleChange}
-                className="w-full rounded-md border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none transition focus:border-theme-accent/40"
+                className="w-full rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none focus:border-indigo-400"
               />
             </div>
-
-            {/* Site URL */}
-
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-theme-secondary">
+              <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">
                 Site URL
               </label>
-
               <input
                 type="url"
                 name="siteUrl"
-                value={formSettings.siteUrl}
+                value={settings.siteUrl}
                 onChange={handleChange}
-                className="w-full rounded-md border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none transition focus:border-theme-accent/40"
+                className="w-full rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none focus:border-indigo-400"
               />
             </div>
-
-            {/* =================================================
-                MAINTENANCE MODE
-            ================================================== */}
-
-            <div className="flex items-center justify-between gap-4 pt-2">
-              <div>
-                <p className="text-sm text-theme-secondary">
-                  Maintenance Mode
-                </p>
-
-                <p className="text-xs text-theme-muted">
-                  Temporarily disable site access
-                </p>
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-theme bg-theme-tertiary p-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-100 text-orange-600">
+                  <AlertTriangle size={14} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-theme-primary sm:text-sm">
+                    Maintenance Mode
+                  </p>
+                  <p className="truncate text-[10px] text-theme-muted sm:text-xs">
+                    Disable public access
+                  </p>
+                </div>
               </div>
-
-              <div className="neo-toggle-container maintenance-toggle">
-                <input
-                  className="neo-toggle-input"
-                  id="maintenance-toggle"
-                  name="maintenanceMode"
-                  type="checkbox"
-                  checked={formSettings.maintenanceMode}
-                  onChange={handleMaintenanceToggle}
-                />
-
-                <label
-                  className="neo-toggle"
-                  htmlFor="maintenance-toggle"
-                  aria-label="Toggle Maintenance Mode"
-                >
-                  <div className="neo-track">
-                    <div className="neo-background-layer"></div>
-                    <div className="neo-grid-layer"></div>
-
-                    <div className="neo-spectrum-analyzer">
-                      <div className="neo-spectrum-bar"></div>
-                      <div className="neo-spectrum-bar"></div>
-                      <div className="neo-spectrum-bar"></div>
-                      <div className="neo-spectrum-bar"></div>
-                      <div className="neo-spectrum-bar"></div>
-                    </div>
-
-                    <div className="neo-track-highlight"></div>
-                  </div>
-
-                  <div className="neo-thumb">
-                    <div className="neo-thumb-ring"></div>
-
-                    <div className="neo-thumb-core">
-                      <div className="neo-thumb-icon">
-                        <div className="neo-thumb-wave"></div>
-                        <div className="neo-thumb-pulse"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="neo-gesture-area"></div>
-
-                  <div className="neo-interaction-feedback">
-                    <div className="neo-ripple"></div>
-                    <div className="neo-progress-arc"></div>
-                  </div>
-
-                  <div className="neo-status">
-                    <div className="neo-status-indicator">
-                      <div className="neo-status-dot"></div>
-                      <div className="neo-status-text"></div>
-                    </div>
-                  </div>
-                </label>
-              </div>
-            </div>
-          </form>
-        </section>
-
-        {/* ===================================================
-            NOTIFICATION SETTINGS
-        ==================================================== */}
-
-        <section className="admin-section p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-theme-primary">
-            <Bell size={16} className="text-theme-accent" />
-
-            Notification Settings
-          </h2>
-
-          <div className="space-y-5">
-
-            {/* =================================================
-                EMAIL NOTIFICATIONS
-            ================================================== */}
-
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm text-theme-secondary">
-                  Email Notifications
-                </p>
-
-                <p className="text-xs text-theme-muted">
-                  Receive email updates
-                </p>
-              </div>
-
-              <div className="neo-toggle-container email-toggle">
-                <input
-                  className="neo-toggle-input"
-                  id="email-toggle"
-                  name="emailNotifications"
-                  type="checkbox"
-                  checked={formSettings.emailNotifications}
-                  onChange={handleChange}
-                />
-
-                <label
-                  className="neo-toggle"
-                  htmlFor="email-toggle"
-                  aria-label="Toggle Email Notifications"
-                >
-                  <div className="neo-track">
-                    <div className="neo-background-layer"></div>
-                    <div className="neo-grid-layer"></div>
-
-                    <div className="neo-spectrum-analyzer">
-                      <div className="neo-spectrum-bar"></div>
-                      <div className="neo-spectrum-bar"></div>
-                      <div className="neo-spectrum-bar"></div>
-                      <div className="neo-spectrum-bar"></div>
-                      <div className="neo-spectrum-bar"></div>
-                    </div>
-
-                    <div className="neo-track-highlight"></div>
-                  </div>
-
-                  <div className="neo-thumb">
-                    <div className="neo-thumb-ring"></div>
-
-                    <div className="neo-thumb-core">
-                      <div className="neo-thumb-icon">
-                        <div className="neo-thumb-wave"></div>
-                        <div className="neo-thumb-pulse"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="neo-gesture-area"></div>
-
-                  <div className="neo-interaction-feedback">
-                    <div className="neo-ripple"></div>
-                    <div className="neo-progress-arc"></div>
-                  </div>
-
-                  <div className="neo-status">
-                    <div className="neo-status-indicator">
-                      <div className="neo-status-dot"></div>
-                      <div className="neo-status-text"></div>
-                    </div>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            {/* =================================================
-                PUSH NOTIFICATIONS
-            ================================================== */}
-
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm text-theme-secondary">
-                  Push Notifications
-                </p>
-
-                <p className="text-xs text-theme-muted">
-                  Receive browser notifications
-                </p>
-              </div>
-
-              <div className="neo-toggle-container push-toggle">
-                <input
-                  className="neo-toggle-input"
-                  id="push-toggle"
-                  name="pushNotifications"
-                  type="checkbox"
-                  checked={formSettings.pushNotifications}
-                  onChange={handleChange}
-                />
-
-                <label
-                  className="neo-toggle"
-                  htmlFor="push-toggle"
-                  aria-label="Toggle Push Notifications"
-                >
-                  <div className="neo-track">
-                    <div className="neo-background-layer"></div>
-                    <div className="neo-grid-layer"></div>
-
-                    <div className="neo-spectrum-analyzer">
-                      <div className="neo-spectrum-bar"></div>
-                      <div className="neo-spectrum-bar"></div>
-                      <div className="neo-spectrum-bar"></div>
-                      <div className="neo-spectrum-bar"></div>
-                      <div className="neo-spectrum-bar"></div>
-                    </div>
-
-                    <div className="neo-track-highlight"></div>
-                  </div>
-
-                  <div className="neo-thumb">
-                    <div className="neo-thumb-ring"></div>
-
-                    <div className="neo-thumb-core">
-                      <div className="neo-thumb-icon">
-                        <div className="neo-thumb-wave"></div>
-                        <div className="neo-thumb-pulse"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="neo-gesture-area"></div>
-
-                  <div className="neo-interaction-feedback">
-                    <div className="neo-ripple"></div>
-                    <div className="neo-progress-arc"></div>
-                  </div>
-
-                  <div className="neo-status">
-                    <div className="neo-status-indicator">
-                      <div className="neo-status-dot"></div>
-                      <div className="neo-status-text"></div>
-                    </div>
-                  </div>
-                </label>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ===================================================
-            APPEARANCE SETTINGS
-        ==================================================== */}
-
-        <section className="admin-section p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-theme-primary">
-            <Moon size={16} className="text-theme-accent" />
-
-            Appearance
-          </h2>
-
-          <div className="space-y-4">
-
-            {/* Theme */}
-
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-theme-secondary">
-                Theme
-              </label>
-
-              <select
-                name="theme"
-                value={theme}
-                onChange={handleThemeChange}
-                className="w-full rounded-md border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none transition focus:border-theme-accent/40"
-              >
-                <option value="dark">
-                  Dark Mode
-                </option>
-
-                <option value="light">
-                  Light Mode
-                </option>
-              </select>
-            </div>
-
-            {/* Language */}
-
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-theme-secondary">
-                Language
-              </label>
-
-              <select
-                name="language"
-                value={formSettings.language}
+              <Toggle
+                name="maintenance"
+                checked={settings.maintenance}
                 onChange={handleChange}
-                className="w-full rounded-md border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none transition focus:border-theme-accent/40"
-              >
-                <option value="en">
-                  English
-                </option>
-
-                <option value="hi">
-                  Hindi
-                </option>
-
-                <option value="te">
-                  Telugu
-                </option>
-
-                <option value="ta">
-                  Tamil
-                </option>
-              </select>
+                variant="toggle-orange"
+              />
             </div>
           </div>
-        </section>
+        </div>
 
-        {/* ===================================================
-            SECURITY SETTINGS
-        ==================================================== */}
-
-        <section className="admin-section p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-theme-primary">
-            <Shield size={16} className="text-theme-accent" />
-
-            Security Settings
-          </h2>
-
-          <div className="space-y-5">
-
-            {/* =================================================
-                TWO FACTOR AUTHENTICATION
-            ================================================== */}
-
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm text-theme-secondary">
-                  Two-Factor Authentication
-                </p>
-
-                <p className="text-xs text-theme-muted">
-                  Extra security layer
-                </p>
+        {/* ---- Notifications ---- */}
+        <div className="card p-4 sm:p-6">
+          <div className="mb-4 flex items-center gap-2 sm:mb-5">
+            <Bell size={16} className="text-indigo-600 sm:hidden" />
+            <Bell size={18} className="hidden text-indigo-600 sm:block" />
+            <h2 className="text-sm font-bold text-theme-primary sm:text-base">
+              Notifications
+            </h2>
+          </div>
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-theme bg-theme-tertiary p-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
+                  <Mail size={14} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-theme-primary sm:text-sm">
+                    Email Notifications
+                  </p>
+                  <p className="truncate text-[10px] text-theme-muted sm:text-xs">
+                    Updates via email
+                  </p>
+                </div>
               </div>
-
-              <div className="neo-toggle-container security-toggle">
-                <input
-                  className="neo-toggle-input"
-                  id="security-toggle"
-                  name="twoFactorAuth"
-                  type="checkbox"
-                  checked={formSettings.twoFactorAuth}
-                  onChange={handleTwoFactorToggle}
-                />
-
-                <label
-                  className="neo-toggle"
-                  htmlFor="security-toggle"
-                  aria-label="Toggle Two-Factor Authentication"
-                >
-                  <div className="neo-track">
-                    <div className="neo-background-layer"></div>
-                    <div className="neo-grid-layer"></div>
-
-                    <div className="neo-spectrum-analyzer">
-                      <div className="neo-spectrum-bar"></div>
-                      <div className="neo-spectrum-bar"></div>
-                      <div className="neo-spectrum-bar"></div>
-                      <div className="neo-spectrum-bar"></div>
-                      <div className="neo-spectrum-bar"></div>
-                    </div>
-
-                    <div className="neo-track-highlight"></div>
-                  </div>
-
-                  <div className="neo-thumb">
-                    <div className="neo-thumb-ring"></div>
-
-                    <div className="neo-thumb-core">
-                      <div className="neo-thumb-icon">
-                        <div className="neo-thumb-wave"></div>
-                        <div className="neo-thumb-pulse"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="neo-gesture-area"></div>
-
-                  <div className="neo-interaction-feedback">
-                    <div className="neo-ripple"></div>
-                    <div className="neo-progress-arc"></div>
-                  </div>
-
-                  <div className="neo-status">
-                    <div className="neo-status-indicator">
-                      <div className="neo-status-dot"></div>
-                      <div className="neo-status-text"></div>
-                    </div>
-                  </div>
-                </label>
-              </div>
+              <Toggle
+                name="emailNotif"
+                checked={settings.emailNotif}
+                onChange={handleChange}
+                variant="toggle-green"
+              />
             </div>
-
-            {/* Change Password */}
-
-            <div>
-              <button
-                type="button"
-                onClick={() => {
-                  alert("Change Password feature will be connected to the backend.");
-                }}
-                className="inline-flex items-center gap-2 rounded-md border border-theme px-3 py-2 text-xs text-theme-secondary transition hover:bg-theme-primary/5"
-              >
-                <Lock size={14} />
-
-                Change Password
-              </button>
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-theme bg-theme-tertiary p-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                  <Smartphone size={14} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-theme-primary sm:text-sm">
+                    Push Notifications
+                  </p>
+                  <p className="truncate text-[10px] text-theme-muted sm:text-xs">
+                    Browser alerts
+                  </p>
+                </div>
+              </div>
+              <Toggle
+                name="pushNotif"
+                checked={settings.pushNotif}
+                onChange={handleChange}
+                variant="toggle-green"
+              />
             </div>
           </div>
-        </section>
+        </div>
+
+        {/* ---- Security ---- */}
+        <div className="card p-4 sm:p-6">
+          <div className="mb-4 flex items-center gap-2 sm:mb-5">
+            <Shield size={16} className="text-indigo-600 sm:hidden" />
+            <Shield size={18} className="hidden text-indigo-600 sm:block" />
+            <h2 className="text-sm font-bold text-theme-primary sm:text-base">
+              Security
+            </h2>
+          </div>
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-theme bg-theme-tertiary p-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-600">
+                  <Shield size={14} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-theme-primary sm:text-sm">
+                    Two-Factor Auth
+                  </p>
+                  <p className="truncate text-[10px] text-theme-muted sm:text-xs">
+                    Extra security layer
+                  </p>
+                </div>
+              </div>
+              <Toggle
+                name="twoFactor"
+                checked={settings.twoFactor}
+                onChange={handleChange}
+                variant="toggle-red"
+              />
+            </div>
+            <button
+              type="button"
+              className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-theme bg-theme-tertiary px-4 text-xs font-semibold text-theme-secondary transition hover:border-indigo-300 hover:text-indigo-600 sm:text-sm"
+            >
+              <Lock size={14} /> Change Password
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* =====================================================
-          SAVE BUTTON
-      ====================================================== */}
-
-      <div className="mt-6 flex items-center justify-end gap-4">
-
-        {/* Save message */}
-
-        {saveMessage && (
-          <p className="text-xs font-medium text-theme-accent">
-            {saveMessage}
-          </p>
-        )}
-
+      {/* ============ SAVE BUTTON ============ */}
+      <div className="sticky bottom-4 z-20 flex justify-end sm:static sm:bottom-auto">
         <button
           type="button"
           onClick={handleSave}
-          className="inline-flex items-center gap-2 rounded-md bg-theme-accent px-6 py-3 text-sm font-semibold text-theme-primary transition hover:bg-theme-accent-hover"
+          disabled={saving}
+          className="btn-primary w-full text-xs shadow-lg disabled:opacity-50 sm:w-auto sm:text-sm sm:shadow-none"
         >
-          <Save size={16} />
-
-          Save Settings
+          {saved ? <Check size={16} /> : <Save size={16} />}
+          {saving ? "Saving..." : saved ? "Saved!" : "Save Changes"}
         </button>
       </div>
     </div>
