@@ -10,9 +10,17 @@ from app.routers.user import router as user_router
 from app.api.admin import router as admin_router
 from app.api.events import router as events_router
 from app.api import auth, users
+from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI(
     title="Smart Event Management System",
     version="1.0.0"
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 # Register API routers
 app.include_router(event_router)
