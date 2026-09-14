@@ -1,22 +1,24 @@
 import uuid
-from sqlalchemy import Column, String, Text, Integer, DateTime, ForeignKey, func
+from sqlalchemy import Column, String, Text, Integer, DateTime, ForeignKey, func, Index
 from sqlalchemy.dialects.postgresql import UUID
-
 from app.db.database import Base
 class Event(Base):
     __tablename__ = "events"
-
+    __table_args__ = (
+        Index("idx_events_venue_id", "venue_id"),
+        Index("idx_events_event_date", "event_date"),
+        Index("idx_events_created_by", "created_by"),
+        Index("idx_events_status", "status"),
+    )
     event_id = Column(
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4
     )
-
     title = Column(
         String,
         nullable=False
     )
-
     description = Column(
         Text,
         nullable=True
