@@ -19,7 +19,7 @@ function AdminApp() {
   // ================================
 
   const [isLoggedIn, setIsLoggedIn] = useState(
-    () => !!localStorage.getItem("admin-token")
+    () => !!localStorage.getItem("admin-auth-token")
   );
 
   // ================================
@@ -60,13 +60,13 @@ function AdminApp() {
   // ================================
 
   function handleLogout() {
-    localStorage.removeItem("admin-token");
-    localStorage.removeItem("admin-token-type");
+  localStorage.removeItem("admin-auth-token");
+  localStorage.removeItem("admin-token");
+  localStorage.removeItem("admin-token-type");
 
-    setIsLoggedIn(false);
-    setCurrentPage("home");
-  }
-
+  setIsLoggedIn(false);
+  setCurrentPage("home");
+}
   // ================================
   // PAGE RENDERING
   // ================================
