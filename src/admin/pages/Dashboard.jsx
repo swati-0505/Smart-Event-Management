@@ -64,7 +64,7 @@ function Dashboard({ searchQuery = "" }) {
       {loading && (
         <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
           {[1, 2, 3, 4].map((item) => (
-            <div key={item} className="admin-metric h-[100px] animate-pulse bg-theme-primary/5" />
+            <div key={item} className="admin-metric h-25 animate-pulse bg-theme-primary/5" />
           ))}
         </div>
       )}

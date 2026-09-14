@@ -58,7 +58,7 @@ function AIAssistant() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -82,7 +82,7 @@ function AIAssistant() {
       <div className="card flex h-[calc(100vh-220px)] flex-col overflow-hidden">
         {/* Chat header */}
         <div className="flex items-center gap-3 border-b border-theme p-5">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-md">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 shadow-md">
             <Bot size={20} className="text-white" />
           </div>
           <div>
@@ -104,7 +104,7 @@ function AIAssistant() {
               className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               {msg.role === "ai" && (
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-md">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 shadow-md">
                   <Bot size={16} className="text-white" />
                 </div>
               )}
@@ -123,7 +123,7 @@ function AIAssistant() {
               </div>
 
               {msg.role === "user" && (
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white shadow-md">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white shadow-md">
                   Y
                 </div>
               )}
@@ -132,7 +132,7 @@ function AIAssistant() {
 
           {isTyping && (
             <div className="flex gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-md">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 shadow-md">
                 <Bot size={16} className="text-white" />
               </div>
               <div className="rounded-2xl bg-theme-tertiary px-4 py-3">
