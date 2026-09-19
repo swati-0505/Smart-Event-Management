@@ -10,7 +10,6 @@
   <img src="https://img.shields.io/badge/Python-3.x-3776AB?logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/AI%20%2F%20RAG-Extensible-purple" alt="AI/RAG">
   <img src="https://img.shields.io/badge/Status-Active-success" alt="Status">
-  <img src="https://img.shields.io/badge/License-Academic-blue" alt="License">
 </p>
 
 ---
