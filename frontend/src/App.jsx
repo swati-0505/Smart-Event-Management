@@ -1,3 +1,4 @@
+import AdminApp from "./admin/AdminApp";
 import React from "react";
 import Events from "./Events";
 import About from "./About";
@@ -13,6 +14,9 @@ import "./App.css";
 
 function App() {
   const [page, setPage] = React.useState("home");
+  if (page === "admin") {
+  return <AdminApp />;
+}
 
   /* PAGE NAVIGATION */
 
@@ -118,6 +122,12 @@ function App() {
             onClick={() => setPage("login")}
           >
             Login
+          </button>
+          <button
+            className="login-btn"
+            onClick={() => setPage("admin")}
+>
+            Admin Dashboard
           </button>
 
         </nav>
