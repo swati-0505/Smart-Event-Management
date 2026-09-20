@@ -4,6 +4,8 @@
 
 .events-page {
   min-height: 100vh;
+  margin: 0;
+  padding: 0;
   background: #080808;
   color: #d5d5d5;
   overflow-x: hidden;
@@ -15,129 +17,179 @@
 ========================= */
 
 .events-nav {
-  height: 90px;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 86px;
+  margin: 0;
   padding: 0 7%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(196, 154, 58, 0.15);
+  border-bottom: 1px solid rgba(218, 165, 55, 0.12);
 }
 
+
+/* LOGO */
+
 .events-nav .logo {
-  color: #d2aa4d;
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: 1px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: #e7c76b;
 }
+
+.events-nav .logo span {
+  color: #b58a2b;
+}
+
+
+/* NAVIGATION LINKS */
 
 .events-nav-links {
   display: flex;
-  gap: 36px;
+  align-items: center;
+  gap: 24px;
+  margin-left: auto;
+  margin-right: 35px;
 }
 
 .events-nav-links button {
+  position: relative;
+  padding: 5px 0;
   background: none;
   border: none;
-  color: #777;
+  color: #bdbdbd;
+  font-family: Arial, Helvetica, sans-serif;
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
-  transition: 0.3s ease;
+  transition: color 0.25s ease;
 }
 
 .events-nav-links button:hover {
   color: #d2aa4d;
 }
 
+
+/* ACTIVE EVENTS LINK */
+
 .events-nav-links .active {
   color: #d2aa4d;
 }
 
+
+/* LOGIN BUTTON */
+
 .events-nav .login-btn {
-  padding: 11px 24px;
+  padding: 10px 22px;
+  border: 1px solid rgba(196, 154, 58, 0.65);
+  border-radius: 3px;
   background: transparent;
-  border: 1px solid #c49a3a;
-  color: #d2aa4d;
+  color: #d8b65d;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: 0.3s ease;
+  transition:
+    background 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    transform 0.3s ease;
 }
 
 .events-nav .login-btn:hover {
   background: #c49a3a;
+  border-color: #c49a3a;
   color: #080808;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(196, 154, 58, 0.18);
 }
 
 
 /* =========================
-   HERO
+   EVENTS HERO
 ========================= */
 
 .events-hero {
-  padding: 120px 7% 100px;
-  max-width: 1000px;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 65px 7% 90px;
+  text-align: center;
 }
 
-.events-hero .eyebrow {
-  color: #c49a3a;
-  font-size: 11px;
-  letter-spacing: 3px;
-  margin-bottom: 25px;
+
+/* EYEBROW */
+
+.events-hero .eyebrow,
+.events-heading .eyebrow {
+  margin-bottom: 24px;
+  color: #bd9134;
+  font-size: 12px;
+  font-weight: 200;
+  letter-spacing: 4px;
 }
+
+
+/* HERO HEADING */
 
 .events-hero h1 {
   margin: 0;
-  font-size: clamp(52px, 7vw, 92px);
-  line-height: 1.02;
+  color: #d5d5d5;
+  font-size: clamp(48px, 6vw, 78px);
   font-weight: 500;
-  letter-spacing: -3px;
-  color: #eeeeee;
+  line-height: 1.05;
+  letter-spacing: -2px;
 }
 
 .events-hero h1 span {
   color: #d2aa4d;
 }
 
+
+/* HERO DESCRIPTION */
+
 .events-intro {
-  max-width: 600px;
-  margin-top: 32px;
+  max-width: 700px;
+  margin: 30px auto 0;
   color: #777;
-  font-size: 15px;
-  line-height: 1.9;
+  font-size: 16px;
+  line-height: 1.8;
+  text-align: center;
 }
 
 
 /* =========================
-   EVENTS SECTION
+   EVENTS LIST
 ========================= */
 
-.events-section {
-  padding: 40px 7% 120px;
+.events-list {
+  padding: 100px 7% 120px;
+  background: #080808;
+  border-top: 1px solid rgba(196, 154, 58, 0.12);
 }
+
+
+/* HEADING */
 
 .events-heading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  margin-bottom: 55px;
-}
-
-.section-label {
-  color: #c49a3a;
-  font-size: 10px;
-  letter-spacing: 3px;
-  margin-bottom: 12px;
+  max-width: 850px;
+  margin: 0 auto 55px;
+  text-align: center;
 }
 
 .events-heading h2 {
-  margin: 0;
-  color: #eeeeee;
-  font-size: clamp(32px, 4vw, 50px);
-  font-weight: 500;
+  margin: 12px 0 14px;
+  color: #d5d5d5;
+  font-size: 48px;
+  font-weight: 600;
 }
 
-.event-count {
-  color: #555;
-  font-size: 11px;
-  letter-spacing: 2px;
+.events-heading > p:last-child {
+  color: #777;
+  font-size: 15px;
 }
 
 
@@ -152,231 +204,225 @@
 }
 
 
-/* =========================
-   EVENT CARD
-========================= */
+/* EVENT CARD */
 
 .event-card {
-  background: #0d0d0d;
-  border: 1px solid rgba(196, 154, 58, 0.15);
   overflow: hidden;
-
-  transition:
-    transform 0.4s ease,
-    border-color 0.4s ease,
-    box-shadow 0.4s ease;
+  background: #101010;
+  border: 1px solid rgba(196, 154, 58, 0.15);
+  transition: 0.4s ease;
 }
 
 .event-card:hover {
   transform: translateY(-8px);
-  border-color: rgba(210, 170, 77, 0.6);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+  border-color: rgba(196, 154, 58, 0.6);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 }
 
 
-/* =========================
-   EVENT IMAGE
-========================= */
-
-.event-image-wrapper {
-  width: 100%;
-  height: 230px;
-  overflow: hidden;
-  position: relative;
-}
-
-.event-image-wrapper::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(8, 8, 8, 0.55),
-    transparent 55%
-  );
-  pointer-events: none;
-}
+/* EVENT IMAGE */
 
 .event-image {
+  width: 100%;
+  height: 240px;
+  overflow: hidden;
+}
+
+.event-image img {
   width: 100%;
   height: 100%;
   display: block;
   object-fit: cover;
-
-  transition:
-    transform 0.7s ease,
-    filter 0.7s ease;
+  filter: brightness(0.72);
+  transition: 0.5s ease;
 }
 
-.event-card:hover .event-image {
-  transform: scale(1.06);
-  filter: brightness(0.85);
-}
-
-
-/* =========================
-   CARD INFORMATION
-========================= */
-
-.event-card-info {
-  padding: 26px;
+.event-card:hover .event-image img {
+  transform: scale(1.04);
+  filter: brightness(0.9);
 }
 
 
-/* =========================
-   CARD TOP
-========================= */
+/* EVENT INFORMATION */
 
-.event-card-top {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 30px;
+.event-info {
+  padding: 25px;
 }
 
-.event-card-top span {
-  color: #666;
+
+/* CATEGORY */
+
+.event-category {
+  color: #b99137;
   font-size: 10px;
+  font-weight: 600;
   letter-spacing: 2px;
-}
-
-.event-card-top span:first-child {
-  color: #c49a3a;
+  text-transform: uppercase;
 }
 
 
-/* =========================
-   CARD CONTENT
-========================= */
+/* TITLE */
 
-.event-card-content {
-  margin-bottom: 30px;
-}
-
-.event-date {
-  color: #c49a3a;
-  font-size: 10px;
-  letter-spacing: 2px;
-  margin-bottom: 14px;
-}
-
-.event-card h3 {
-  margin: 0 0 10px;
-  color: #eeeeee;
-  font-size: 25px;
+.event-info h3 {
+  margin: 10px 0 12px;
+  color: #d6d6d6;
+  font-size: 23px;
   font-weight: 500;
-  line-height: 1.25;
 }
+
+
+/* LOCATION */
 
 .event-location {
-  margin: 0;
-  color: #666;
+  color: #777;
   font-size: 13px;
 }
 
 
-/* =========================
-   VIEW EVENT BUTTON
-========================= */
+/* BOTTOM */
 
-.view-event-btn {
-  width: 100%;
-  padding: 15px 0;
+.event-bottom {
+  margin-top: 25px;
+  padding-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
 
-  background: transparent;
+.event-bottom span {
+  color: #9a9a9a;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+}
+
+
+/* VIEW EVENT */
+
+.event-bottom button {
   border: none;
-  border-top: 1px solid rgba(196, 154, 58, 0.15);
-
-  color: #d2aa4d;
-  text-align: left;
+  background: transparent;
+  color: #c49a3a;
   font-size: 12px;
   cursor: pointer;
-
-  transition:
-    color 0.3s ease,
-    padding-left 0.3s ease;
+  transition: 0.3s ease;
 }
 
-.view-event-btn span {
-  float: right;
-  font-size: 16px;
-}
-
-.view-event-btn:hover {
-  color: #e0bd62;
-  padding-left: 6px;
+.event-bottom button:hover {
+  color: #e2bf67;
+  transform: translateX(4px);
 }
 
 
 /* =========================
-   RESPONSIVE
+   TABLET
 ========================= */
 
-@media (max-width: 1000px) {
-  .events-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 700px) {
-  .events-nav {
-    height: auto;
-    padding-top: 25px;
-    padding-bottom: 25px;
-    flex-wrap: wrap;
-    gap: 20px;
-  }
-
-  .events-nav-links {
-    order: 3;
-    width: 100%;
-    justify-content: center;
-    gap: 20px;
-  }
-
-  .events-hero {
-    padding-top: 80px;
-  }
-
-  .events-hero h1 {
-    font-size: clamp(45px, 12vw, 70px);
-    letter-spacing: -2px;
-  }
-
-  .events-heading {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 15px;
-  }
+@media (max-width: 900px) {
 
   .events-grid {
     grid-template-columns: 1fr;
   }
+
+  .events-heading h2 {
+    font-size: 38px;
+  }
 }
 
-@media (max-width: 450px) {
-  .events-nav-links {
-    gap: 12px;
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 768px) {
+
+  .events-nav {
+    height: auto;
+    padding: 25px 6%;
   }
 
-  .events-nav-links button {
-    font-size: 12px;
+  .events-nav-links {
+    display: none;
+  }
+
+  .events-nav .login-btn {
+    padding: 10px 20px;
   }
 
   .events-hero {
-    padding-left: 6%;
-    padding-right: 6%;
+    padding: 70px 6% 75px;
   }
 
-  .events-section {
-    padding-left: 6%;
-    padding-right: 6%;
+  .events-hero h1 {
+    font-size: 48px;
+    letter-spacing: -1px;
   }
 
-  .event-image-wrapper {
-    height: 210px;
+  .events-intro {
+    font-size: 15px;
   }
 
-  .event-card-info {
+  .events-list {
+    padding: 85px 6% 100px;
+  }
+}
+
+
+/* =========================
+   SMALL MOBILE
+========================= */
+
+@media (max-width: 450px) {
+
+  .events-nav {
+    height: auto;
+    padding: 22px 5%;
+  }
+
+  .events-nav .logo {
+    font-size: 22px;
+  }
+
+  .events-nav .login-btn {
+    padding: 9px 17px;
+    font-size: 11px;
+  }
+
+  .events-hero {
+    padding: 60px 5% 65px;
+  }
+
+  .events-hero .eyebrow {
+    font-size: 10px;
+    letter-spacing: 3px;
+  }
+
+  .events-hero h1 {
+    font-size: 40px;
+  }
+
+  .events-intro {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .events-list {
+    padding: 70px 5% 80px;
+  }
+
+  .events-heading h2 {
+    font-size: 34px;
+  }
+
+  .event-info {
     padding: 22px;
+  }
+
+  .event-info h3 {
+    font-size: 21px;
+  }
+
+  .event-bottom {
+    gap: 15px;
   }
 }
