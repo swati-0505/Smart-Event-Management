@@ -1,43 +1,36 @@
 from datetime import datetime
 from uuid import UUID
-
-from pydantic import BaseModel, Field
-
-
+from pydantic import BaseModel, ConfigDict, Field
 class EventCreate(BaseModel):
-    title: str = Field(..., min_length=3)
+    title: str
     description: str | None = None
-    category: str = Field(..., min_length=2)
-    location: str = Field(..., min_length=2)
+    category: str
+    venue_id: UUID
     event_date: datetime
     registration_deadline: datetime | None = None
-    capacity: int = Field(..., gt=0)
-    organizer_id: UUID
-
-
+    capacity: int = Field(gt=0)
+    created_by: UUID
 class EventUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     category: str | None = None
-    location: str | None = None
+    venue_id: UUID | None = None
     event_date: datetime | None = None
     registration_deadline: datetime | None = None
     capacity: int | None = Field(default=None, gt=0)
     status: str | None = None
 
-
 class EventResponse(BaseModel):
-    id: UUID
+    model_config = ConfigDict(from_attributes=True)
+    event_id: UUID
     title: str
     description: str | None
     category: str
-    location: str
+    venue_id: UUID
     event_date: datetime
     registration_deadline: datetime | None
     capacity: int
     available_seats: int
-    organizer_id: UUID
+    created_by: UUID
     status: str
-    created_at: datetime | None
-
-    model_config = {"from_attributes": True}
+    created_at: datetime | None = None
