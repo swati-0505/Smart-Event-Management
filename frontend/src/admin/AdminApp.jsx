@@ -11,27 +11,11 @@ import Users from "./pages/Users";
 import Reports from "./pages/Reports";
 import AIAssistant from "./pages/AIAssistant";
 import Settings from "./pages/Settings";
-import AdminLogin from "./pages/AdminLogin";
 
 function AdminApp() {
-  // ================================
-  // AUTHENTICATION
-  // ================================
-
-  const [isLoggedIn, setIsLoggedIn] = useState(
-    () => !!localStorage.getItem("admin-auth-token")
-  );
-
-  // ================================
-  // PAGE NAVIGATION
-  // ================================
 
   const [currentPage, setCurrentPage] = useState("home");
   const [searchQuery, setSearchQuery] = useState("");
-
-  // ================================
-  // THEME
-  // ================================
 
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem("admin-theme") || "light";
@@ -55,21 +39,13 @@ function AdminApp() {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
   }
 
-  // ================================
-  // LOGOUT
-  // ================================
-
   function handleLogout() {
-  localStorage.removeItem("admin-auth-token");
-  localStorage.removeItem("admin-token");
-  localStorage.removeItem("admin-token-type");
+    localStorage.removeItem("admin-auth-token");
+    localStorage.removeItem("admin-token");
+    localStorage.removeItem("admin-token-type");
 
-  setIsLoggedIn(false);
-  setCurrentPage("home");
-}
-  // ================================
-  // PAGE RENDERING
-  // ================================
+    setCurrentPage("home");
+  }
 
   function renderPage() {
     switch (currentPage) {
@@ -110,22 +86,6 @@ function AdminApp() {
         );
     }
   }
-
-  // ================================
-  // SHOW LOGIN FIRST
-  // ================================
-
-  if (!isLoggedIn) {
-    return (
-      <AdminLogin
-        onLoginSuccess={() => setIsLoggedIn(true)}
-      />
-    );
-  }
-
-  // ================================
-  // SHOW DASHBOARD AFTER LOGIN
-  // ================================
 
   return (
     <AdminLayout
