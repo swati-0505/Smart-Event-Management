@@ -9,7 +9,11 @@
   overflow-x: hidden;
 }
 
-/* NAVBAR */
+
+/* =========================
+   NAVBAR
+========================= */
+
 .contact-nav {
   height: 86px;
   padding: 0 7%;
@@ -70,10 +74,16 @@
   transform: translateY(-2px);
 }
 
-/* HERO */
+
+/* =========================
+   HERO
+========================= */
+
 .contact-hero {
-  padding: 125px 7% 110px;
   max-width: 1050px;
+  margin: 0 auto;
+  padding: 85px 7% 90px;
+  text-align: center;
 }
 
 .contact-eyebrow {
@@ -99,13 +109,17 @@
 
 .contact-hero > p:last-child {
   max-width: 620px;
-  margin-top: 30px;
+  margin: 30px auto 0;
   color: #777;
   font-size: 15px;
   line-height: 1.9;
 }
 
-/* CONTACT SECTION */
+
+/* =========================
+   CONTACT SECTION
+========================= */
+
 .contact-section {
   padding: 100px 7% 130px;
   display: grid;
@@ -114,7 +128,11 @@
   border-top: 1px solid rgba(196, 154, 58, 0.12);
 }
 
-/* CONTACT INFO */
+
+/* =========================
+   CONTACT INFO
+========================= */
+
 .contact-info h2 {
   margin: 12px 0 25px;
   color: #eeeeee;
@@ -160,7 +178,11 @@
   font-weight: 400;
 }
 
-/* FORM */
+
+/* =========================
+   FORM
+========================= */
+
 .contact-form {
   padding: 38px;
   background: #101010;
@@ -208,7 +230,11 @@
   box-shadow: 0 0 20px rgba(196, 154, 58, 0.05);
 }
 
-/* SEND BUTTON */
+
+/* =========================
+   SEND BUTTON
+========================= */
+
 .send-btn {
   width: 100%;
   padding: 15px;
@@ -228,7 +254,11 @@
   box-shadow: 0 12px 30px rgba(196, 154, 58, 0.18);
 }
 
-/* FOOTER */
+
+/* =========================
+   FOOTER
+========================= */
+
 .contact-footer {
   padding: 60px 7% 25px;
   display: flex;
@@ -252,15 +282,27 @@
   letter-spacing: 0.5px;
 }
 
-/* RESPONSIVE */
+
+/* =========================
+   RESPONSIVE
+========================= */
+
 @media (max-width: 900px) {
+
   .contact-section {
     grid-template-columns: 1fr;
     gap: 60px;
   }
+
 }
 
+
+/* =========================
+   MOBILE
+========================= */
+
 @media (max-width: 700px) {
+
   .contact-nav {
     height: auto;
     padding-top: 22px;
@@ -278,7 +320,7 @@
   }
 
   .contact-hero {
-    padding-top: 80px;
+    padding: 65px 6% 75px;
   }
 
   .contact-section {
@@ -295,9 +337,16 @@
     align-items: flex-start;
     gap: 30px;
   }
+
 }
 
+
+/* =========================
+   SMALL MOBILE
+========================= */
+
 @media (max-width: 450px) {
+
   .contact-nav-links {
     gap: 12px;
   }
@@ -306,7 +355,12 @@
     font-size: 12px;
   }
 
+  .contact-hero {
+    padding: 60px 5% 65px;
+  }
+
   .contact-hero h1 {
     font-size: 46px;
   }
+
 }
