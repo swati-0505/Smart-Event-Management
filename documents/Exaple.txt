@@ -1,0 +1,7 @@
+{
+    "document_id": "53d7e59a-0fd1-4bc2-a635-2c1e59473a5c",
+    "filename": "python.pdf",
+    "stored_filename": "53d7e59a-0fd1-4bc2-a635-2c1e59473a5c.pdf",
+    "content_type": "application/pdf",
+    "size": 283742
+}
