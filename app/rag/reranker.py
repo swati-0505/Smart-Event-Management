@@ -1,36 +1,6 @@
-"""
-Reranking: the precision stage.
-
-Retrieval is tuned for recall - we pull 20 dense + 20 sparse candidates and
-fuse to 10. Most of those 10 are wrong. Stuffing all of them into the prompt
-hurts: the model has to pick the relevant part out of noise, and irrelevant
-context is a common cause of confident wrong answers.
-
-The reranker reads the query and each candidate *together* and scores actual
-relevance, then we keep only the top few. Bi-encoder retrieval cannot do this
-because it embeds the query and the document independently and never compares
-them directly.
-
-Two backends:
-
-  "llm"           - asks the chat model to score each candidate 0-10.
-                    Works with the free OpenRouter setup, no GPU needed.
-                    This is the default given CHAT_NUM_GPU=0.
-
-  "cross_encoder" - a local sentence-transformers cross-encoder. Faster and
-                    more accurate per query, but pulls in torch and wants a
-                    GPU to be quick. Used only if explicitly selected and
-                    importable.
-
-Both degrade to "return the fused order unchanged" on any failure. A worse
-ordering is survivable; a 500 on the chat endpoint is not.
-"""
-
 from __future__ import annotations
-
 import logging
 import re
-
 from app.core.ai_config import ai_settings
 from app.rag.clients import get_chat_model
 from app.rag.search import RetrievedChunk
@@ -40,7 +10,6 @@ logger = logging.getLogger(__name__)
 _RERANK_PROMPT = """Rate how well each passage answers the user's question.
 
 Question: {query}
-
 Passages:
 {passages}
 

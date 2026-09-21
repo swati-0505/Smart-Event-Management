@@ -1,20 +1,4 @@
-"""
-Conversation memory.
 
-Memory here means: load the last N turns of this session from Postgres and
-put them in front of the model, then save the new turn.
-
-Why the database rather than LangGraph's checkpointer: the frontend already
-has a conversation_id concept, the roadmap already asks for agent_sessions in
-section 7, and an admin needs to read these threads back in the agent-activity
-view. One store that serves memory, history and audit is simpler than a
-checkpointer plus a separate audit trail.
-
-Only user and assistant turns are persisted, not the intermediate tool calls.
-Replaying old tool results into a new turn is worse than useless - the model
-treats stale seat counts as current. Tool results live in the agent_runs and
-tool_calls tables for observability, not in memory.
-"""
 
 from __future__ import annotations
 

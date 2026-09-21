@@ -1,17 +1,3 @@
-"""
-The generation half of the RAG pipeline.
-
-    prompt builder -> LLM -> hallucination checker -> (retry) -> final answer
-
-The hallucination checker is the piece people skip, and it is what makes the
-difference between "a chatbot that sounds authoritative about our refund
-policy" and "a system that says it does not know". A second LLM call verifies
-that every claim in the draft is supported by the retrieved chunks. If it is
-not, we regenerate once with a stricter instruction, and if that still fails
-we return the grounded-but-unhelpful answer rather than the ungrounded-but-
-fluent one.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -21,7 +7,6 @@ from dataclasses import dataclass, field
 from app.core.ai_config import ai_settings
 from app.rag.clients import get_chat_model
 from app.rag.search import RetrievedChunk
-
 logger = logging.getLogger(__name__)
 
 NO_ANSWER = (

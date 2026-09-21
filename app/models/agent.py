@@ -1,15 +1,4 @@
-"""
-Agent memory and observability tables.
 
-  agent_sessions - one conversation thread (this is the memory boundary)
-  chat_messages  - the actual turns; loading the last N gives the agent memory
-  agent_runs     - one row per user message processed, with intent + latency
-  tool_calls     - one row per tool invocation, with input, output and timing
-
-Section 15 of the Infosys roadmap asks for run id, user id, intent, tool
-selected, tool input/output, latency and errors. agent_runs + tool_calls
-cover all of it, which is what feeds /admin/agent-activity.
-"""
 
 import uuid
 

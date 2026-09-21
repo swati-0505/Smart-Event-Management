@@ -1,17 +1,4 @@
-"""
-Stage 1 of the indexing pipeline: load -> parse.
-
-MarkItDown gives us one converter for PDF, DOCX, PPTX, XLSX, HTML, CSV and
-plain text, and it emits Markdown. Markdown matters here because the heading
-structure (`#`, `##`) survives conversion, and the chunker uses those headings
-as natural split points instead of cutting mid-sentence.
-
-Plain .md and .txt files are read directly - running them through MarkItDown
-would be a pointless round trip.
-"""
-
 from __future__ import annotations
-
 import hashlib
 import logging
 from dataclasses import dataclass

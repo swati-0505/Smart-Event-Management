@@ -1,26 +1,5 @@
-"""
-AgentState - the object that flows through the graph.
-
-Section 10 of the roadmap specifies these fields:
-
-    user_id, message, intent, tool_calls, tool_results,
-    retrieved_documents, final_response
-
-All seven are here. A few extras are added because the graph needs them:
-
-    messages    - the LangGraph conversation channel. Everything the model
-                  sees lives here: system prompt, memory, the current turn,
-                  and every tool result. The `add_messages` reducer means
-                  nodes return only what they want to append, rather than
-                  rebuilding the list each time.
-    session_id  - conversation thread, so memory can be loaded and saved.
-    run_id      - this single turn, for observability.
-    role        - the caller's role, used to pick the tool set.
-    loop_count  - guards against an agent that calls tools forever.
-"""
 
 from __future__ import annotations
-
 from typing import Annotated, Any, TypedDict
 from uuid import UUID
 

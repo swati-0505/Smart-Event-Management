@@ -1,30 +1,6 @@
-"""
-Reciprocal Rank Fusion: merging the dense and sparse result lists.
-
-The problem RRF solves: cosine similarity lives roughly in [0, 1] and
-ts_rank_cd is unbounded and differently distributed. You cannot add them, and
-normalising them into a shared range requires assumptions that break as soon
-as the corpus changes.
-
-RRF sidesteps this by throwing away the scores entirely and using only the
-rank each list assigned:
-
-    score(chunk) = sum over lists of  1 / (K + rank_in_that_list)
-
-A chunk ranked #1 by both arms scores highest. A chunk ranked #1 by one arm
-and absent from the other still scores well - which is exactly what you want,
-because the arms are supposed to disagree.
-
-K (default 60, the value from the original Cormack et al. paper) damps the
-influence of top ranks. Lower K makes the #1 result dominate; higher K
-flattens the contribution across the list.
-"""
-
 from __future__ import annotations
-
 from app.core.ai_config import ai_settings
 from app.rag.search import RetrievedChunk
-
 
 def reciprocal_rank_fusion(
     result_lists: list[list[RetrievedChunk]],

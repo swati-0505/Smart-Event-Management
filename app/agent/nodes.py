@@ -1,18 +1,3 @@
-"""
-The graph's nodes.
-
-Each node is a plain function: state in, partial state out. LangGraph merges
-what you return into the state, so a node only returns the keys it changed.
-
-    classify_intent  - label the request (observability + routing signal)
-    load_memory      - build the message list the model will see
-    reason           - call the LLM with tools bound; it either answers or
-                       asks for tool calls
-    act              - run the requested tools, log each one, feed results back
-    finalize         - pull out the answer and persist the turn
-
-reason and act form the loop. Everything else runs once.
-"""
 
 from __future__ import annotations
 

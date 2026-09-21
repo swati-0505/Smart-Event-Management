@@ -1,17 +1,4 @@
-"""
-Prompts for the agent.
 
-The system prompt does most of the work of making tool selection reliable. It
-is written around the failure modes small free models actually have:
-
-  * Inventing UUIDs instead of searching first. Addressed with an explicit,
-    repeated rule rather than a hint.
-  * Answering policy questions from training data. Addressed by naming the
-    RAG tool as the only acceptable source.
-  * Asking the user to confirm every step. Addressed by telling it to chain
-    tools and only stop for genuinely destructive actions.
-  * Reciting tool output verbatim, UUIDs and all. Addressed in the style rules.
-"""
 
 from __future__ import annotations
 

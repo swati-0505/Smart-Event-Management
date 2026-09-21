@@ -1,28 +1,8 @@
-"""
-Observability.
-Section 15 of the roadmap lists what must be captured per run: run id, user
-id, timestamp, request, detected intent, tool selected, tool input, tool
-output, latency, errors, final response. All of it lands in agent_runs and
-tool_calls, which is what /admin/agent-activity reads.
-
-Design choices worth knowing:
-
-  * A run row is written *before* the graph executes, not after. If the run
-    crashes, there is still a record of it having been attempted - which is
-    exactly the case you most want visibility into.
-  * Tool output is truncated. A search returning 200 events would otherwise
-    put a wall of text in the audit table for no benefit.
-  * Logging failures are swallowed. Observability that can take down the
-    feature it observes is worse than no observability.
-"""
-
 from __future__ import annotations
 import logging
 from uuid import UUID
 from sqlalchemy.orm import Session
 from app.models.agent import AgentRun, ToolCall
-
-
 
 logger = logging.getLogger(__name__)
 MAX_OUTPUT_CHARS = 4000

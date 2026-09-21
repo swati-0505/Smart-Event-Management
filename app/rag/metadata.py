@@ -1,25 +1,4 @@
-"""
-Stage 3 of the indexing pipeline: LLM metadata extraction.
-
-For each chunk we ask the LLM for a one-line summary and a few keywords. Two
-payoffs:
-
-  * The keywords are appended to the text that gets indexed into the tsvector,
-    which strengthens the sparse arm of hybrid search - a chunk about "refund
-    within 48 hours" also becomes findable via "money back", "cancel fee".
-  * The summary is shown to the generator alongside the raw chunk, so the
-    model knows what it is looking at.
-
-This runs at ingest time only, never on the query path, so its latency does
-not affect users.
-
-It is best-effort. If the LLM is rate-limited or returns malformed JSON we log
-it and fall back to empty metadata rather than failing the whole ingest -
-losing metadata degrades retrieval slightly; losing the ingest loses everything.
-"""
-
 from __future__ import annotations
-
 import json
 import logging
 import re

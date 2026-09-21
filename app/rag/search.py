@@ -1,28 +1,6 @@
-"""
-The two retrieval arms of hybrid search.
-
-  dense_search()  - meaning. "how do I get my money back" finds a chunk that
-                    says "refunds are issued", with no shared keywords.
-  sparse_search() - exact terms. "Hall B" or "48 hours" or a policy code,
-                    which an embedding will happily blur into something else.
-
-They fail in different directions, which is the whole reason to run both and
-fuse the results (see fusion.py).
-
-Note on the architecture diagram: it specifies BM25 via FastEmbed over Qdrant.
-The Infosys roadmap mandates PostgreSQL + pgvector, so the sparse arm is
-implemented with Postgres native full-text search (tsvector + GIN +
-ts_rank_cd) instead. Same role in the pipeline, no extra infrastructure.
-ts_rank_cd is not literally BM25 - it lacks BM25's document-length
-normalisation - but over short, uniform policy chunks the difference is not
-material, and it gives us stemming and stopword handling for free.
-"""
-
 from __future__ import annotations
-
 import logging
 from dataclasses import dataclass, field
-
 from sqlalchemy import text as sql_text
 from sqlalchemy.orm import Session
 

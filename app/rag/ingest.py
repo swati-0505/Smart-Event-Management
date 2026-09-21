@@ -1,18 +1,4 @@
-"""
-Stage 4 of the indexing pipeline: write to PostgreSQL + pgvector.
-
-Runs the full chain for a directory of documents:
-
-    convert -> chunk -> extract metadata -> embed -> store (dense + sparse)
-
-Re-running is safe. Each document's content hash is compared against the
-stored one; unchanged documents are skipped, changed ones have their old
-chunks deleted and replaced. That means you can edit a policy file and
-re-run ingest without ending up with duplicate or stale chunks.
-"""
-
 from __future__ import annotations
-
 import logging
 from dataclasses import dataclass
 

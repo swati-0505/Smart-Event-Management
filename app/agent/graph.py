@@ -1,34 +1,4 @@
-"""
-The LangGraph workflow.
-
-    classify_intent
-          |
-      load_memory
-          |
-        reason  <-------+
-          |             |
-      has tool calls?   |
-       /          \     |
-     act ---------+     |   (loop, capped by AGENT_MAX_TOOL_LOOPS)
-       \                |
-        no tool calls   |
-          |             |
-       finalize --------+
-          |
-         END
-
-This is the reason/act cycle from section 11 of the roadmap. reason decides,
-act executes, results go back into the message list, and reason looks again
-with more information than it had before. Multi-step workflows fall out of
-this naturally: "find an AI workshop and register me" is search_events on the
-first pass, register_participant on the second, using the event_id the first
-pass returned.
-
-run_agent() is the only function the API layer needs.
-"""
-
 from __future__ import annotations
-
 import logging
 import time
 from uuid import UUID, uuid4

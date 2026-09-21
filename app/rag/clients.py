@@ -1,15 +1,3 @@
-"""
-Thin clients for OpenRouter.
-
-Everything that talks to a model goes through this file. Two entry points:
-
-    get_chat_model()   -> a LangChain ChatOpenAI bound to OpenRouter
-    embed_texts([...]) -> list of 1024-dim vectors
-
-OpenRouter is OpenAI-compatible, so we point the OpenAI SDK at its base URL
-instead of writing a custom HTTP layer.
-"""
-
 from __future__ import annotations
 import logging
 from functools import lru_cache

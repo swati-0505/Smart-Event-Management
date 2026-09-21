@@ -1,24 +1,3 @@
-"""
-Stage 2 of the indexing pipeline: smart chunking.
-
-"Smart" means the splitter tries boundaries in order of how much meaning they
-preserve, and only falls back to a cruder one when a piece is still too big:
-
-    1. Markdown headings  (##, ###)  - keeps a policy section intact
-    2. Blank lines        (paragraphs)
-    3. Sentence ends
-    4. Hard character cut (last resort)
-
-Size matters more than usual here. lfm-2.5-embedding-350m truncates at 512
-tokens, so anything past that is silently thrown away by the embedding model -
-you would get a vector that does not represent the whole chunk and you would
-never see an error. CHUNK_SIZE_CHARS is set to 1400 (~350 tokens) to stay
-comfortably inside that ceiling.
-
-Each chunk keeps its heading trail (e.g. "Cancellation Policy > Refunds") so a
-retrieved fragment still says what part of what document it came from.
-"""
-
 from __future__ import annotations
 import re
 from dataclasses import dataclass, field
