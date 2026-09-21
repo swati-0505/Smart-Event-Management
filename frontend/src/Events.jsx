@@ -55,8 +55,12 @@ function Events({ onNavigate }) {
   return (
     <div className="events-page">
 
+      {/* NAVBAR */}
       <nav className="events-nav">
-        <div className="logo">SmartEvent</div>
+
+        <div className="logo">
+          Smart<span>Event</span>
+        </div>
 
         <div className="events-nav-links">
           <button onClick={() => onNavigate("home")}>
@@ -80,15 +84,20 @@ function Events({ onNavigate }) {
         </div>
 
         <button
-  className="login-btn"
-  onClick={() => onNavigate("login")}
->
-  Login
-</button>
+          className="login-btn"
+          onClick={() => onNavigate("login")}
+        >
+          Login
+        </button>
+
       </nav>
 
+      {/* HERO */}
       <section className="events-hero">
-        <p className="eyebrow">SMART EVENT MANAGEMENT</p>
+
+        <p className="eyebrow">
+          SMART EVENT MANAGEMENT
+        </p>
 
         <h1>
           Discover experiences
@@ -100,17 +109,24 @@ function Events({ onNavigate }) {
           Explore concerts, technology summits, business gatherings,
           cultural festivals and more — all in one place.
         </p>
+
       </section>
 
-      <section className="events-section">
+      {/* EVENTS */}
+      <section className="events-list">
 
         <div className="events-heading">
-          <div>
-            <p className="section-label">EXPLORE</p>
-            <h2>Upcoming Events</h2>
-          </div>
+          <p className="eyebrow">
+            EXPLORE
+          </p>
 
-          <p className="event-count">06 EVENTS</p>
+          <h2>
+            Upcoming Events
+          </h2>
+
+          <p>
+            Find experiences that match your interests.
+          </p>
         </div>
 
         <div className="events-grid">
@@ -118,41 +134,40 @@ function Events({ onNavigate }) {
           {events.map((event, index) => (
             <div className="event-card" key={index}>
 
-              <div className="event-image-wrapper">
+              <div className="event-image">
                 <img
                   src={event.image}
                   alt={event.title}
-                  className="event-image"
                 />
               </div>
 
-              <div className="event-card-info">
+              <div className="event-info">
 
-                <div className="event-card-top">
-                  <span>{event.category}</span>
+                <span className="event-category">
+                  {event.category}
+                </span>
+
+                <h3>
+                  {event.title}
+                </h3>
+
+                <p className="event-location">
+                  📍 {event.location}
+                </p>
+
+                <div className="event-bottom">
+
                   <span>
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                </div>
-
-                <div className="event-card-content">
-                  <p className="event-date">
                     {event.date}
-                  </p>
+                  </span>
 
-                  <h3>{event.title}</h3>
+                  <button
+                    onClick={() => onNavigate("eventDetails")}
+                  >
+                    View Event →
+                  </button>
 
-                  <p className="event-location">
-                    {event.location}
-                  </p>
                 </div>
-
-                <button
-  className="view-event-btn"
-  onClick={() => onNavigate("eventDetails")}
->
-  View Event <span>↗</span>
-</button>
 
               </div>
 
@@ -167,4 +182,4 @@ function Events({ onNavigate }) {
   );
 }
 
-export default Events; 
+export default Events;

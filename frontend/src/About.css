@@ -17,11 +17,9 @@
 .about-nav {
   height: 86px;
   padding: 0 7%;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   border-bottom: 1px solid rgba(196, 154, 58, 0.14);
 }
 
@@ -46,16 +44,11 @@
 .about-nav-links button {
   border: none;
   background: transparent;
-
   padding: 5px 0;
-
   color: #bdbdbd;
-
   font-size: 13px;
   font-weight: 500;
-
   cursor: pointer;
-
   transition: color 0.25s ease;
 }
 
@@ -69,18 +62,13 @@
 
 .about-login-btn {
   padding: 10px 22px;
-
   border: 1px solid rgba(196, 154, 58, 0.65);
   border-radius: 3px;
-
   background: transparent;
   color: #d8b65d;
-
   font-size: 12px;
   font-weight: 500;
-
   cursor: pointer;
-
   transition: 0.3s ease;
 }
 
@@ -96,29 +84,25 @@
 ========================= */
 
 .about-hero {
-  padding: 125px 7% 115px;
   max-width: 1050px;
+  margin: 0 auto;
+  padding: 85px 7% 90px;
+  text-align: center;
 }
 
 .about-eyebrow {
   margin-bottom: 24px;
-
   color: #c49a3a;
-
   font-size: 11px;
   font-weight: 600;
-
   letter-spacing: 3px;
 }
 
 .about-hero h1 {
   margin: 0;
-
   color: #eeeeee;
-
   font-size: clamp(50px, 6vw, 82px);
   line-height: 1.04;
-
   font-weight: 500;
   letter-spacing: -2.5px;
 }
@@ -129,11 +113,8 @@
 
 .about-intro {
   max-width: 620px;
-
-  margin-top: 30px;
-
+  margin: 30px auto 0;
   color: #777;
-
   font-size: 15px;
   line-height: 1.9;
 }
@@ -145,32 +126,24 @@
 
 .about-story {
   padding: 100px 7% 130px;
-
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 80px;
-
   align-items: center;
-
   border-top: 1px solid rgba(196, 154, 58, 0.12);
 }
 
 .about-story-image {
   overflow: hidden;
-
   border: 1px solid rgba(196, 154, 58, 0.18);
 }
 
 .about-story-image img {
   width: 100%;
   height: 480px;
-
   display: block;
-
   object-fit: cover;
-
   filter: brightness(0.65);
-
   transition: 0.6s ease;
 }
 
@@ -181,12 +154,9 @@
 
 .about-story-content h2 {
   margin: 12px 0 25px;
-
   color: #eeeeee;
-
   font-size: clamp(40px, 4vw, 60px);
   line-height: 1.08;
-
   font-weight: 500;
   letter-spacing: -1px;
 }
@@ -197,11 +167,8 @@
 
 .about-story-content p:not(.about-eyebrow) {
   max-width: 500px;
-
   margin-bottom: 20px;
-
   color: #777;
-
   font-size: 15px;
   line-height: 1.9;
 }
@@ -213,9 +180,7 @@
 
 .about-values {
   padding: 120px 7%;
-
   background: #0b0b0b;
-
   border-top: 1px solid rgba(196, 154, 58, 0.12);
 }
 
@@ -225,12 +190,9 @@
 
 .about-section-heading h2 {
   margin: 12px 0 0;
-
   color: #eeeeee;
-
   font-size: clamp(42px, 5vw, 65px);
   line-height: 1.06;
-
   font-weight: 500;
 }
 
@@ -246,47 +208,35 @@
 
 .about-value-card {
   min-height: 270px;
-
   padding: 36px 30px;
-
   background: #101010;
-
   border: 1px solid rgba(196, 154, 58, 0.14);
-
   transition: 0.4s ease;
 }
 
 .about-value-card:hover {
   transform: translateY(-7px);
-
   border-color: rgba(196, 154, 58, 0.55);
-
   background: #121212;
-
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
 }
 
 .about-value-card > span {
   color: #b58a2b;
-
   font-size: 11px;
   letter-spacing: 2px;
 }
 
 .about-value-card h3 {
   margin: 45px 0 15px;
-
   color: #d2aa4d;
-
   font-size: 24px;
   font-weight: 500;
 }
 
 .about-value-card p {
   max-width: 340px;
-
   color: #777;
-
   font-size: 14px;
   line-height: 1.8;
 }
@@ -298,10 +248,8 @@
 
 .about-stats {
   padding: 75px 7%;
-
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-
   border-top: 1px solid rgba(196, 154, 58, 0.12);
   border-bottom: 1px solid rgba(196, 154, 58, 0.12);
 }
@@ -313,18 +261,14 @@
 
 .about-stats strong {
   display: block;
-
   margin-bottom: 10px;
-
   color: #c49a3a;
-
   font-size: 30px;
   font-weight: 500;
 }
 
 .about-stats span {
   color: #666;
-
   font-size: 10px;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -337,9 +281,7 @@
 
 .about-cta {
   padding: 140px 7%;
-
   text-align: center;
-
   background:
     radial-gradient(
       circle at center,
@@ -350,12 +292,9 @@
 
 .about-cta h2 {
   margin: 15px 0 30px;
-
   color: #eeeeee;
-
   font-size: clamp(45px, 5vw, 70px);
   line-height: 1.08;
-
   font-weight: 500;
 }
 
@@ -365,27 +304,20 @@
 
 .about-cta button {
   padding: 15px 30px;
-
   border: 1px solid #c49a3a;
   border-radius: 3px;
-
   background: #c49a3a;
   color: #080808;
-
   font-size: 13px;
   font-weight: 600;
-
   cursor: pointer;
-
   transition: 0.3s ease;
 }
 
 .about-cta button:hover {
   background: #e0bd62;
   border-color: #e0bd62;
-
   transform: translateY(-3px);
-
   box-shadow: 0 12px 35px rgba(196, 154, 58, 0.18);
 }
 
@@ -396,30 +328,23 @@
 
 .about-footer {
   padding: 60px 7% 25px;
-
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-
   background: #050505;
-
   border-top: 1px solid rgba(196, 154, 58, 0.12);
 }
 
 .about-footer-brand p {
   max-width: 280px;
-
   margin-top: 16px;
-
   color: #666;
-
   font-size: 13px;
   line-height: 1.7;
 }
 
 .about-footer-copy {
   color: #4f4f4f;
-
   font-size: 10px;
   letter-spacing: 0.5px;
 }
@@ -447,6 +372,11 @@
 
 }
 
+
+/* =========================
+   TABLET / MOBILE
+========================= */
+
 @media (max-width: 700px) {
 
   .about-nav {
@@ -466,7 +396,7 @@
   }
 
   .about-hero {
-    padding-top: 80px;
+    padding: 65px 6% 75px;
   }
 
   .about-story,
@@ -489,6 +419,11 @@
 
 }
 
+
+/* =========================
+   SMALL MOBILE
+========================= */
+
 @media (max-width: 450px) {
 
   .about-nav-links {
@@ -497,6 +432,10 @@
 
   .about-nav-links button {
     font-size: 12px;
+  }
+
+  .about-hero {
+    padding: 60px 5% 65px;
   }
 
   .about-hero h1 {
