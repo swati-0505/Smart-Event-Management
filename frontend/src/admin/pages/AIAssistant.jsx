@@ -1,184 +1,412 @@
 // AIAssistant.jsx
-// Full-page AI Assistant chat interface.
+// AI Assistant — full page chat, messages from bottom.
 
-import { useState } from "react";
-import { Sparkles, Send, User, Bot } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import {
+  Send,
+  Bot,
+  User,
+  Sparkles,
+  Paperclip,
+  Lightbulb,
+  ImageIcon,
+  Microscope,
+  Mic,
+  MicOff,
+  X,
+} from "lucide-react";
+import { sendAIMessage, getQuickPrompts } from "../services/aiService";
+import PageWrapper from "../components/common/PageWrapper";
+import RobotMascot from "../components/common/RobotMascot";
+import { toast } from "sonner";
+import "../components/common/AIAssistantPage.css";
 
-const initialMessages = [
-  {
-    role: "ai",
-    text: "Hello! I'm your SmartEvent AI Assistant. I can help you with event planning, registration management, reports, and much more. How can I help you today?",
-    time: "10:24 AM",
-  },
-];
+const initialMessages = [];
 
-const quickPrompts = [
-  "Show me upcoming events",
-  "How many registrations this month?",
-  "Generate a report for last week",
-  "Create a new event template",
-  "What's the attendance rate?",
+const defaultChips = [
+  { label: "Events" },
+  { label: "Attendees" },
+  { label: "Reports" },
+  { label: "Analytics" },
+  { label: "Venues" },
+  { label: "Tickets" },
 ];
 
 function AIAssistant() {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [conversationId, setConversationId] = useState(null);
+  const [quickPrompts, setQuickPrompts] = useState(defaultChips);
 
-  function handleSend(e) {
+  const [activeTools, setActiveTools] = useState([]);
+  const [isListening, setIsListening] = useState(false);
+  const [attachedFile, setAttachedFile] = useState(null);
+
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  const firstName =
+    (localStorage.getItem("admin-name") || "Admin").split(" ")[0];
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isTyping]);
+
+  useEffect(() => {
+    getQuickPrompts()
+      .then((p) => {
+        if (Array.isArray(p) && p.length) {
+          setQuickPrompts(p.slice(0, 6).map((label) => ({ label })));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  function toggleTool(tool) {
+    setActiveTools((prev) =>
+      prev.includes(tool) ? prev.filter((t) => t !== tool) : [...prev, tool]
+    );
+  }
+
+  function handleAttachClick() {
+    fileInputRef.current?.click();
+  }
+
+  function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAttachedFile(file.name);
+      toast.success(`Attached: ${file.name}`);
+    }
+    e.target.value = "";
+  }
+
+  function removeFile() {
+    setAttachedFile(null);
+  }
+
+  function toggleMic() {
+    setIsListening((prev) => {
+      const next = !prev;
+      if (next) {
+        toast.info("Listening... Speak now");
+        setTimeout(() => {
+          setIsListening(false);
+          toast.success("Voice captured");
+        }, 3000);
+      }
+      return next;
+    });
+  }
+
+  async function handleSend(e) {
     e?.preventDefault();
-    if (!input.trim()) return;
+    const text = input.trim();
+    if (!text || isTyping) return;
 
-    const userMsg = {
-      role: "user",
-      text: input,
-      time: new Date().toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-    setMessages((prev) => [...prev, userMsg]);
+    const now = new Date().toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    setMessages((prev) => [...prev, { role: "user", text, time: now }]);
     setInput("");
+    setAttachedFile(null);
+    setActiveTools([]);
     setIsTyping(true);
 
-    setTimeout(() => {
+    try {
+      const res = await sendAIMessage(text, conversationId);
+      if (res?.conversation_id) setConversationId(res.conversation_id);
+
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
-          text: "This is a simulated response. Once the backend AI agent is connected, I'll provide real answers based on your event data.",
+          text: res?.reply || "I couldn't process that. Please try again.",
           time: new Date().toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
           }),
         },
       ]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "Sorry, something went wrong. Please try again.",
+          time: new Date().toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        },
+      ]);
+    } finally {
       setIsTyping(false);
-    }, 1200);
+      inputRef.current?.focus();
+    }
   }
 
+  function handleKeyDown(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  }
+
+  function pickPrompt(p) {
+    setInput(p);
+    inputRef.current?.focus();
+  }
+
+  const showWelcome = messages.length === 0;
+
   return (
-    <div className="space-y-10">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold text-theme-primary">AI Assistant</h1>
-            <span className="badge badge-info">New</span>
+    <PageWrapper>
+      <div className="ai-page-bg">
+        <div className="ai-shell">
+          <div className="ai-main">
+            {/* ============ Body ============ */}
+            {showWelcome ? (
+              <div className="ai-welcome">
+                <h1>
+                  <span className="ai-hi">Hi {firstName},</span> Ready to
+                  achieve great things?
+                </h1>
+
+                <div className="ai-mascot-wrap">
+                  <div className="ai-bubble left">
+                    <span className="ai-bubble-icon">
+                      <Bot size={11} />
+                    </span>
+                    Hey! Need a boost?
+                  </div>
+
+                  <RobotMascot size={200} />
+
+                  <div className="ai-bubble right">
+                    <span className="ai-bubble-icon">
+                      <Bot size={11} />
+                    </span>
+                    Hey there! Need a boost?
+                  </div>
+                </div>
+
+                {/* Welcome chips */}
+                <div className="ai-welcome-chips">
+                  {quickPrompts.map((c, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className="ai-welcome-chip"
+                      onClick={() => pickPrompt(c.label)}
+                    >
+                      <Sparkles size={12} />
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="ai-messages">
+                <div className="ai-date-sep">
+                  <span>Today</span>
+                </div>
+
+                {messages.map((msg, idx) => (
+                  <MessageBubble key={idx} msg={msg} />
+                ))}
+                {isTyping && <TypingIndicator />}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+
+            {/* ============ Input area ============ */}
+            <div className="ai-input-area">
+              <div className="ai-input-card">
+                {attachedFile && (
+                  <div className="ai-attached-file">
+                    <Paperclip size={11} />
+                    <span>{attachedFile}</span>
+                    <button
+                      type="button"
+                      onClick={removeFile}
+                      className="ai-attached-remove"
+                      aria-label="Remove file"
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                )}
+
+                <form onSubmit={handleSend}>
+                  <div className="ai-input-inner">
+                    <textarea
+                      id="ai-input"
+                      name="ai-input"
+                      ref={inputRef}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Initiate a query or send a command to the AI..."
+                      rows={1}
+                    />
+                  </div>
+
+                  <div className="ai-action-row">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      onChange={handleFileChange}
+                      style={{ display: "none" }}
+                      aria-hidden="true"
+                    />
+
+                    <button
+                      type="button"
+                      className={`ai-action-btn ${
+                        activeTools.includes("attach") ? "active" : ""
+                      }`}
+                      onClick={handleAttachClick}
+                    >
+                      <Paperclip size={13} />
+                      <span>Attach File</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`ai-action-btn ${
+                        activeTools.includes("reasoning") ? "active" : ""
+                      }`}
+                      onClick={() => toggleTool("reasoning")}
+                    >
+                      <Lightbulb size={13} />
+                      <span>Reasoning</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`ai-action-btn ${
+                        activeTools.includes("image") ? "active" : ""
+                      }`}
+                      onClick={() => {
+                        toggleTool("image");
+                        toast.info("Image generation mode");
+                      }}
+                    >
+                      <ImageIcon size={13} />
+                      <span>Create Image</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`ai-action-btn ${
+                        activeTools.includes("research") ? "active" : ""
+                      }`}
+                      onClick={() => {
+                        toggleTool("research");
+                        toast.info("Deep research mode");
+                      }}
+                    >
+                      <Microscope size={13} />
+                      <span>Deep Research</span>
+                    </button>
+
+                    <div className="ai-action-spacer" />
+
+                    <button
+                      type="button"
+                      className={`ai-mic-btn ${
+                        isListening ? "listening" : ""
+                      }`}
+                      onClick={toggleMic}
+                      aria-label="Voice input"
+                    >
+                      {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+                    </button>
+
+                    <button
+                      type="submit"
+                      className="ai-send-fab"
+                      disabled={!input.trim() || isTyping}
+                      aria-label="Send"
+                    >
+                      <Send size={16} />
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Chips — only in welcome state */}
+              {showWelcome && (
+                <div className="ai-chips-hidden" aria-hidden="true" />
+              )}
+            </div>
           </div>
-          <p className="mt-1 text-sm text-theme-muted">
-            Chat with SmartEvent AI to manage events, registrations, and reports.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2">
-          <Sparkles size={14} className="text-indigo-600" />
-          <span className="text-xs font-semibold text-indigo-600">
-            Powered by SmartEvent AI
-          </span>
         </div>
       </div>
+    </PageWrapper>
+  );
+}
 
-      {/* Chat container */}
-      <div className="card flex h-[calc(100vh-220px)] flex-col overflow-hidden">
-        {/* Chat header */}
-        <div className="flex items-center gap-3 border-b border-theme p-5">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 shadow-md">
-            <Bot size={20} className="text-white" />
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-theme-primary">
-              SmartEvent Assistant
-            </h2>
-            <p className="flex items-center gap-1.5 text-xs text-emerald-600">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Online
-            </p>
-          </div>
+/* ============================================================
+   Message Bubble
+   ============================================================ */
+function MessageBubble({ msg }) {
+  const isUser = msg.role === "user";
+
+  return (
+    <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+      <div
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+          isUser ? "bg-slate-700 text-white" : "bg-indigo-600 text-white"
+        }`}
+      >
+        {isUser ? <User size={14} /> : <Bot size={14} />}
+      </div>
+
+      <div
+        className={`flex max-w-[75%] flex-col ${
+          isUser ? "items-end" : "items-start"
+        }`}
+      >
+        <div
+          className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+            isUser
+              ? "rounded-tr-sm bg-indigo-600 text-white"
+              : "rounded-tl-sm border border-theme bg-theme-secondary text-theme-primary"
+          }`}
+        >
+          {msg.text}
         </div>
+        <p className="mt-1 text-[10px] text-theme-dim">{msg.time}</p>
+      </div>
+    </div>
+  );
+}
 
-        {/* Messages */}
-        <div className="flex-1 space-y-5 overflow-y-auto p-5">
-          {messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            >
-              {msg.role === "ai" && (
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 shadow-md">
-                  <Bot size={16} className="text-white" />
-                </div>
-              )}
-
-              <div className={`max-w-[75%] ${msg.role === "user" ? "text-right" : ""}`}>
-                <div
-                  className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                    msg.role === "user"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-theme-tertiary text-theme-secondary"
-                  }`}
-                >
-                  {msg.text}
-                </div>
-                <p className="mt-1.5 text-[10px] text-theme-dim">{msg.time}</p>
-              </div>
-
-              {msg.role === "user" && (
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white shadow-md">
-                  Y
-                </div>
-              )}
-            </div>
-          ))}
-
-          {isTyping && (
-            <div className="flex gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 shadow-md">
-                <Bot size={16} className="text-white" />
-              </div>
-              <div className="rounded-2xl bg-theme-tertiary px-4 py-3">
-                <div className="flex gap-1">
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-theme-muted" style={{ animationDelay: "0ms" }} />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-theme-muted" style={{ animationDelay: "150ms" }} />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-theme-muted" style={{ animationDelay: "300ms" }} />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Input area */}
-        <div className="border-t border-theme p-4">
-          <form onSubmit={handleSend} className="flex items-center gap-3">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask me anything about your events..."
-              className="flex-1 rounded-xl border border-theme bg-theme-tertiary px-4 py-3 text-sm text-theme-primary outline-none focus:border-indigo-400"
-            />
-            <button
-              type="submit"
-              disabled={!input.trim()}
-              className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-md transition hover:bg-indigo-700 disabled:opacity-50"
-            >
-              <Send size={18} />
-            </button>
-          </form>
-
-          {/* Quick prompts */}
-          <div className="mt-3 flex flex-wrap gap-2">
-            {quickPrompts.map((prompt, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => setInput(prompt)}
-                className="rounded-lg border border-theme bg-theme-tertiary px-3 py-1.5 text-[11px] font-medium text-theme-secondary transition hover:border-indigo-300 hover:text-indigo-600"
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
-        </div>
+/* ============================================================
+   Typing Indicator
+   ============================================================ */
+function TypingIndicator() {
+  return (
+    <div className="flex gap-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white">
+        <Bot size={14} />
+      </div>
+      <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm border border-theme bg-theme-secondary px-4 py-3">
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-theme-muted" />
+        <span
+          className="h-1.5 w-1.5 animate-bounce rounded-full bg-theme-muted"
+          style={{ animationDelay: "150ms" }}
+        />
+        <span
+          className="h-1.5 w-1.5 animate-bounce rounded-full bg-theme-muted"
+          style={{ animationDelay: "300ms" }}
+        />
       </div>
     </div>
   );
