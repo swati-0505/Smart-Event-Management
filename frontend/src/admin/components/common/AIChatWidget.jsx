@@ -1,8 +1,9 @@
 // AIChatWidget.jsx
-// Floating AI chat widget — small icon at bottom-right, opens on click.
+// Responsive AI chat widget — floating button bottom-right.
+// Mobile: full screen. Tablet/Desktop: floating panel.
 
 import { useState, useRef, useEffect } from "react";
-import { Bot, Send, X, Sparkles, Minimize2 } from "lucide-react";
+import { Bot, Send, X, Sparkles } from "lucide-react";
 
 const initialMessages = [
   {
@@ -25,14 +26,32 @@ function AIChatWidget() {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // Auto-scroll to bottom when new message arrives
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, isTyping]);
 
-  // Send message
+  useEffect(() => {
+    function handleOpen() {
+      setOpen(true);
+    }
+    window.addEventListener("open-ai-chat", handleOpen);
+    return () => window.removeEventListener("open-ai-chat", handleOpen);
+  }, []);
+
+  useEffect(() => {
+    const isMobile = window.innerWidth < 640;
+    if (open && isMobile) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
   function handleSend(e) {
     e?.preventDefault();
     if (!input.trim()) return;
@@ -49,7 +68,6 @@ function AIChatWidget() {
     setInput("");
     setIsTyping(true);
 
-    // Simulate AI response (backend-ready)
     setTimeout(() => {
       setMessages((prev) => [
         ...prev,
@@ -68,17 +86,15 @@ function AIChatWidget() {
 
   return (
     <>
-      {/* Floating Button (only when closed) */}
+      {/* Floating Button — hidden when chat open */}
       {!open && (
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg transition hover:scale-110"
+          className="ai-chat-fab fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg transition hover:scale-110 sm:bottom-6 sm:right-6"
           aria-label="Open AI Assistant"
         >
           <Sparkles size={22} />
-
-          {/* Pulsing dot */}
           <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75" />
             <span className="relative inline-flex h-3 w-3 rounded-full bg-indigo-500" />
@@ -86,10 +102,15 @@ function AIChatWidget() {
         </button>
       )}
 
-      {/* Chat Panel (only when open) */}
+      {/* Chat Panel */}
       {open && (
-        <div className="animate-scale-in fixed bottom-6 right-6 z-40 flex h-[560px] w-[380px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-theme bg-theme-secondary shadow-2xl">
-          {/* Header */}
+        <div
+          className={[
+            "animate-scale-in fixed z-40 flex flex-col overflow-hidden bg-theme-secondary shadow-2xl",
+            "inset-0 h-[100dvh] w-full rounded-none border-0",
+            "sm:inset-auto sm:bottom-6 sm:right-6 sm:h-[560px] sm:max-h-[calc(100vh-3rem)] sm:w-[380px] sm:rounded-2xl sm:border sm:border-theme",
+          ].join(" ")}
+        >
           <div className="flex items-center justify-between bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-3.5">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
@@ -103,29 +124,17 @@ function AIChatWidget() {
                 </p>
               </div>
             </div>
-
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/20 hover:text-white"
-                aria-label="Minimize"
-              >
-                <Minimize2 size={14} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/20 hover:text-white"
-                aria-label="Close"
-              >
-                <X size={14} />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="rounded-lg p-2 text-white/80 transition hover:bg-white/20 hover:text-white"
+              aria-label="Close"
+            >
+              <X size={16} />
+            </button>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 space-y-3 overflow-y-auto p-4">
+          <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
             {messages.map((msg, idx) => (
               <div
                 key={idx}
@@ -137,9 +146,9 @@ function AIChatWidget() {
                   </div>
                 )}
 
-                <div className={`max-w-[80%] ${msg.role === "user" ? "text-right" : ""}`}>
+                <div className={`max-w-[85%] sm:max-w-[80%] ${msg.role === "user" ? "text-right" : ""}`}>
                   <div
-                    className={`rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${
+                    className={`rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed sm:text-sm ${
                       msg.role === "user"
                         ? "bg-indigo-600 text-white"
                         : "bg-theme-tertiary text-theme-secondary"
@@ -170,7 +179,6 @@ function AIChatWidget() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick prompts (only show at start) */}
           {messages.length <= 1 && (
             <div className="flex flex-wrap gap-2 border-t border-theme px-4 pt-3">
               {quickPrompts.map((p, i) => (
@@ -186,8 +194,7 @@ function AIChatWidget() {
             </div>
           )}
 
-          {/* Input */}
-          <div className="border-t border-theme p-3">
+          <div className="border-t border-theme p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <form
               onSubmit={handleSend}
               className="flex items-center gap-2 rounded-xl border border-theme bg-theme-tertiary px-3 py-2"
@@ -197,14 +204,14 @@ function AIChatWidget() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask me anything..."
-                className="min-w-0 flex-1 bg-transparent text-xs text-theme-primary outline-none placeholder:text-theme-dim"
+                className="min-w-0 flex-1 bg-transparent text-sm text-theme-primary outline-none placeholder:text-theme-dim"
               />
               <button
                 type="submit"
                 disabled={!input.trim()}
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white transition hover:bg-indigo-700 disabled:opacity-50"
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white transition hover:bg-indigo-700 disabled:opacity-50"
               >
-                <Send size={14} />
+                <Send size={15} />
               </button>
             </form>
           </div>

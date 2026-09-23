@@ -120,13 +120,3 @@ export function buildQuery(params = {}) {
   const str = q.toString();
   return str ? `?${str}` : "";
 }
-
-export default {
-  apiRequest,
-  apiGet,
-  apiPost,
-  apiPut,
-  apiPatch,
-  apiDelete,
-  buildQuery,
-};

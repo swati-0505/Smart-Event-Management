@@ -2,7 +2,7 @@
 // Handles all calendar/events API calls.
 // Uses mock data now — switches to real backend when ready.
 
-import apiRequest from "./api";
+import { apiRequest } from "./api";
 
 // ============================================
 // MOCK DATA (Development)

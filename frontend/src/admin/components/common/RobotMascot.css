@@ -1,0 +1,137 @@
+/* ============================================
+   Robot Mascot — Natural Random Animations
+   ============================================ */
+
+.robot-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 12px 24px rgba(200, 133, 74, 0.2));
+}
+
+/* Entire robot floats gently */
+.robot-wrap svg {
+  animation: robot-float 5s ease-in-out infinite;
+}
+
+@keyframes robot-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-4px) rotate(0.3deg); }
+  50% { transform: translateY(-7px) rotate(0deg); }
+  75% { transform: translateY(-4px) rotate(-0.3deg); }
+}
+
+/* -------- Antenna wiggle (random feel) -------- */
+.robot-antenna {
+  transform-origin: 100px 42px;
+  animation: antenna-wiggle 3.2s ease-in-out infinite;
+}
+
+@keyframes antenna-wiggle {
+  0% { transform: rotate(0deg); }
+  15% { transform: rotate(-10deg); }
+  30% { transform: rotate(6deg); }
+  45% { transform: rotate(-4deg); }
+  60% { transform: rotate(9deg); }
+  80% { transform: rotate(-6deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* -------- Head slight bob + tilt -------- */
+.robot-head {
+  transform-origin: 100px 124px;
+  animation: head-bob 4.5s ease-in-out infinite;
+}
+
+@keyframes head-bob {
+  0% { transform: rotate(0deg); }
+  20% { transform: rotate(2deg); }
+  40% { transform: rotate(0deg); }
+  60% { transform: rotate(-1.5deg); }
+  80% { transform: rotate(1deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* -------- Eyes blink (with double blink sometimes) -------- */
+.robot-eye {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: eye-blink 5s ease-in-out infinite;
+}
+
+@keyframes eye-blink {
+  0%, 88%, 100% { transform: scaleY(1); }
+  90% { transform: scaleY(0.05); }
+  92% { transform: scaleY(1); }
+  94% { transform: scaleY(0.05); }
+  96% { transform: scaleY(1); }
+}
+
+/* -------- LEFT ARM — now waving too -------- */
+.robot-arm-left {
+  transform-origin: 50px 138px;
+  animation: arm-wave-left 2.4s ease-in-out infinite;
+}
+
+@keyframes arm-wave-left {
+  0% { transform: rotate(0deg); }
+  12% { transform: rotate(20deg); }
+  28% { transform: rotate(38deg); }
+  42% { transform: rotate(20deg); }
+  58% { transform: rotate(42deg); }
+  72% { transform: rotate(18deg); }
+  88% { transform: rotate(30deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* -------- RIGHT ARM — waving (different timing) -------- */
+.robot-arm-right {
+  transform-origin: 150px 138px;
+  animation: arm-wave-right 2.8s ease-in-out infinite;
+}
+
+@keyframes arm-wave-right {
+  0% { transform: rotate(0deg); }
+  10% { transform: rotate(-25deg); }
+  25% { transform: rotate(-42deg); }
+  38% { transform: rotate(-22deg); }
+  52% { transform: rotate(-46deg); }
+  68% { transform: rotate(-28deg); }
+  82% { transform: rotate(-38deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* -------- Body gentle breathing -------- */
+.robot-body {
+  transform-origin: 100px 190px;
+  animation: body-breathe 4s ease-in-out infinite;
+}
+
+@keyframes body-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+/* -------- Legs subtle shift -------- */
+.robot-legs {
+  transform-origin: 100px 195px;
+  animation: legs-shift 5s ease-in-out infinite;
+}
+
+@keyframes legs-shift {
+  0%, 100% { transform: translateX(0); }
+  33% { transform: translateX(-1px); }
+  66% { transform: translateX(1px); }
+}
+
+/* -------- Ground shadow pulse -------- */
+.robot-shadow {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: shadow-pulse 5s ease-in-out infinite;
+}
+
+@keyframes shadow-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.15; }
+  50% { transform: scale(0.85); opacity: 0.1; }
+}
