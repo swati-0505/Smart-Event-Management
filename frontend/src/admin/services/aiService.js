@@ -1,62 +1,43 @@
 // aiService.js
-// AI Assistant — backend-ready.
-// Sends messages to LangGraph agent via FastAPI.
+// AI Assistant — connected to FastAPI backend.
 
 import { apiPost, apiGet } from "./api";
-
-/**
- * Send a message to AI assistant.
- * 🚀 Backend: POST /admin/ai/chat
- * Returns: { reply: string, tool_used?: string, latency?: number }
- */
 export async function sendAIMessage(message, conversationId = null) {
-  // ✅ MOCK — simulate a reply
-  await new Promise((r) => setTimeout(r, 1200));
-
-  return {
-    reply:
-      "This is a demo response. Once the backend AI agent is connected, I'll provide real answers based on your event data.",
-    tool_used: null,
-    latency: 1200,
-    conversation_id: conversationId || `conv_${Date.now()}`,
+  if (!message || !message.trim()) {
+    throw new Error("Message cannot be empty.");
+  }
+  const payload = {
+    message: message.trim(),
   };
-
-  // 🚀 PRODUCTION
-  // return apiPost("/admin/ai/chat", {
-  //   message,
-  //   conversation_id: conversationId,
-  // });
+  if (conversationId) {
+    payload.conversation_id = conversationId;
+  }
+  return await apiPost("/chat", payload);
 }
-
-/**
- * Get AI conversation history.
- * 🚀 Backend: GET /admin/ai/conversations/:id
- */
 export async function getConversation(conversationId) {
-  await new Promise((r) => setTimeout(r, 200));
-  return [];
+  if (!conversationId) {
+    return [];
+  }
 
-  // 🚀 PRODUCTION
-  // return apiGet(`/admin/ai/conversations/${conversationId}`);
+  return await apiGet(`/chat/conversations/${conversationId}`);
 }
 
 /**
- * Get quick prompts / suggestions.
- * 🚀 Backend: GET /admin/ai/prompts
+ * Quick prompts shown in the AI Assistant.
  */
 export async function getQuickPrompts() {
-  await new Promise((r) => setTimeout(r, 100));
-
   return [
     "Show me upcoming events",
     "How many registrations this month?",
     "Generate a report for last week",
     "Create a new event template",
     "What's the attendance rate?",
+    "Show me available venues",
   ];
-
-  // 🚀 PRODUCTION
-  // return apiGet("/admin/ai/prompts");
 }
 
-export default { sendAIMessage, getConversation, getQuickPrompts };
+export default {
+  sendAIMessage,
+  getConversation,
+  getQuickPrompts,
+};
