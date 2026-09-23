@@ -27,14 +27,8 @@ from app.schemas.chat import (
     SessionSummary,
     ToolCallOut,
 )
-
 logger = logging.getLogger(__name__)
-
 router = APIRouter(prefix="/api", tags=["ai"])
-
-
-
-
 @router.post("/chat", response_model=ChatResponse)
 def chat(
     payload: ChatRequest,
@@ -99,11 +93,6 @@ def get_session_messages(
         .order_by(ChatMessage.created_at.asc())
         .all()
     )
-
-
-
-
-
 
 @router.get("/admin/agent-activity", response_model=list[AgentRunOut])
 def agent_activity(
