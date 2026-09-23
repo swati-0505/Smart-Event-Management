@@ -12,7 +12,6 @@ import Users from "./pages/Users";
 import Reports from "./pages/Reports";
 import AIAssistant from "./pages/AIAssistant";
 import Settings from "./pages/Settings";
-import AdminLogin from "./pages/AdminLogin";
 
 function AdminApp() {
   // ================================
@@ -129,7 +128,7 @@ function AdminApp() {
       onToggleTheme={toggleTheme}
       onLogout={handleLogout}
     >
-      <Page onPageChange={setCurrentPage} />
+      {renderPage()}
     </AdminLayout>
   );
 }
