@@ -1,6 +1,10 @@
+// AdminLayout.jsx
+// Main admin layout: sidebar + navbar + content + command palette + AI widget.
+
 import { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
+import CommandPalette from "./CommandPalette";
 import AIChatWidget from "../common/AIChatWidget";
 
 function AdminLayout({
@@ -11,6 +15,7 @@ function AdminLayout({
   onSearchChange,
   theme,
   onToggleTheme,
+  onLogout,
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window !== "undefined") {
@@ -19,7 +24,30 @@ function AdminLayout({
     return true;
   });
 
-  // Keep sidebar behavior correct on window resize
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  function handlePageChange(page) {
+    onPageChange(page);
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  }
+
+  // Ctrl+K / Cmd+K → Command Palette
+  useEffect(() => {
+    function handleKeyDown(e) {
+      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const modifier = isMac ? e.metaKey : e.ctrlKey;
+
+      if (modifier && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCommandPaletteOpen((prev) => !prev);
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   useEffect(() => {
     function handleResize() {
       if (window.innerWidth >= 1024) {
@@ -36,15 +64,13 @@ function AdminLayout({
 
   return (
     <div className="admin-root min-h-screen bg-theme-primary text-theme-primary overflow-x-hidden">
-      {/* Sidebar */}
       <Sidebar
         currentPage={currentPage}
-        onPageChange={onPageChange}
+        onPageChange={handlePageChange}
         sidebarOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
 
-      {/* Backdrop — only visible on mobile/tablet when sidebar is open */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/50 lg:hidden"
@@ -52,13 +78,11 @@ function AdminLayout({
         />
       )}
 
-      {/* Main Content */}
       <div
         className={`content-with-sidebar min-h-screen min-w-0 transition-all duration-300 ${
           sidebarOpen ? "sidebar-open" : ""
         }`}
       >
-        {/* Navbar */}
         <Navbar
           searchQuery={searchQuery}
           onSearchChange={onSearchChange}
@@ -66,15 +90,21 @@ function AdminLayout({
           sidebarOpen={sidebarOpen}
           theme={theme}
           onToggleTheme={onToggleTheme}
+          onLogout={onLogout}
+          onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         />
 
-        {/* Page Content */}
         <main className="w-full min-w-0 overflow-x-hidden px-4 py-6">
           {children}
         </main>
       </div>
 
-      {/* Floating AI Chat */}
+      <CommandPalette
+        isOpen={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        onPageChange={handlePageChange}
+      />
+
       {showAIWidget && <AIChatWidget />}
     </div>
   );

@@ -1,5 +1,5 @@
 // Reports.jsx
-// Reports & Analytics — service-driven, backend-ready.
+// Reports & Analytics — period-based data with fallback.
 
 import { useState, useEffect } from "react";
 import {
@@ -14,6 +14,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { getReportData, exportReport } from "../services/reportService";
+import { toast } from "sonner";
 
 const KPI_CONFIG = {
   total_events: { label: "Total Events", icon: Calendar, color: "indigo" },
@@ -29,12 +30,60 @@ const COLOR_MAP = {
   orange: "bg-orange-100 text-orange-600",
 };
 
+const PERIODS = ["This Week", "This Month", "This Quarter", "This Year"];
+
+// ============================================
+// FALLBACK — same structure as service
+// ============================================
+const FALLBACK_REPORT = {
+  kpis: {
+    total_events: { value: 52, trend: "+18%", trend_up: true },
+    total_registrations: { value: 2470, trend: "+24%", trend_up: true },
+    avg_attendance: { value: "82%", trend: "+5%", trend_up: true },
+    cancellations: { value: 43, trend: "-12%", trend_up: false },
+  },
+  monthly: [
+    { month: "Jan", events: 4, registrations: 120 },
+    { month: "Feb", events: 6, registrations: 180 },
+    { month: "Mar", events: 5, registrations: 220 },
+    { month: "Apr", events: 8, registrations: 340 },
+    { month: "May", events: 7, registrations: 410 },
+    { month: "Jun", events: 10, registrations: 520 },
+    { month: "Jul", events: 12, registrations: 680 },
+  ],
+  categories: [
+    { name: "Technology", value: 35, color: "bg-indigo-500" },
+    { name: "Cultural", value: 25, color: "bg-purple-500" },
+    { name: "Workshop", value: 20, color: "bg-blue-500" },
+    { name: "Business", value: 12, color: "bg-emerald-500" },
+    { name: "Other", value: 8, color: "bg-orange-500" },
+  ],
+  top_events: [
+    { name: "Tech Fest 2025", registrations: 420, attendance: "94%", rating: 4.8 },
+    { name: "Cultural Fest", registrations: 650, attendance: "88%", rating: 4.6 },
+    { name: "College Annual Day", registrations: 950, attendance: "92%", rating: 4.9 },
+    { name: "Startup Pitch Night", registrations: 120, attendance: "78%", rating: 4.4 },
+  ],
+  chartLabel: "Monthly",
+  trendLabel: "Registrations over time",
+};
+
+function isValidReport(data) {
+  if (!data || typeof data !== "object") return false;
+  if (!data.kpis || typeof data.kpis !== "object") return false;
+  if (!Array.isArray(data.monthly) || data.monthly.length === 0) return false;
+  if (!Array.isArray(data.categories)) return false;
+  if (!Array.isArray(data.top_events)) return false;
+  return true;
+}
+
 function Reports() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [period, setPeriod] = useState("This Month");
   const [exporting, setExporting] = useState(false);
+  const [usingFallback, setUsingFallback] = useState(false);
 
   useEffect(() => {
     loadReports();
@@ -44,11 +93,21 @@ function Reports() {
     try {
       setLoading(true);
       setError(null);
+
       const res = await getReportData(period);
-      setData(res);
+
+      if (isValidReport(res)) {
+        setData(res);
+        setUsingFallback(false);
+      } else {
+        setData(FALLBACK_REPORT);
+        setUsingFallback(true);
+      }
     } catch (err) {
-      setError("Failed to load report data. Please try again.");
-      console.error(err);
+      console.warn("Reports service failed, using fallback:", err);
+      setData(FALLBACK_REPORT);
+      setUsingFallback(true);
+      setError(null);
     } finally {
       setLoading(false);
     }
@@ -58,10 +117,10 @@ function Reports() {
     try {
       setExporting(true);
       const res = await exportReport("csv");
-      alert(res.message || "Report exported!");
+      toast.success(res.message || "Report exported!");
     } catch (err) {
       console.error(err);
-      alert("Failed to export report.");
+      toast.error("Failed to export report.");
     } finally {
       setExporting(false);
     }
@@ -72,7 +131,9 @@ function Reports() {
     return (
       <div className="space-y-10">
         <div>
-          <h1 className="text-3xl font-bold text-theme-primary">Reports & Analytics</h1>
+          <h1 className="text-3xl font-bold text-theme-primary">
+            Reports & Analytics
+          </h1>
           <p className="mt-1 text-sm text-theme-muted">Loading...</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -92,7 +153,9 @@ function Reports() {
   if (error) {
     return (
       <div className="space-y-10">
-        <h1 className="text-3xl font-bold text-theme-primary">Reports & Analytics</h1>
+        <h1 className="text-3xl font-bold text-theme-primary">
+          Reports & Analytics
+        </h1>
         <div className="card flex flex-col items-center gap-3 p-12 text-center">
           <p className="text-sm text-red-500">{error}</p>
           <button type="button" onClick={loadReports} className="btn-primary">
@@ -103,8 +166,9 @@ function Reports() {
     );
   }
 
-  /* ---------- MAIN ---------- */
-  const maxValue = Math.max(...data.monthly.map((d) => d.registrations));
+  const maxValue = Math.max(...data.monthly.map((d) => d.registrations), 1);
+  const chartLabel = data.chartLabel || "Monthly";
+  const trendLabel = data.trendLabel || "Registrations over time";
 
   return (
     <div className="space-y-10">
@@ -124,10 +188,9 @@ function Reports() {
             onChange={(e) => setPeriod(e.target.value)}
             className="rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none"
           >
-            <option>This Week</option>
-            <option>This Month</option>
-            <option>This Quarter</option>
-            <option>This Year</option>
+            {PERIODS.map((p) => (
+              <option key={p}>{p}</option>
+            ))}
           </select>
           <button
             type="button"
@@ -140,6 +203,13 @@ function Reports() {
           </button>
         </div>
       </div>
+
+      {/* Fallback Notice */}
+      {usingFallback && (
+        <div className="rounded-lg border border-amber-300 bg-amber-100 px-4 py-2.5 text-[11px] font-bold text-amber-900">
+          Demo data shown — connect backend to see real analytics.
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -158,14 +228,20 @@ function Reports() {
                 >
                   <Icon size={20} />
                 </div>
-                <span
-                  className={`inline-flex items-center gap-1 text-xs font-semibold ${
-                    kpi.trend_up ? "text-emerald-600" : "text-red-600"
-                  }`}
-                >
-                  {kpi.trend_up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                  {kpi.trend}
-                </span>
+                {kpi.trend && (
+                  <span
+                    className={`inline-flex items-center gap-1 text-xs font-semibold ${
+                      kpi.trend_up ? "text-emerald-600" : "text-red-600"
+                    }`}
+                  >
+                    {kpi.trend_up ? (
+                      <TrendingUp size={12} />
+                    ) : (
+                      <TrendingDown size={12} />
+                    )}
+                    {kpi.trend}
+                  </span>
+                )}
               </div>
               <p className="mt-4 text-sm text-theme-muted">{config.label}</p>
               <p className="mt-1 text-3xl font-bold text-theme-primary">
@@ -178,18 +254,25 @@ function Reports() {
 
       {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-3">
+        {/* Bar Chart — dynamic label */}
         <div className="card animate-fade-in-up p-5 lg:col-span-2">
           <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-base font-bold text-theme-primary">
-              Monthly Registrations
-            </h2>
+            <div>
+              <h2 className="text-base font-bold text-theme-primary">
+                {chartLabel} Registrations
+              </h2>
+              <p className="mt-0.5 text-xs text-theme-muted">{trendLabel}</p>
+            </div>
             <BarChart3 size={18} className="text-theme-muted" />
           </div>
-          <div className="flex h-64 items-end justify-between gap-3">
+          <div className="flex h-64 items-end justify-between gap-2 sm:gap-3">
             {data.monthly.map((d, idx) => {
               const height = (d.registrations / maxValue) * 100;
               return (
-                <div key={idx} className="flex flex-1 flex-col items-center gap-2">
+                <div
+                  key={idx}
+                  className="flex flex-1 flex-col items-center gap-2"
+                >
                   <span className="text-[10px] font-semibold text-theme-secondary">
                     {d.registrations}
                   </span>
@@ -197,7 +280,7 @@ function Reports() {
                     className="w-full rounded-t-lg bg-linear-to-t from-indigo-500 to-purple-500 transition-all duration-500 hover:from-indigo-600 hover:to-purple-600"
                     style={{ height: `${height}%`, minHeight: "8px" }}
                   />
-                  <span className="text-[11px] font-medium text-theme-muted">
+                  <span className="truncate text-[10px] font-medium text-theme-muted">
                     {d.month}
                   </span>
                 </div>
@@ -270,7 +353,9 @@ function Reports() {
                     {event.registrations}
                   </td>
                   <td className="px-5 py-4">
-                    <span className="badge badge-success">{event.attendance}</span>
+                    <span className="badge badge-success">
+                      {event.attendance}
+                    </span>
                   </td>
                   <td className="px-5 py-4 text-sm font-bold text-theme-primary">
                     ⭐ {event.rating}

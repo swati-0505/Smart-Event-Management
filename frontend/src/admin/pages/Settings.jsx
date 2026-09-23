@@ -1,5 +1,5 @@
 // Settings.jsx
-// Admin settings — service-driven, backend-ready.
+// Admin settings — fetches from service, with fallback when backend is empty.
 
 import { useState, useEffect } from "react";
 import {
@@ -7,6 +7,28 @@ import {
   Mail, Smartphone, AlertTriangle, RefreshCw, Check,
 } from "lucide-react";
 import { getSettings, updateSettings } from "../services/settingsService";
+import { toast } from "sonner";
+
+// ============================================
+// FALLBACK SETTINGS — Used when backend returns empty
+// ============================================
+const FALLBACK_SETTINGS = {
+  siteName: "SmartEvent",
+  siteUrl: "https://smartevent.com",
+  maintenance: false,
+  emailNotif: true,
+  pushNotif: false,
+  twoFactor: true,
+  language: "en",
+};
+
+// Validate — must have required keys
+function isValidSettings(data) {
+  if (!data || typeof data !== "object") return false;
+  if (typeof data.siteName !== "string") return false;
+  if (typeof data.language !== "string") return false;
+  return true;
+}
 
 function Settings() {
   const [settings, setSettings] = useState(null);
@@ -14,6 +36,7 @@ function Settings() {
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [usingFallback, setUsingFallback] = useState(false);
 
   useEffect(() => {
     load();
@@ -23,11 +46,22 @@ function Settings() {
     try {
       setLoading(true);
       setError(null);
+
       const data = await getSettings();
-      setSettings(data);
+
+      if (isValidSettings(data)) {
+        // Merge with fallback — in case backend returns partial data
+        setSettings({ ...FALLBACK_SETTINGS, ...data });
+        setUsingFallback(false);
+      } else {
+        setSettings(FALLBACK_SETTINGS);
+        setUsingFallback(true);
+      }
     } catch (err) {
-      setError("Failed to load settings.");
-      console.error(err);
+      console.warn("Settings service failed, using fallback:", err);
+      setSettings(FALLBACK_SETTINGS);
+      setUsingFallback(true);
+      setError(null);
     } finally {
       setLoading(false);
     }
@@ -46,10 +80,11 @@ function Settings() {
       setSaving(true);
       await updateSettings(settings);
       setSaved(true);
+      toast.success("Settings saved successfully");
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       console.error(err);
-      alert("Failed to save settings.");
+      toast.error("Failed to save settings");
     } finally {
       setSaving(false);
     }
@@ -58,33 +93,57 @@ function Settings() {
   function Toggle({ name, checked, onChange, variant = "" }) {
     return (
       <label className={`toggle-switch ${variant}`}>
-        <input type="checkbox" name={name} checked={checked} onChange={onChange} />
+        <input
+          type="checkbox"
+          name={name}
+          checked={checked}
+          onChange={onChange}
+        />
         <span className="toggle-slider" />
       </label>
     );
   }
 
+  /* ---------- LOADING ---------- */
   if (loading) {
     return (
-      <div className="card p-12 text-center text-sm text-theme-muted">
-        Loading settings...
+      <div className="space-y-10">
+        <div>
+          <h1 className="text-3xl font-bold text-theme-primary">Settings</h1>
+          <p className="mt-1 text-sm text-theme-muted">Loading settings...</p>
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="card animate-pulse p-6">
+              <div className="h-5 w-32 rounded bg-theme-tertiary" />
+              <div className="mt-4 h-10 w-full rounded-xl bg-theme-tertiary" />
+              <div className="mt-3 h-10 w-full rounded-xl bg-theme-tertiary" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
+  /* ---------- ERROR ---------- */
   if (error) {
     return (
-      <div className="card flex flex-col items-center gap-3 p-12 text-center">
-        <p className="text-sm text-red-500">{error}</p>
-        <button type="button" onClick={load} className="btn-primary">
-          <RefreshCw size={14} /> Retry
-        </button>
+      <div className="space-y-10">
+        <h1 className="text-3xl font-bold text-theme-primary">Settings</h1>
+        <div className="card flex flex-col items-center gap-3 p-12 text-center">
+          <p className="text-sm text-red-500">{error}</p>
+          <button type="button" onClick={load} className="btn-primary">
+            <RefreshCw size={14} /> Retry
+          </button>
+        </div>
       </div>
     );
   }
 
+  /* ---------- MAIN ---------- */
   return (
     <div className="space-y-10">
+      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-theme-primary">Settings</h1>
         <p className="mt-1 text-sm text-theme-muted">
@@ -92,12 +151,22 @@ function Settings() {
         </p>
       </div>
 
+      {/* Fallback Notice */}
+      {usingFallback && (
+        <div className="rounded-lg border border-amber-300 bg-amber-100 px-4 py-2.5 text-[11px] font-bold text-amber-900">
+          Demo settings shown — connect backend to see real configuration.
+        </div>
+      )}
+
+      {/* Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Preferences */}
         <div className="card p-6">
           <div className="mb-5 flex items-center gap-2">
             <Palette size={18} className="text-indigo-600" />
-            <h2 className="text-base font-bold text-theme-primary">Preferences</h2>
+            <h2 className="text-base font-bold text-theme-primary">
+              Preferences
+            </h2>
           </div>
           <div>
             <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">
@@ -157,7 +226,9 @@ function Settings() {
                   <p className="text-sm font-semibold text-theme-primary">
                     Maintenance Mode
                   </p>
-                  <p className="text-xs text-theme-muted">Disable public access</p>
+                  <p className="text-xs text-theme-muted">
+                    Disable public access
+                  </p>
                 </div>
               </div>
               <Toggle
@@ -174,7 +245,9 @@ function Settings() {
         <div className="card p-6">
           <div className="mb-5 flex items-center gap-2">
             <Bell size={18} className="text-indigo-600" />
-            <h2 className="text-base font-bold text-theme-primary">Notifications</h2>
+            <h2 className="text-base font-bold text-theme-primary">
+              Notifications
+            </h2>
           </div>
           <div className="space-y-4">
             <div className="flex items-center justify-between rounded-xl border border-theme bg-theme-tertiary p-3">
@@ -222,7 +295,9 @@ function Settings() {
         <div className="card p-6">
           <div className="mb-5 flex items-center gap-2">
             <Shield size={18} className="text-indigo-600" />
-            <h2 className="text-base font-bold text-theme-primary">Security</h2>
+            <h2 className="text-base font-bold text-theme-primary">
+              Security
+            </h2>
           </div>
           <div className="space-y-4">
             <div className="flex items-center justify-between rounded-xl border border-theme bg-theme-tertiary p-3">
@@ -234,7 +309,9 @@ function Settings() {
                   <p className="text-sm font-semibold text-theme-primary">
                     Two-Factor Auth
                   </p>
-                  <p className="text-xs text-theme-muted">Extra security layer</p>
+                  <p className="text-xs text-theme-muted">
+                    Extra security layer
+                  </p>
                 </div>
               </div>
               <Toggle
@@ -246,6 +323,7 @@ function Settings() {
             </div>
             <button
               type="button"
+              onClick={() => toast.info("Change Password coming soon")}
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-theme bg-theme-tertiary px-4 py-2.5 text-sm font-semibold text-theme-secondary transition hover:border-indigo-300 hover:text-indigo-600"
             >
               <Lock size={14} /> Change Password
@@ -254,6 +332,7 @@ function Settings() {
         </div>
       </div>
 
+      {/* Save Button */}
       <div className="flex justify-end">
         <button
           type="button"
