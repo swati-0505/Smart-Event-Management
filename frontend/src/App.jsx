@@ -123,12 +123,12 @@ function App() {
           >
             Login
           </button>
-          <button
+          {/*<button
             className="login-btn"
             onClick={() => setPage("admin")}
 >
             Admin Dashboard
-          </button>
+          </button>*/}
 
         </nav>
 
