@@ -10,7 +10,7 @@ export async function sendAIMessage(message, sessionId = null) {
 }
 
 export async function getConversation(conversationId) {
-  return await apiGet(`/chat/${conversationId}`);
+  return await apiGet(`/chat/sessions/${conversationId}`);
 }
 
 export async function getQuickPrompts() {

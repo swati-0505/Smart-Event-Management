@@ -119,7 +119,7 @@ function AIAssistant() {
 
     try {
       const res = await sendAIMessage(text, conversationId);
-      if (res?.conversation_id) setConversationId(res.conversation_id);
+      if (res?.session_id) setConversationId(res.session_id);
 
       setMessages((prev) => [
         ...prev,
