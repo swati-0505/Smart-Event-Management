@@ -1,15 +1,13 @@
 from __future__ import annotations
 import logging
 from functools import lru_cache
-from typing import List
 
 from langchain_openai import ChatOpenAI
-from openai import OpenAI
 
 from app.core.ai_config import ai_settings
+from app.rag.embeddings import embed_texts as local_embed_texts
 
 logger = logging.getLogger(__name__)
-
 
 def _headers() -> dict:
     """OpenRouter uses these for attribution on your dashboard."""
@@ -17,9 +15,12 @@ def _headers() -> dict:
         "HTTP-Referer": "http://localhost:8000",
         "X-Title": ai_settings.OPENROUTER_APP_NAME,
     }
-    
+
 @lru_cache(maxsize=4)
-def get_chat_model(model: str | None = None, temperature: float | None = None) -> ChatOpenAI:
+def get_chat_model(
+    model: str | None = None,
+    temperature: float | None = None,
+) -> ChatOpenAI:
     """
     Return a chat model. Cached so we are not rebuilding the client on every
     request. Pass an explicit model to override the configured default.
@@ -32,7 +33,9 @@ def get_chat_model(model: str | None = None, temperature: float | None = None) -
     return ChatOpenAI(
         model=model or ai_settings.CHAT_MODEL,
         temperature=(
-            ai_settings.CHAT_TEMPERATURE if temperature is None else temperature
+            ai_settings.CHAT_TEMPERATURE
+            if temperature is None
+            else temperature
         ),
         max_tokens=ai_settings.CHAT_MAX_TOKENS,
         timeout=ai_settings.CHAT_TIMEOUT_SECONDS,
@@ -42,7 +45,6 @@ def get_chat_model(model: str | None = None, temperature: float | None = None) -
         max_retries=2,
     )
 
-
 def get_chat_model_with_fallback() -> ChatOpenAI:
     """
     Primary model with an automatic fallback.
@@ -51,64 +53,23 @@ def get_chat_model_with_fallback() -> ChatOpenAI:
     to a randomly chosen free model and can be rate-limited or unavailable.
     """
     primary = get_chat_model()
+
     if not ai_settings.CHAT_MODEL_FALLBACK:
         return primary
+
     fallback = get_chat_model(model=ai_settings.CHAT_MODEL_FALLBACK)
+
     return primary.with_fallbacks([fallback])
 
-
-
-
-
-
-@lru_cache(maxsize=1)
-def _embedding_client() -> OpenAI:
-    if not ai_settings.OPENROUTER_API_KEY:
-        raise RuntimeError("OPENROUTER_API_KEY is not set.")
-    return OpenAI(
-        api_key=ai_settings.OPENROUTER_API_KEY,
-        base_url=ai_settings.OPENROUTER_BASE_URL,
-        default_headers=_headers(),
-        timeout=ai_settings.CHAT_TIMEOUT_SECONDS,
-    )
-
-
-def embed_texts(texts: List[str]) -> List[List[float]]:
+def embed_texts(texts: list[str]) -> list[list[float]]:
     """
-    Embed a list of strings, batched.
+    Generate local embeddings using all-MiniLM-L6-v2.
 
-    Returns one vector per input, in the same order. Raises if the model
-    returns a vector whose size does not match EMBEDDING_DIM, because a
-    mismatch would silently corrupt the pgvector column.
+    The model produces 384-dimensional vectors, matching the existing
+    pgvector embeddings stored in the knowledge_chunks table.
     """
-    if not texts:
-        return []
+    return local_embed_texts(texts)
 
-    client = _embedding_client()
-    vectors: List[List[float]] = []
-    batch_size = ai_settings.EMBEDDING_BATCH_SIZE
-
-    for start in range(0, len(texts), batch_size):
-        batch = texts[start : start + batch_size]
-        response = client.embeddings.create(
-            model=ai_settings.EMBEDDING_MODEL,
-            input=batch,
-        )
-
-        ordered = sorted(response.data, key=lambda item: item.index)
-        for item in ordered:
-            vector = list(item.embedding)
-            if len(vector) != ai_settings.EMBEDDING_DIM:
-                raise ValueError(
-                    f"Embedding model returned {len(vector)} dims but "
-                    f"EMBEDDING_DIM is {ai_settings.EMBEDDING_DIM}. "
-                    f"Update ai_config and write a new migration."
-                )
-            vectors.append(vector)
-
-    return vectors
-
-
-def embed_query(text: str) -> List[float]:
-    """Embed a single query string."""
+def embed_query(text: str) -> list[float]:
+    """Embed a single query string using the local embedding model."""
     return embed_texts([text])[0]

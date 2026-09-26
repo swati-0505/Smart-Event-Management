@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 import logging
 from dataclasses import dataclass, field
+
 from sqlalchemy import text as sql_text
 from sqlalchemy.orm import Session
 
@@ -8,7 +10,6 @@ from app.core.ai_config import ai_settings
 from app.rag.clients import embed_query
 
 logger = logging.getLogger(__name__)
-
 
 @dataclass
 class RetrievedChunk:
@@ -19,7 +20,6 @@ class RetrievedChunk:
     source_filename: str
     doc_type: str
     metadata: dict = field(default_factory=dict)
-
 
     dense_score: float | None = None
     sparse_score: float | None = None
@@ -35,9 +35,11 @@ class RetrievedChunk:
         return self.metadata.get("document_title", self.source_filename)
 
     def citation(self) -> str:
-        """Human-readable source label shown in the final answer."""
-        return f"{self.document_title} > {self.section}" if self.section else self.document_title
-
+        return (
+            f"{self.document_title} > {self.section}"
+            if self.section
+            else self.document_title
+        )
 
 def dense_search(
     db: Session,
@@ -46,46 +48,53 @@ def dense_search(
     doc_type: str | None = None,
 ) -> list[RetrievedChunk]:
     """
-    Vector similarity search over pgvector.
+    Vector similarity search over the existing knowledge_chunks table.
 
-    `<=>` is cosine distance (0 = identical), so we convert to a similarity
-    score with 1 - distance to keep "higher is better" consistent everywhere.
+    Existing database columns:
+        id
+        content
+        embedding
+        source_document
+        document_id
     """
-    top_k = top_k or ai_settings.DENSE_TOP_K
-    query_vector = embed_query(query)
 
+    top_k = top_k or ai_settings.DENSE_TOP_K
+
+    query_vector = embed_query(query)
 
     vector_literal = "[" + ",".join(str(v) for v in query_vector) + "]"
 
-    filter_clause = "AND doc_type = :doc_type" if doc_type else ""
     rows = db.execute(
         sql_text(
-            f"""
+            """
             SELECT
-                chunk_id::text,
+                id::text,
                 content,
-                source_filename,
-                doc_type,
-                doc_metadata,
+                source_document,
+                document_id::text,
                 1 - (embedding <=> CAST(:query_vector AS vector)) AS score
             FROM knowledge_chunks
             WHERE embedding IS NOT NULL
-            {filter_clause}
             ORDER BY embedding <=> CAST(:query_vector AS vector)
             LIMIT :top_k
             """
         ),
-        {"query_vector": vector_literal, "top_k": top_k, "doc_type": doc_type},
+        {
+            "query_vector": vector_literal,
+            "top_k": top_k,
+        },
     ).fetchall()
 
     return [
         RetrievedChunk(
             chunk_id=row[0],
             content=row[1],
-            source_filename=row[2],
-            doc_type=row[3],
-            metadata=row[4] or {},
-            dense_score=float(row[5]),
+            source_filename=row[2] or "Unknown document",
+            doc_type="",
+            metadata={
+                "document_id": row[3],
+            },
+            dense_score=float(row[4]),
         )
         for row in rows
     ]
@@ -98,43 +107,49 @@ def sparse_search(
     doc_type: str | None = None,
 ) -> list[RetrievedChunk]:
     """
-    Keyword search over the tsvector column.
+    Sparse keyword search.
 
-    websearch_to_tsquery is used rather than plainto_tsquery because it
-    tolerates natural phrasing and quoted phrases without throwing on
-    punctuation - important when the query is a raw user sentence.
+    The current knowledge_chunks table does not contain a search_vec
+    column, so this uses PostgreSQL full-text search directly on content.
     """
+
     top_k = top_k or ai_settings.SPARSE_TOP_K
 
-    filter_clause = "AND doc_type = :doc_type" if doc_type else ""
     rows = db.execute(
         sql_text(
-            f"""
+            """
             SELECT
-                chunk_id::text,
+                id::text,
                 content,
-                source_filename,
-                doc_type,
-                doc_metadata,
-                ts_rank_cd(search_vec, websearch_to_tsquery('english', :query)) AS score
+                source_document,
+                document_id::text,
+                ts_rank_cd(
+                    to_tsvector('english', content),
+                    websearch_to_tsquery('english', :query)
+                ) AS score
             FROM knowledge_chunks
-            WHERE search_vec @@ websearch_to_tsquery('english', :query)
-            {filter_clause}
+            WHERE to_tsvector('english', content)
+                  @@ websearch_to_tsquery('english', :query)
             ORDER BY score DESC
             LIMIT :top_k
             """
         ),
-        {"query": query, "top_k": top_k, "doc_type": doc_type},
+        {
+            "query": query,
+            "top_k": top_k,
+        },
     ).fetchall()
 
     return [
         RetrievedChunk(
             chunk_id=row[0],
             content=row[1],
-            source_filename=row[2],
-            doc_type=row[3],
-            metadata=row[4] or {},
-            sparse_score=float(row[5]),
+            source_filename=row[2] or "Unknown document",
+            doc_type="",
+            metadata={
+                "document_id": row[3],
+            },
+            sparse_score=float(row[4]),
         )
         for row in rows
     ]
