@@ -1,303 +1,348 @@
-# 🎟️ Smart Event Management System
+## 🎟️ Smart Event Management System
 
-<p align="center">
-  <strong>A modern, scalable event management platform with a React frontend, FastAPI backend, database-driven services, and an extensible AI/RAG layer.</strong>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/React-Frontend-61DAFB?logo=react&logoColor=white" alt="React">
-  <img src="https://img.shields.io/badge/FastAPI-Backend-009688?logo=fastapi&logoColor=white" alt="FastAPI">
-  <img src="https://img.shields.io/badge/Python-3.x-3776AB?logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/AI%20%2F%20RAG-Extensible-purple" alt="AI/RAG">
-  <img src="https://img.shields.io/badge/Status-Active-success" alt="Status">
-</p>
-
----
+A modern, full-stack event management platform built with React, FastAPI, Python, PostgreSQL, and AI/RAG. The system provides event, registration, user, and administration management along with an integrated AI assistant capable of retrieving event-related information and responding to natural-language queries.
 
 ## 📌 Overview
 
-**Smart Event Management System** is a full-stack platform designed to simplify the creation, discovery, registration, and administration of events through a centralized digital system.
+Smart Event Management System is a full-stack platform designed to simplify the creation, management, discovery, and registration of events through a centralized digital system.
 
-The project combines a responsive user-facing interface with a dedicated administration dashboard and a RESTful FastAPI backend. Its architecture is designed to support future intelligent capabilities such as **Retrieval-Augmented Generation (RAG), embeddings, AI agents, event recommendations, automated insights, and natural-language assistance**.
+## The platform combines:
 
-The system is being developed as an extensible academic project, with a foundation suitable for further expansion into an **agentic AI-powered event management platform**.
+- 🖥️ React-based user and admin interfaces
+- ⚡ FastAPI REST backend
+- 🗄️ Database-driven services
+- 🔐 Authentication and authorization
+- 🎫 Event and registration management
+- 🤖 Integrated AI assistant
+- 🧠 Retrieval-Augmented Generation (RAG)
+- 🔎 Semantic knowledge retrieval
+- 🛠️ AI tools for interacting with event-management services
 
----
+The architecture is designed to support intelligent event-management workflows and future extensions such as recommendations, analytics, automated insights, and advanced agentic workflows.
 
 ## ✨ Key Features
 
-### 👤 User Management
+## 👤 User Management
+
 - User registration and authentication
 - User profile management
 - User lookup by ID or email
 - Secure API-based communication
+- Role-based access support
 
-### 🎫 Event Management
+## 🎫 Event Management
+
 - Create events
 - View event listings
 - Retrieve event details
 - Update event information
 - Delete events
-- Published-event retrieval
+- Retrieve published events
+- Event search and navigation
 
-### 📝 Registration Management
-- Event registration
-- Registration lookup
+## 📝 Registration Management
+
+- Register for events
+- Retrieve registrations
 - Event-wise registrations
 - User-wise registrations
 - Registration cancellation
 
-### 🏢 Venue Management
+## 🏢 Venue Management
+
 - Create and manage venues
 - Retrieve venue information
 - Update venue details
 - Delete venues
 
-### 💳 Payment Management
+## 💳 Payment Management
+
 - Payment records
 - Event-wise payment retrieval
 - User-wise payment retrieval
 - Payment status updates
 
-### ⭐ Feedback
+## ⭐ Feedback
+
 - Submit feedback
 - Event-wise feedback
 - User-wise feedback
 
-### 🛡️ Admin Dashboard
-- Dedicated admin interface
-- Dashboard metrics
+## 🛡️ Admin Dashboard
+
+The project includes a dedicated React-based administration dashboard with:
+
+- Dashboard overview and metrics
 - Event management
 - Registration management
 - User management
+- Event listing and upcoming events
 - Search and navigation
-- Light/dark theme support
-- Admin authentication and logout
+- Authentication
+- Logout
+- Theme support
+- API-connected dashboard services
 
-### 🤖 AI & RAG Foundation
-The project includes an extensible foundation for:
-- Document loading
-- Text chunking
-- Embeddings
-- Semantic retrieval
-- Vector database integration
-- LLM-powered responses
-- Agentic workflows
+## 🤖 AI Assistant
+
+The platform includes an integrated AI assistant that can interact with the event-management backend.
+
+Current capabilities include:
+
+- Natural-language interaction
+- Event-related queries
+- RAG-based information retrieval
+- Context-aware responses
+- AI chat sessions
+- Knowledge-base retrieval
+- Integration with backend tools
+- Agent-based workflow support
+
+The AI assistant is connected to the application backend rather than being a standalone chatbot.
+
+## 🧠 AI / RAG Architecture
+
+The AI layer combines RAG, semantic retrieval, LLMs, and backend tools.
+
+RAG Pipeline
+
+Documents / Knowledge
+        │
+        ▼
+ Document Loader
+        │
+        ▼
+     Chunking
+        │
+        ▼
+    Embeddings
+        │
+        ▼
+ Vector / Knowledge Store
+        │
+        ▼
+     Retriever
+        │
+        ▼
+   Relevant Context
+        │
+        ▼
+       LLM
+        │
+        ▼
+ Context-Aware Response
+
+Integrated AI Workflow
+
+                 User Query
+                     │
+                     ▼
+              AI Chat Endpoint
+                     │
+                     ▼
+              AI Agent / Graph
+                     │
+          ┌──────────┴──────────┐
+          │                     │
+          ▼                     ▼
+      RAG Retrieval        Backend Tools
+          │                     │
+          │              ┌──────┼──────┐
+          │              ▼      ▼      ▼
+          │           Events  Venue  Registration
+          │
+          └──────────┬──────────┘
+                     ▼
+              Context + Results
+                     │
+                     ▼
+                    LLM
+                     │
+                     ▼
+              Final AI Response
+
 ---
 
-## 🏗️ System Architecture
+🏗️ System Architecture
 
-```text
-                         ┌─────────────────────────┐
-                         │       End Users         │
-                         └────────────┬────────────┘
-                                      │
-                                      ▼
-                         ┌─────────────────────────┐
-                         │    React Frontend       │
-                         │                         │
-                         │  • User Interface       │
-                         │  • Event Discovery      │
-                         │  • Registration         │
-                         └────────────┬────────────┘
-                                      │
-                                      │ REST API
-                                      ▼
-                    ┌──────────────────────────────────┐
-                    │         FastAPI Backend           │
-                    │                                  │
-                    │  • Authentication                 │
-                    │  • Users                          │
-                    │  • Events                         │
-                    │  • Registrations                  │
-                    │  • Venues                         │
-                    │  • Payments                       │
-                    │  • Feedback                       │
-                    └───────────────┬──────────────────┘
+                         ┌──────────────────────┐
+                         │       Users          │
+                         └──────────┬───────────┘
                                     │
-                    ┌───────────────┴──────────────────┐
-                    ▼                                  ▼
-          ┌────────────────────┐             ┌────────────────────┐
-          │     Database       │             │   AI / RAG Layer   │
-          │                    │             │                    │
-          │ Users              │             │ Documents          │
-          │ Events             │             │ Chunking            │
-          │ Registrations      │             │ Embeddings          │
-          │ Venues             │             │ Retrieval           │
-          │ Payments           │             │ LLM / Agents        │
-          │ Feedback           │             │ Recommendations     │
-          └────────────────────┘             └────────────────────┘
-```
+                                    ▼
+                         ┌──────────────────────┐
+                         │    React Frontend    │
+                         │                      │
+                         │ • User Interface     │
+                         │ • Event Discovery    │
+                         │ • Registration       │
+                         │ • Admin Dashboard    │
+                         │ • AI Assistant       │
+                         └──────────┬───────────┘
+                                    │
+                                    │ REST API
+                                    ▼
+                    ┌────────────────────────────────┐
+                    │         FastAPI Backend        │
+                    │                                │
+                    │ • Authentication               │
+                    │ • Users                        │
+                    │ • Events                       │
+                    │ • Registrations                │
+                    │ • Venues                        │
+                    │ • Payments                      │
+                    │ • Feedback                      │
+                    │ • AI Chat                       │
+                    │ • Admin APIs                    │
+                    └───────────────┬────────────────┘
+                                    │
+                    ┌───────────────┴────────────────┐
+                    ▼                                ▼
+          ┌────────────────────┐          ┌────────────────────┐
+          │     Database       │          │    AI / RAG Layer  │
+          │                    │          │                    │
+          │ Users              │          │ Knowledge          │
+          │ Events             │          │ Embeddings         │
+          │ Registrations      │          │ Retrieval          │
+          │ Venues             │          │ LLM                │
+          │ Payments           │          │ Agent Graph        │
+          │ Feedback           │          │ AI Tools           │
+          └────────────────────┘          └────────────────────┘
 
 ---
 
-## 🧩 Project Modules
+🧩 Project Modules
 
-| Module | Responsibility |
-|---|---|
-| 🔐 Authentication | Registration, login and authentication |
-| 👤 Users | User CRUD and user information |
-| 🎫 Events | Event creation, retrieval, update and deletion |
-| 📝 Registrations | Event registration and cancellation |
-| 🏢 Venues | Venue management |
-| 💳 Payments | Payment records and status |
-| ⭐ Feedback | Event and user feedback |
-| 🛡️ Admin | Administrative dashboard and management |
-| 🧠 RAG | Document processing and semantic knowledge retrieval |
-| 🤖 AI Agents | Planned intelligent workflows and automation |
+Module| Responsibility
+🔐 Authentication| Registration, login, authentication and authorization
+👤 Users| User management and user information
+🎫 Events| Event creation, retrieval, update and deletion
+📝 Registrations| Event registration and cancellation
+🏢 Venues| Venue management
+💳 Payments| Payment records and status
+⭐ Feedback| Event and user feedback
+🛡️ Admin| Administrative dashboard and management
+🧠 RAG| Knowledge processing and semantic retrieval
+🤖 AI Assistant| Natural-language interaction and intelligent responses
+🛠️ AI Tools| Backend operations exposed to the AI workflow
 
 ---
 
-## 🛠️ Technology Stack
+🛠️ Technology Stack
 
-### Frontend
-- **React**
-- **Vite**
-- **JavaScript / JSX**
-- **Tailwind CSS**
+Frontend
 
-### Backend
-- **Python**
-- **FastAPI**
-- **Uvicorn**
-- **Pydantic**
+- React
+- Vite
+- JavaScript / JSX
+- CSS
+- Lucide React
+
+Backend
+
+- Python
+- FastAPI
+- Uvicorn
+- Pydantic
 - RESTful API architecture
 
-### Database
-- Relational database architecture
-- SQLAlchemy-based backend models/services
+Database
 
-### AI / Machine Learning
-- **Sentence Transformers**
-- `all-MiniLM-L6-v2`
+- PostgreSQL
+- SQLAlchemy
+- Alembic
+
+AI / Machine Learning
+
+- LLM-based conversational AI
+- Retrieval-Augmented Generation (RAG)
 - Embeddings
-- RAG architecture
-- Vector database integration planned
-- LLM and agent pipelines planned
+- Semantic search
+- Vector-based knowledge retrieval
+- Agentic AI workflow
+- Backend-integrated AI tools
 
-### Development Tools
+Development Tools
+
 - Git
 - GitHub
-- `uv`
 - npm
+- uv
 - Vite
+- Alembic
 
----
+## ⚙️ Getting Started
 
-## 📁 Project Structure
+Prerequisites
 
-```text
-Smart-Event-Management/
-│
-├── backend/
-│   ├── app/
-│   │   ├── api/
-│   │   ├── models/
-│   │   ├── routers/
-│   │   ├── rag/
-│   │   ├── db/
-│   │   └── main.py
-│   ├── pyproject.toml
-│   └── uv.lock
-│
-├── frontend/
-│   ├── src/
-│   │   ├── admin/
-│   │   │   ├── components/
-│   │   │   ├── pages/
-│   │   │   ├── services/
-│   │   │   ├── AdminApp.jsx
-│   │   │   └── main.jsx
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── admin.html
-│   ├── package.json
-│   └── vite.config.js
-│
-└── README.md
-```
-
----
-
-# ⚙️ Getting Started
-
-## Prerequisites
+Make sure the following are installed:
 
 - Python 3.x
-- Node.js and npm
+- Node.js
+- npm
 - Git
-- `uv`
+- uv
+- PostgreSQL
+
 
 ## 1️⃣ Clone the Repository
 
-```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
+git clone <https://github.com/swati-0505/Smart-Event-Management>
 cd Smart-Event-Management
-```
 
 ## 2️⃣ Backend Setup
 
-```bash
-cd backend
+Install dependencies:
+
 uv sync
+
+Start the FastAPI development server:
+
 uv run uvicorn app.main:app --reload
-```
 
 Backend:
 
-```text
 http://127.0.0.1:8000
-```
 
-Health check:
+Health Check
 
-```text
 http://127.0.0.1:8000/health
-```
 
-Expected:
+Expected response:
 
-```json
-{"status":"ok"}
-```
+{
+  "status": "ok"
+}
 
-Interactive API documentation:
+API Documentation
 
-```text
+Open:
+
 http://127.0.0.1:8000/docs
-```
+
+FastAPI provides an interactive Swagger API interface for testing the available endpoints.
+
 
 ## 3️⃣ Frontend Setup
 
 Open another terminal:
 
-```bash
 cd frontend
 npm install
 npm run dev
-```
 
 Frontend:
 
-```text
 http://localhost:5173
-```
 
 Admin dashboard:
 
-```text
 http://localhost:5173/admin.html
-```
 
----
-
-# 🔌 API Overview
+## 🔌 API Overview
 
 The backend provides REST APIs for:
 
-```text
 /api/auth/...
 /api/users/...
 /api/events/...
@@ -305,199 +350,145 @@ The backend provides REST APIs for:
 /api/venues/...
 /api/payments/...
 /api/feedback/...
-/api/admin/dashboard
-```
+/api/admin/...
+/api/chat/...
 
-### Events
-
-```text
-GET     /api/events/
-POST    /api/events/
-GET     /api/events/published
-GET     /api/events/{event_id}
-PUT     /api/events/{event_id}
-DELETE  /api/events/{event_id}
-```
-
-### Registrations
-
-```text
-GET     /api/registrations/
-POST    /api/registrations/
-GET     /api/registrations/event/{event_id}
-GET     /api/registrations/user/{user_id}
-GET     /api/registrations/{registration_id}
-PUT     /api/registrations/{registration_id}/cancel
-```
-
-### Users
-
-```text
-GET     /api/users/
-POST    /api/users/
-GET     /api/users/{user_id}
-GET     /api/users/email/{email}
-DELETE  /api/users/{user_id}
-```
-
-### Venues
-
-```text
-GET     /api/venues/
-POST    /api/venues/
-GET     /api/venues/{venue_id}
-PUT     /api/venues/{venue_id}
-DELETE  /api/venues/{venue_id}
-```
-
-### Payments
-
-```text
-GET     /api/payments/
-POST    /api/payments/
-GET     /api/payments/{payment_id}
-GET     /api/payments/event/{event_id}
-GET     /api/payments/user/{user_id}
-PUT     /api/payments/{payment_id}/status
-```
-
-### Feedback
-
-```text
-GET     /api/feedback/
-POST    /api/feedback/
-GET     /api/feedback/event/{event_id}
-GET     /api/feedback/user/{user_id}
-```
-
----
-
-# 🖥️ Admin Dashboard
+## 🖥️ Admin Dashboard
 
 The dedicated administration interface provides:
 
-- Dashboard metrics
-- Event management
-- Registration management
-- User management
-- Authentication
-- Search and navigation
-- Theme switching
-- Logout
+- 📊 Dashboard metrics
+- 🎫 Event management
+- 📝 Registration management
+- 👤 User management
+- 📅 Upcoming events
+- 🔎 Search and navigation
+- 🔐 Admin authentication
+- 🚪 Logout
+- 🌓 Theme support
+- 🔌 Backend API integration
+- 🤖 AI assistant
 
-The frontend service layer connects the currently integrated modules to the FastAPI backend.
+The frontend service layer communicates with the FastAPI backend through REST APIs.
 
----
 
-# 🧠 AI / RAG Architecture
+## 🤖 AI Assistant
 
-The major-project direction extends the platform with intelligent event-management capabilities.
+The AI assistant is integrated directly into the Smart Event Management System.
 
-### RAG Pipeline
+Instead of functioning only as a general conversational chatbot, the AI layer is designed to work with application data and backend services.
 
-```text
-Documents / Event Data
-          │
-          ▼
-     Document Loader
-          │
-          ▼
-        Chunking
-          │
-          ▼
-      Embeddings
-          │
-          ▼
-     Vector Database
-          │
-          ▼
-       Retriever
-          │
-          ▼
+Example Workflow
+
+User:
+"Show me all available events"
+
+             ↓
+
+        AI Assistant
+
+             ↓
+
+      Agent / Workflow
+
+             ↓
+
+     Event-related Tool
+
+             ↓
+
+       Backend API
+
+             ↓
+
+       Event Database
+
+             ↓
+
+       Retrieved Data
+
+             ↓
+
           LLM
-          │
-          ▼
-   Context-Aware Answer
-```
 
-### Planned Agentic Architecture
+             ↓
 
-```text
-                    User Query
-                        │
-                        ▼
-                 ┌─────────────┐
-                 │ AI Orchestrator│
-                 └──────┬──────┘
-                        │
-          ┌─────────────┼─────────────┐
-          ▼             ▼             ▼
-     Event Agent   Venue Agent   Registration Agent
-          │             │             │
-          └─────────────┼─────────────┘
-                        ▼
-                Recommendation /
-                 Final Response
-```
+       Natural-language
+          Response
 
-### Planned Intelligent Features
-
-- Natural-language event search
-- Event recommendations
-- Venue recommendations
-- RAG-based event assistant
-- Event description generation
-- Feedback summarization
-- Feedback sentiment analysis
-- Registration analytics
-- Organizer assistance
-- Intelligent event planning
-- Multi-step agentic workflows
+This allows users to interact with the event-management system using natural language.
 
 ---
 
-# 🧪 Build & Verification
+## 🧠 RAG
 
-Frontend production build:
+The RAG layer provides knowledge retrieval capabilities for the AI system.
 
-```bash
+RAG Workflow
+
+Knowledge Documents
+        ↓
+Document Loading
+        ↓
+Text Chunking
+        ↓
+Embedding Generation
+        ↓
+Knowledge / Vector Store
+        ↓
+Semantic Retrieval
+        ↓
+Relevant Context
+        ↓
+LLM
+        ↓
+Final Response
+
+RAG can be extended to support event information, organizational knowledge, FAQs, policies, venue information, and other relevant documents.
+
+
+## 🧪 Build & Verification
+
+Frontend Production Build
+
 cd frontend
 npm run build
-```
 
-Backend development server:
+A successful build confirms that the frontend compiles correctly.
 
-```bash
-cd backend
+Backend
+
 uv run uvicorn app.main:app --reload
-```
 
-Health endpoint:
+Health Check
 
-```text
 GET /health
-```
 
----
-# 👥 Team & Contributions
+API Testing
 
-This project is developed collaboratively as an academic software engineering project.
+Use the FastAPI Swagger interface:
 
-| Area | Responsibility |
-|---|---|
-| Backend | Authentication, events, registrations, users and backend services |
-| AI | RAG, embeddings, vector database, agents and LLM pipelines |
-| Frontend | User interface and admin dashboard |
-| Database | Schema design, queries and optimization |
-| Integration | AI/backend/frontend integration |
+http://127.0.0.1:8000/docs
 
-> Add individual team-member names and GitHub profiles here before final submission.
 
----
+## 👥 Team & Contributions
 
-# 🔒 Security
+This project is developed collaboratively as a part of the Infosyd Springboard Virtual Internship Program
 
-For production deployment, consider:
+Area| Responsibility
+Backend| Authentication, events, registrations, users and backend services
+AI| RAG, embeddings, LLM, agent workflows and AI tools
+Frontend| User interface and administration dashboard
+Database| Schema, queries and database integration
+Integration| AI, backend and frontend integration
+Testing| API, frontend and integration testing
+
+Individual team-member names and GitHub profiles can be added before final submission.
+
+
+## 🔒 Security
+
+For production deployment, the following security practices should be followed:
 
 - HTTPS
 - Secure secret management
@@ -512,45 +503,54 @@ For production deployment, consider:
 
 Never commit:
 
-```text
 .env
 API keys
-database passwords
-private credentials
-secret tokens
-```
+Database passwords
+Private credentials
+Secret tokens
 
 ---
 
-# 🤝 Contributing
+## 🤝 Contributing
 
 1. Create a feature branch.
+
+git checkout -b feature/your-feature
+
 2. Implement the feature.
+
 3. Test locally.
+
 4. Run the production build.
-5. Review changes.
+
+npm run build
+
+5. Review your changes.
+
 6. Commit with a meaningful message.
+
+git add .
+git commit -m "Add your feature"
+
 7. Push the branch.
+
+git push origin feature/your-feature
+
 8. Open a Pull Request.
 
-Example:
+Example
 
-```bash
 git checkout -b feature/ai-recommendation
 git add .
 git commit -m "Add AI event recommendation service"
 git push origin feature/ai-recommendation
-```
 
----
+## 🚀 Project Vision
 
-# 📌 Project Vision
+The long-term objective is to evolve the platform from a conventional event-management application into an intelligent, AI-assisted event-management system.
 
-The long-term objective is to evolve the platform from a conventional event-management application into an **intelligent, agent-assisted event management system**.
+The architecture combines:
 
-The major extension combines:
-
-```text
 Full-Stack Application
         +
 REST APIs
@@ -563,24 +563,20 @@ LLMs
         +
 AI Agents
         +
-Recommendations
+Backend Tools
         +
-Analytics
-```
+Natural-Language Interaction
+        +
+Future Recommendations & Analytics
 
-This architecture provides a strong foundation for building a scalable and intelligent event-management platform.
+The current implementation provides a foundation for building intelligent workflows around event discovery, registration, knowledge retrieval, administration, and event-related assistance.
 
----
+## 📄 License
 
-# 📄 License
-
-This project is developed for academic and educational purposes.
+This project was developed as part of the Infosys Springboard Virtual Internship Program for educational and professional learning purposes.
 
 A formal open-source license can be added if the project is later released publicly.
 
----
+## 🎟️ Smart Event Management System
 
-<p align="center">
-  <strong>🎟️ Smart Event Management System</strong><br>
-  <sub>Built with React • FastAPI • Python • Database • AI/RAG</sub>
-</p>
+Built with React • FastAPI • Python • PostgreSQL • RAG • LLM • AI Agents
