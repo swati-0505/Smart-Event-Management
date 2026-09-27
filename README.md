@@ -1,5 +1,7 @@
 ## 🎟️ Smart Event Management System
 
+##       Built with React • FastAPI • Python • PostgreSQL • RAG • LLM • AI Agents
+
 A modern, full-stack event management platform built with React, FastAPI, Python, PostgreSQL, and AI/RAG. The system provides event, registration, user, and administration management along with an integrated AI assistant capable of retrieving event-related information and responding to natural-language queries.
 
 ## 📌 Overview
@@ -189,11 +191,11 @@ Integrated AI Workflow
                     │ • Users                        │
                     │ • Events                       │
                     │ • Registrations                │
-                    │ • Venues                        │
-                    │ • Payments                      │
-                    │ • Feedback                      │
-                    │ • AI Chat                       │
-                    │ • Admin APIs                    │
+                    │ • Venues                       │
+                    │ • Payments                     │
+                    │ • Feedback                     │
+                    │ • AI Chat                      │
+                    │ • Admin APIs                   │
                     └───────────────┬────────────────┘
                                     │
                     ┌───────────────┴────────────────┐
@@ -209,9 +211,8 @@ Integrated AI Workflow
           │ Feedback           │          │ AI Tools           │
           └────────────────────┘          └────────────────────┘
 
----
 
-🧩 Project Modules
+## 🧩 Project Modules
 
 Module| Responsibility
 🔐 Authentication| Registration, login, authentication and authorization
@@ -226,9 +227,8 @@ Module| Responsibility
 🤖 AI Assistant| Natural-language interaction and intelligent responses
 🛠️ AI Tools| Backend operations exposed to the AI workflow
 
----
 
-🛠️ Technology Stack
+## 🛠️ Technology Stack
 
 Frontend
 
@@ -483,9 +483,6 @@ Database| Schema, queries and database integration
 Integration| AI, backend and frontend integration
 Testing| API, frontend and integration testing
 
-Individual team-member names and GitHub profiles can be added before final submission.
-
-
 ## 🔒 Security
 
 For production deployment, the following security practices should be followed:
@@ -576,7 +573,3 @@ The current implementation provides a foundation for building intelligent workfl
 This project was developed as part of the Infosys Springboard Virtual Internship Program for educational and professional learning purposes.
 
 A formal open-source license can be added if the project is later released publicly.
-
-## 🎟️ Smart Event Management System
-
-Built with React • FastAPI • Python • PostgreSQL • RAG • LLM • AI Agents

@@ -1,6 +1,5 @@
 // registrationService.js
 // Registration service — connected to backend API.
-
 import {
   apiGet,
   apiPost,

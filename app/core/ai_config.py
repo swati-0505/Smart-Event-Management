@@ -28,21 +28,10 @@ class AISettings(BaseSettings):
     CHAT_TIMEOUT_SECONDS: int = 60
     CHAT_NUM_GPU: int = 0
 
-
-
-
-
-
-
     EMBEDDING_MODEL: str = "liquid/lfm-2.5-embedding-350m:free"
     EMBEDDING_DIM: int = 1024
     EMBEDDING_MAX_TOKENS: int = 512
     EMBEDDING_BATCH_SIZE: int = 16
-
-
-
-
-
 
     CHUNK_SIZE_CHARS: int = 1400
     CHUNK_OVERLAP_CHARS: int = 200
@@ -61,9 +50,6 @@ class AISettings(BaseSettings):
     ENABLE_METADATA_EXTRACTION: bool = True
     ENABLE_HALLUCINATION_CHECK: bool = True
     MAX_GENERATION_RETRIES: int = 1
-
-
-
 
     AGENT_MAX_TOOL_LOOPS: int = 6
     MEMORY_WINDOW_MESSAGES: int = 10
