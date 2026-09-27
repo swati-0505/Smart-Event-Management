@@ -1,6 +1,12 @@
 import "./Register.css";
-
+import { useState } from "react";
 function Register({ onNavigate }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   return (
     <main className="register-page">
 
@@ -54,13 +60,43 @@ function Register({ onNavigate }) {
             Create your SmartEvent account.
           </p>
 
-          <form onSubmit={(e) => e.preventDefault()}>
+          <form
+  onSubmit={async (e) => {
+    e.preventDefault();
+    setError("");
 
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch("http://localhost:8000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || "Registration failed");
+      }
+      alert("Account created! Please sign in.");
+      onNavigate("login");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }}
+>
             <div className="register-field">
               <label>Full Name</label>
               <input
                 type="text"
                 placeholder="Enter your full name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
               />
             </div>
 
@@ -69,6 +105,9 @@ function Register({ onNavigate }) {
               <input
                 type="email"
                 placeholder="Enter your email"
+                autoComplete="off"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
 
@@ -77,6 +116,8 @@ function Register({ onNavigate }) {
               <input
                 type="password"
                 placeholder="Create a password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
 
@@ -85,16 +126,15 @@ function Register({ onNavigate }) {
               <input
                 type="password"
                 placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
               />
             </div>
+            {error && <p style={{ color: "red", fontSize: "13px" }}>{error}</p>}
 
-            <button
-              className="register-submit"
-              type="submit"
-            >
-              Create Account →
-            </button>
-
+            <button className="register-submit" type="submit" disabled={loading}>
+  {loading ? "Creating..." : "Create Account →"}
+</button>
           </form>
 
           <p className="login-account-text">

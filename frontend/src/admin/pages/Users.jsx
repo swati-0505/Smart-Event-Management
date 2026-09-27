@@ -1,34 +1,51 @@
 // Users.jsx
 // Users management — uses useApiWithFallback for concise data loading.
-
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Search, Mail, MoreVertical, UserPlus, Check } from "lucide-react";
 import Badge from "../components/common/Badge";
 import Modal from "../components/common/Modal";
-import { useApiWithFallback } from "../hooks/useApiWithFallback";
 import { getUsers, createUser } from "../services/userService";
 import { toast } from "sonner";
-
-const ROLE_VARIANT = { Admin: "danger", Organizer: "warning", User: "info" };
-
-const SAMPLE = [
-  { id: "s1", name: "Yugant Patel", email: "yugant@smartevent.com", role: "Admin", joined: "01 Jan 2025" },
-  { id: "s2", name: "Rahul Sharma", email: "rahul@example.com", role: "User", joined: "15 Mar 2025" },
-  { id: "s3", name: "Ananya Verma", email: "ananya@example.com", role: "Organizer", joined: "20 Apr 2025" },
-  { id: "s4", name: "Arjun Mehta", email: "arjun@example.com", role: "User", joined: "10 May 2025" },
-  { id: "s5", name: "Priya Singh", email: "priya@example.com", role: "Organizer", joined: "22 Jun 2025" },
-  { id: "s6", name: "Sneha Patel", email: "sneha@example.com", role: "User", joined: "05 Jul 2025" },
-];
-
+const ROLE_VARIANT = {
+  ADMIN: "danger",
+  Admin: "danger",
+  ORGANIZER: "warning",
+  Organizer: "warning",
+  USER: "info",
+  User: "info",
+};
 function Users() {
-  const { data: users, setData: setUsers, loading, usingFallback } =
-    useApiWithFallback(getUsers, SAMPLE);
-
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("All");
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", role: "User" });
-
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    role: "User",
+  });
+  // Load REAL users from backend
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const data = await getUsers();
+      console.log("USERS FROM BACKEND:", data);
+      // Backend is expected to return an array
+      setUsers(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("FAILED TO LOAD USERS:", err);
+      setError(err.message || "Failed to load users.");
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    loadUsers();
+  }, []);
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
     return users.filter((u) => {
@@ -36,31 +53,39 @@ function Users() {
         !s ||
         (u.name || "").toLowerCase().includes(s) ||
         (u.email || "").toLowerCase().includes(s);
-      const matchR = roleFilter === "All" || u.role === roleFilter;
+
+      const matchR =
+        roleFilter === "All" ||
+        u.role?.toUpperCase() === roleFilter.toUpperCase();
+
       return matchS && matchR;
     });
   }, [users, search, roleFilter]);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const joined = new Date().toLocaleDateString("en-US", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-    const optimistic = { id: `new-${Date.now()}`, ...form, joined };
-    setUsers((prev) => [optimistic, ...prev]);
-    setShowModal(false);
-    setForm({ name: "", email: "", role: "User" });
 
     try {
-      await createUser(form);
-      toast.success("User added");
-    } catch {
-      toast.success("User added (offline)");
+      const createdUser = await createUser(form);
+
+      console.log("USER CREATED:", createdUser);
+
+      toast.success("User added successfully");
+
+      setShowModal(false);
+      setForm({
+        name: "",
+        email: "",
+        role: "User",
+      });
+
+      // Reload real users from backend
+      await loadUsers();
+    } catch (error) {
+      console.error("FAILED TO CREATE USER:", error);
+      toast.error(error.message || "Failed to add user");
     }
   }
-
   return (
     <div className="space-y-6">
       {/* Header */}

@@ -1,19 +1,27 @@
 // Registrations.jsx
-// Attendees management — with bulk actions + CSV export + consolidated buttons.
-
-import { useState, useMemo } from "react";
+// Attendees management — connected to backend API.
+import { useState, useMemo, useEffect } from "react";
 import {
-  Search, CheckCircle2, XCircle, Users, Mail, Download,
-  Square, CheckSquare, X,
+  Search,
+  CheckCircle2,
+  XCircle,
+  Users,
+  Mail,
+  Download,
+  Square,
+  CheckSquare,
+  X,
 } from "lucide-react";
+
 import PageWrapper from "../components/common/PageWrapper";
 import Badge from "../components/common/Badge";
-import { useApiWithFallback } from "../hooks/useApiWithFallback";
 import { exportToCsv } from "../utils/exportCsv";
+
 import {
   getRegistrations,
   updateRegistrationStatus,
 } from "../services/registrationService";
+
 import { toast } from "sonner";
 
 const STATUS_VARIANT = {
@@ -23,25 +31,72 @@ const STATUS_VARIANT = {
 };
 
 const CSV_COLUMNS = [
-  { key: "user", label: "Name", transform: (r) => r.user || r.user_name || "" },
-  { key: "email", label: "Email", transform: (r) => r.email || r.user_email || "" },
-  { key: "event", label: "Event", transform: (r) => r.event || r.event_name || "" },
-  { key: "date", label: "Date", transform: (r) => r.date || r.created_at || "" },
-  { key: "status", label: "Status" },
-];
-
-const SAMPLE = [
-  { id: "s1", user: "Rahul Sharma", email: "rahul@example.com", event: "Tech Summit 2026", date: "15 Aug 2026", status: "confirmed" },
-  { id: "s2", user: "Ananya Verma", email: "ananya@example.com", event: "Design Workshop", date: "18 Aug 2026", status: "confirmed" },
-  { id: "s3", user: "Arjun Mehta", email: "arjun@example.com", event: "Startup Meetup", date: "20 Aug 2026", status: "pending" },
-  { id: "s4", user: "Priya Singh", email: "priya@example.com", event: "AI Conference", date: "22 Aug 2026", status: "pending" },
-  { id: "s5", user: "Karan Patel", email: "karan@example.com", event: "Tech Summit 2026", date: "23 Aug 2026", status: "cancelled" },
-  { id: "s6", user: "Sneha Reddy", email: "sneha@example.com", event: "Cultural Fest", date: "25 Aug 2026", status: "confirmed" },
+  {
+    key: "user",
+    label: "Name",
+    transform: (r) => r.user || r.user_name || "",
+  },
+  {
+    key: "email",
+    label: "Email",
+    transform: (r) => r.email || r.user_email || "",
+  },
+  {
+    key: "event",
+    label: "Event",
+    transform: (r) => r.event || r.event_name || "",
+  },
+  {
+    key: "date",
+    label: "Date",
+    transform: (r) => r.date || r.created_at || "",
+  },
+  {
+    key: "status",
+    label: "Status",
+  },
 ];
 
 function Registrations() {
-  const { data: rows, setData: setRows, loading, usingFallback } =
-    useApiWithFallback(getRegistrations, SAMPLE);
+  // ==========================================
+  // BACKEND DATA
+  // ==========================================
+
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Load registrations from backend
+  const loadRegistrations = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const data = await getRegistrations();
+
+      console.log("REGISTRATIONS FROM BACKEND:", data);
+
+      setRows(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("FAILED TO LOAD REGISTRATIONS:", err);
+
+      setError(
+        err?.message || "Failed to load registrations from backend."
+      );
+
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRegistrations();
+  }, []);
+
+  // ==========================================
+  // FILTERS
+  // ==========================================
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
@@ -49,26 +104,60 @@ function Registrations() {
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
+
     return rows.filter((r) => {
-      const name = (r.user || r.user_name || "").toLowerCase();
-      const email = (r.email || r.user_email || "").toLowerCase();
-      const event = (r.event || r.event_name || "").toLowerCase();
+      const name = (
+        r.user ||
+        r.user_name ||
+        ""
+      ).toLowerCase();
+
+      const email = (
+        r.email ||
+        r.user_email ||
+        ""
+      ).toLowerCase();
+
+      const event = (
+        r.event ||
+        r.event_name ||
+        ""
+      ).toLowerCase();
+
       const matchS =
-        !s || name.includes(s) || email.includes(s) || event.includes(s);
+        !s ||
+        name.includes(s) ||
+        email.includes(s) ||
+        event.includes(s);
+
       const matchF =
-        filter === "All" || r.status?.toLowerCase() === filter.toLowerCase();
+        filter === "All" ||
+        r.status?.toLowerCase() === filter.toLowerCase();
+
       return matchS && matchF;
     });
   }, [rows, search, filter]);
 
+  // ==========================================
+  // SELECTION
+  // ==========================================
+
   const allSelected =
-    filtered.length > 0 && filtered.every((r) => selected.has(r.id));
+    filtered.length > 0 &&
+    filtered.every((r) => selected.has(r.id));
+
   const someSelected = selected.size > 0;
 
   function toggleOne(id) {
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+
       return next;
     });
   }
@@ -77,7 +166,9 @@ function Registrations() {
     if (allSelected) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(filtered.map((r) => r.id)));
+      setSelected(
+        new Set(filtered.map((r) => r.id))
+      );
     }
   }
 
@@ -85,42 +176,111 @@ function Registrations() {
     setSelected(new Set());
   }
 
+  // ==========================================
+  // CSV EXPORT
+  // ==========================================
+
   function handleExport() {
     try {
-      exportToCsv(filtered, CSV_COLUMNS, "attendees");
-      toast.success(`Exported ${filtered.length} attendees`);
+      exportToCsv(
+        filtered,
+        CSV_COLUMNS,
+        "attendees"
+      );
+
+      toast.success(
+        `Exported ${filtered.length} attendees`
+      );
     } catch (err) {
-      toast.error(err.message || "Export failed");
+      toast.error(
+        err?.message || "Export failed"
+      );
     }
   }
 
+  // ==========================================
+  // UPDATE SINGLE REGISTRATION
+  // ==========================================
+
   async function updateStatus(id, status) {
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
     try {
-      await updateRegistrationStatus(id, status);
-    } catch {
-      /* offline ok */
+      await updateRegistrationStatus(
+        id,
+        status
+      );
+
+      // Update UI only after backend succeeds
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id === id
+            ? { ...r, status }
+            : r
+        )
+      );
+
+      toast.success(
+        `Registration ${status}`
+      );
+    } catch (err) {
+      console.error(
+        "FAILED TO UPDATE REGISTRATION:",
+        err
+      );
+
+      toast.error(
+        err?.message ||
+          "Failed to update registration"
+      );
     }
   }
+
+  // ==========================================
+  // BULK UPDATE
+  // ==========================================
 
   async function bulkUpdate(status) {
     const ids = [...selected];
+
     if (ids.length === 0) return;
 
-    setRows((prev) =>
-      prev.map((r) => (selected.has(r.id) ? { ...r, status } : r))
-    );
+    try {
+      await Promise.all(
+        ids.map((id) =>
+          updateRegistrationStatus(
+            id,
+            status
+          )
+        )
+      );
 
-    await Promise.all(
-      ids.map((id) => updateRegistrationStatus(id, status).catch(() => {}))
-    );
+      // Update UI after backend succeeds
+      setRows((prev) =>
+        prev.map((r) =>
+          selected.has(r.id)
+            ? { ...r, status }
+            : r
+        )
+      );
 
-    toast.success(
-      `${ids.length} attendee${ids.length > 1 ? "s" : ""} updated to ${status}`
-    );
-    clearSelection();
+      toast.success(
+        `${ids.length} attendee${
+          ids.length > 1 ? "s" : ""
+        } updated to ${status}`
+      );
+
+      clearSelection();
+    } catch (err) {
+      console.error(
+        "FAILED BULK UPDATE:",
+        err
+      );
+
+      toast.error(
+        err?.message ||
+          "Failed to update registrations"
+      );
+    }
   }
-
   return (
     <PageWrapper>
       <div className="space-y-6">
@@ -233,7 +393,7 @@ function Registrations() {
               </div>
             )}
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[750px]">
+              <table className="w-full min-w-187.5">
                 <thead>
                   <tr className="border-b border-theme bg-theme-tertiary text-left">
                     <th className="w-12 px-4 py-3">

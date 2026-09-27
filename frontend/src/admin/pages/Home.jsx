@@ -1,6 +1,3 @@
-// Home.jsx
-// Dashboard — fetches metrics from service, with fallback when backend is empty.
-
 import { useState, useEffect } from "react";
 import { Calendar, Users, IndianRupee, Star, Plus } from "lucide-react";
 
@@ -11,8 +8,6 @@ import CategoryChart from "../components/dashboard/CategoryChart";
 import RecentActivity from "../components/dashboard/RecentActivity";
 import PromoBanner from "../components/dashboard/PromoBanner";
 import { getDashboardMetrics } from "../services/dashboardService";
-
-/* -------------------- Fallback Data -------------------- */
 const FALLBACK_METRICS = {
   total_events: { value: "12", trend: "+20%", trendUp: true },
   total_attendees: { value: "1,245", trend: "+12%", trendUp: true },
@@ -20,7 +15,6 @@ const FALLBACK_METRICS = {
   avg_rating: { value: "4.8", trend: "+0.3", trendUp: true },
 };
 
-/* -------------------- Animated Greeting -------------------- */
 function AnimatedGreeting() {
   const fullText = "Welcome back, Admin";
   const [displayed, setDisplayed] = useState("");
@@ -69,63 +63,102 @@ function LiveDate() {
   }, []);
   return <p className="text-xs font-medium text-theme-muted">{dateLabel}</p>;
 }
-
-/* -------------------- Home -------------------- */
 function Home({ onPageChange }) {
-  const [metrics, setMetrics] = useState(FALLBACK_METRICS);
-  const [usingFallback, setUsingFallback] = useState(true);
+  const [metrics, setMetrics] = useState({
+    total_events: { value: "0", trend: null, trendUp: true },
+    total_attendees: { value: "0", trend: null, trendUp: true },
+    total_revenue: { value: "₹0", trend: null, trendUp: true },
+    avg_rating: { value: "0", trend: null, trendUp: true },
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function loadMetrics() {
       try {
+        setLoading(true);
+        setError("");
+
         const data = await getDashboardMetrics();
 
-        // Normalize backend response — handle multiple shapes
-        if (data && (data.total_events !== undefined || data.totalEvents !== undefined)) {
-          const normalized = {
-            total_events: normalizeMetric(data.total_events || data.totalEvents, "12"),
-            total_attendees: normalizeMetric(
-              data.total_attendees || data.totalAttendees || data.total_registrations,
-              "1,245"
-            ),
-            total_revenue: normalizeMetric(
-              data.total_revenue || data.totalRevenue || data.revenue,
-              "₹2.4L"
-            ),
-            avg_rating: normalizeMetric(
-              data.avg_rating || data.avgRating || data.rating,
-              "4.8"
-            ),
-          };
-          setMetrics(normalized);
-          setUsingFallback(false);
-        } else {
-          // Empty backend — keep fallback
-          setMetrics(FALLBACK_METRICS);
-          setUsingFallback(true);
+        console.log("DASHBOARD DATA FROM BACKEND:", data);
+
+        if (!data || typeof data !== "object") {
+          throw new Error("Invalid dashboard response.");
         }
+
+        const normalized = {
+          total_events: normalizeMetric(
+            data.total_events ??
+              data.totalEvents ??
+              data.events ??
+              data.total_event_count,
+            "0"
+          ),
+
+          total_attendees: normalizeMetric(
+            data.total_attendees ??
+              data.totalAttendees ??
+              data.total_registrations ??
+              data.totalRegistrations ??
+              data.attendees,
+            "0"
+          ),
+
+          total_revenue: normalizeMetric(
+            data.total_revenue ??
+              data.totalRevenue ??
+              data.revenue,
+            "₹0"
+          ),
+
+          avg_rating: normalizeMetric(
+            data.avg_rating ??
+              data.avgRating ??
+              data.rating ??
+              data.average_rating,
+            "0"
+          ),
+        };
+
+        setMetrics(normalized);
       } catch (err) {
-        console.warn("Dashboard metrics failed, using fallback:", err);
-        setMetrics(FALLBACK_METRICS);
-        setUsingFallback(true);
+        console.error("FAILED TO LOAD DASHBOARD:", err);
+        setError(err?.message || "Failed to load dashboard.");
+      } finally {
+        setLoading(false);
       }
     }
+
     loadMetrics();
   }, []);
 
-  // Normalize — service could return just a number, or { value, trend }
   function normalizeMetric(raw, fallbackValue) {
     if (raw === undefined || raw === null) {
-      return { value: fallbackValue, trend: null, trendUp: true };
+      return {
+        value: fallbackValue,
+        trend: null,
+        trendUp: true,
+      };
     }
+
     if (typeof raw === "object" && raw.value !== undefined) {
       return {
         value: String(raw.value),
-        trend: raw.trend || null,
-        trendUp: raw.trendUp !== undefined ? raw.trendUp : raw.trend_up ?? true,
+        trend: raw.trend ?? null,
+        trendUp:
+          raw.trendUp !== undefined
+            ? raw.trendUp
+            : raw.trend_up ?? true,
       };
     }
-    return { value: String(raw), trend: null, trendUp: true };
+
+    return {
+      value: String(raw),
+      trend: null,
+      trendUp: true,
+    };
   }
 
   const metricCards = [
@@ -162,7 +195,6 @@ function Home({ onPageChange }) {
       color: "amber",
     },
   ];
-
   return (
     <div className="w-full min-w-0 max-w-full space-y-5 overflow-hidden">
       {/* ================= HEADER ================= */}

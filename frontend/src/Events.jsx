@@ -1,56 +1,32 @@
+import { useEffect, useState } from "react";
 import "./Events.css";
+import eventService from "./admin/services/eventService";
 
 function Events({ onNavigate }) {
-  const events = [
-    {
-      title: "Live Music Night",
-      location: "Hyderabad",
-      date: "18 SEP 2026",
-      category: "Music",
-      image:
-        "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=85",
-    },
-    {
-      title: "Future Tech Summit",
-      location: "Bengaluru",
-      date: "25 SEP 2026",
-      category: "Technology",
-      image:
-        "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=85",
-    },
-    {
-      title: "Urban Culture Fest",
-      location: "Mumbai",
-      date: "03 OCT 2026",
-      category: "Arts & Culture",
-      image:
-        "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=85",
-    },
-    {
-      title: "Business Leaders Meet",
-      location: "Chennai",
-      date: "10 OCT 2026",
-      category: "Business",
-      image:
-        "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=900&q=85",
-    },
-    {
-      title: "Creative Arts Expo",
-      location: "Delhi",
-      date: "18 OCT 2026",
-      category: "Arts & Culture",
-      image:
-        "https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&w=900&q=85",
-    },
-    {
-      title: "Startup Innovation Day",
-      location: "Pune",
-      date: "24 OCT 2026",
-      category: "Technology",
-      image:
-        "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=900&q=85",
-    },
-  ];
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadEvents = async () => {
+    try {
+      setLoading(true);
+
+      const data = await eventService.getEvents();
+
+      console.log("EVENTS FROM BACKEND:", data);
+
+      setEvents(data);
+    } catch (error) {
+      console.error("FAILED TO LOAD EVENTS:", error);
+      setError("Failed to load events.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadEvents();
+  }, []);
 
   return (
     <div className="events-page">

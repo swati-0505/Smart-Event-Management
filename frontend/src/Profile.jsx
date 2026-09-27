@@ -1,12 +1,71 @@
 import "./Profile.css";
+import { useState, useEffect } from "react";
 
 function Profile({ onNavigate }) {
-  const user = {
-    name: "Rahul Sharma",
-    email: "rahul.sharma@example.com",
-    phone: "+91 98765 43210",
-    events: 2,
-  };
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadProfile() {
+      const token = localStorage.getItem("user-auth-token");
+      if (!token) {
+        onNavigate("login");
+        return;
+      }
+
+      try {
+        const response = await fetch("http://localhost:8000/api/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            localStorage.removeItem("user-auth-token");
+            onNavigate("login");
+            return;
+          }
+          throw new Error("Failed to load profile");
+        }
+
+        const data = await response.json();
+        setUser(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadProfile();
+  }, [onNavigate]);
+
+  function handleLogout() {
+    localStorage.removeItem("user-auth-token");
+    onNavigate("login");
+  }
+
+  if (loading) {
+    return (
+      <main className="profile-page">
+        <p style={{ padding: "40px", textAlign: "center" }}>Loading profile...</p>
+      </main>
+    );
+  }
+
+  if (error || !user) {
+    return (
+      <main className="profile-page">
+        <p style={{ padding: "40px", textAlign: "center", color: "red" }}>
+          {error || "Could not load profile."}
+        </p>
+      </main>
+    );
+  }
+
+  const initials = user.name
+    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "??";
 
   return (
     <main className="profile-page">
@@ -48,7 +107,7 @@ function Profile({ onNavigate }) {
 
         <button
           className="profile-login"
-          onClick={() => onNavigate("login")}
+          onClick={handleLogout}
         >
           Logout
         </button>
@@ -79,7 +138,7 @@ function Profile({ onNavigate }) {
         <div className="profile-card">
 
           <div className="profile-avatar">
-            RS
+            {initials}
           </div>
 
           <div className="profile-main">
@@ -100,8 +159,8 @@ function Profile({ onNavigate }) {
               </div>
 
               <div>
-                <span>PHONE NUMBER</span>
-                <strong>{user.phone}</strong>
+                <span>ROLE</span>
+                <strong>{user.role}</strong>
               </div>
 
             </div>
@@ -114,20 +173,8 @@ function Profile({ onNavigate }) {
         <div className="profile-stats">
 
           <div className="profile-stat">
-            <span>REGISTERED EVENTS</span>
-            <strong>
-              {String(user.events).padStart(2, "0")}
-            </strong>
-          </div>
-
-          <div className="profile-stat">
             <span>ACCOUNT STATUS</span>
             <strong>ACTIVE</strong>
-          </div>
-
-          <div className="profile-stat">
-            <span>MEMBER SINCE</span>
-            <strong>2026</strong>
           </div>
 
         </div>

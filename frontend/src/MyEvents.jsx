@@ -1,28 +1,60 @@
 import "./MyEvents.css";
+import { useState, useEffect } from "react";
+import { getRegistrationsByUser } from "./admin/services/registrationService";
+import { getEventById } from "./admin/services/eventService";
 
 function MyEvents({ onNavigate }) {
-  const registeredEvents = [
-    {
-      title: "Live Music Night",
-      category: "Music",
-      date: "18 SEP 2026",
-      time: "07:00 PM",
-      location: "Hyderabad",
-      status: "Confirmed",
-      image:
-        "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=85",
-    },
-    {
-      title: "Future Tech Summit",
-      category: "Technology",
-      date: "25 SEP 2026",
-      time: "10:00 AM",
-      location: "Bengaluru",
-      status: "Confirmed",
-      image:
-        "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=85",
-    },
-  ];
+  const [registeredEvents, setRegisteredEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadMyEvents() {
+      const token = localStorage.getItem("user-auth-token");
+      if (!token) {
+        onNavigate("login");
+        return;
+      }
+
+      try {
+        const meResponse = await fetch("http://localhost:8000/api/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!meResponse.ok) throw new Error("Could not verify user");
+        const me = await meResponse.json();
+
+        const regResponse = await fetch(
+          `http://localhost:8000/api/registrations/user/${me.id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!regResponse.ok) throw new Error("Could not load registrations");
+        const registrations = await regResponse.json();
+
+        const withEventDetails = await Promise.all(
+          registrations.map(async (reg) => {
+            try {
+              const eventRes = await fetch(
+                `http://localhost:8000/api/events/${reg.event_id}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              const event = eventRes.ok ? await eventRes.json() : null;
+              return { ...reg, event };
+            } catch {
+              return { ...reg, event: null };
+            }
+          })
+        );
+
+        setRegisteredEvents(withEventDetails);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadMyEvents();
+  }, [onNavigate]);
 
   return (
     <main className="my-events-page">
@@ -107,50 +139,52 @@ function MyEvents({ onNavigate }) {
 
         </div>
 
+        {loading && <p style={{ padding: "20px" }}>Loading your events...</p>}
+        {error && <p style={{ padding: "20px", color: "red" }}>{error}</p>}
+
+        {!loading && !error && registeredEvents.length === 0 && (
+          <p style={{ padding: "20px" }}>
+            You haven't registered for any events yet.
+          </p>
+        )}
+
         <div className="my-events-list">
 
-          {registeredEvents.map((event, index) => (
+          {registeredEvents.map((reg, index) => (
 
-            <div className="my-event-card" key={index}>
+            <div className="my-event-card" key={reg.id || index}>
 
               <div className="my-event-number">
                 {String(index + 1).padStart(2, "0")}
               </div>
 
-              {/* EVENT IMAGE */}
-              <div className="my-event-image-wrapper">
-                <img
-                  src={event.image}
-                  alt={event.title}
-                  className="my-event-image"
-                />
-              </div>
-
               <div className="my-event-main">
 
                 <p className="my-event-category">
-                  {event.category}
+                  {reg.event?.category || "Event"}
                 </p>
 
                 <h3>
-                  {event.title}
+                  {reg.event?.title || "Event details unavailable"}
                 </h3>
 
                 <div className="my-event-meta">
 
                   <span>
                     <small>DATE</small>
-                    {event.date}
+                    {reg.event?.event_date
+                      ? new Date(reg.event.event_date).toLocaleDateString()
+                      : "—"}
                   </span>
 
                   <span>
                     <small>TIME</small>
-                    {event.time}
-                  </span>
-
-                  <span>
-                    <small>LOCATION</small>
-                    {event.location}
+                    {reg.event?.event_date
+                      ? new Date(reg.event.event_date).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "—"}
                   </span>
 
                 </div>
@@ -159,7 +193,7 @@ function MyEvents({ onNavigate }) {
 
               <div className="my-event-status">
                 <span>●</span>
-                {event.status}
+                {reg.status}
               </div>
 
             </div>

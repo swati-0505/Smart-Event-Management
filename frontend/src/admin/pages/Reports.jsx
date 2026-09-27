@@ -1,6 +1,5 @@
 // Reports.jsx
 // Reports & Analytics — period-based data with fallback.
-
 import { useState, useEffect } from "react";
 import {
   TrendingUp,
@@ -90,28 +89,32 @@ function Reports() {
   }, [period]);
 
   async function loadReports() {
-    try {
-      setLoading(true);
-      setError(null);
+  try {
+    setLoading(true);
+    setError(null);
 
-      const res = await getReportData(period);
+    const res = await getReportData(period);
 
-      if (isValidReport(res)) {
-        setData(res);
-        setUsingFallback(false);
-      } else {
-        setData(FALLBACK_REPORT);
-        setUsingFallback(true);
-      }
-    } catch (err) {
-      console.warn("Reports service failed, using fallback:", err);
-      setData(FALLBACK_REPORT);
-      setUsingFallback(true);
-      setError(null);
-    } finally {
-      setLoading(false);
+    console.log("REPORT DATA FROM BACKEND:", res);
+
+    if (isValidReport(res)) {
+      setData(res);
+      setUsingFallback(false);
+    } else {
+      console.error("Invalid report data received:", res);
+      setData(null);
+      setUsingFallback(false);
+      setError("Backend returned an invalid report format.");
     }
+  } catch (err) {
+    console.error("FAILED TO LOAD REPORTS:", err);
+    setData(null);
+    setUsingFallback(false);
+    setError(err?.message || "Failed to load reports from backend.");
+  } finally {
+    setLoading(false);
   }
+}
 
   async function handleExport() {
     try {
