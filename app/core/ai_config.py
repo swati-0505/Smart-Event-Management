@@ -40,7 +40,7 @@ class AISettings(BaseSettings):
     FUSED_TOP_K: int = 10
     FINAL_TOP_K: int = 4
 
-    ENABLE_RERANKER: bool = True
+    ENABLE_RERANKER: bool = False
     ENABLE_METADATA_EXTRACTION: bool = True
     ENABLE_HALLUCINATION_CHECK: bool = True
     MAX_GENERATION_RETRIES: int = 1
