@@ -1,6 +1,3 @@
-// AdminLogin.jsx
-// Admin authentication — real backend login, with demo-mode fallback.
-
 import { useState } from "react";
 import { apiRequest } from "../services/api";
 import "./AdminLogin.css";
@@ -12,7 +9,6 @@ const AUTH_KEYS = [
   "admin-email",
   "admin-role",
 ];
-
 function AdminLogin({ onLoginSuccess }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,9 +27,7 @@ function AdminLogin({ onLoginSuccess }) {
     e.preventDefault();
     setError("");
     setLoading(true);
-
     try {
-      // Real backend login
       const authData = await apiRequest("/auth/login", {
         method: "POST",
         body: { email, password },
@@ -143,5 +137,4 @@ function AdminLogin({ onLoginSuccess }) {
     </main>
   );
 }
-
 export default AdminLogin;

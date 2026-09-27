@@ -153,20 +153,37 @@ function Events() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (editing) {
-      setEvents((prev) =>
-        prev.map((x) => (x.id === editing.id ? { ...x, ...form } : x))
-      );
-      try { await updateEvent(editing.id, form); } catch { /* offline ok */ }
-    } else {
-      const newEvent = { id: `new-${Date.now()}`, ...form, registered: 0 };
-      setEvents((prev) => [newEvent, ...prev]);
-      try { await createEvent(form); } catch { /* offline ok */ }
-    }
-    setShowModal(false);
-    toast.success(editing ? "Event updated" : "Event created");
+    try{
+      const payload={
+        title: form.title,
+        date: form.date,
+        time: form.time,
+        venue: form.venue,
+        capacity: parseInt(form.capacity, 10),
+        category: form.category,
+        status: form.status,
+      };
+      console.log("Submitting event form:", payload);
+      if (editing) {
+        const updatedEvent = await updateEvent(editing.id, payload);
+        setEvents((prev) =>
+          prev.map((x) => (x.id === editing.id ? {...x, ...payload, ...updatedEvent ||{}} : x))
+        );
+        toast.success("Event updated");
+      } else {
+        const createdEvent = await createEvent(payload);
+        console.log("Created event:", createdEvent);
+        setEvents((prev) => [...prev, createdEvent || {id:'new-${Date.now()}', ...payload, registered: 0},
+          ...prev,]);
+    toast.success("Event updated Successfully");
   }
-
+  setShowModal(false);
+  setEditing(null);
+  setForm(EMPTY_FORM);
+    } catch (err) {
+      toast.error(error?.message || "Failed to save event");
+    }
+  }
   async function confirmDelete() {
     const id = deleteTarget?.id;
     if (!id) return;

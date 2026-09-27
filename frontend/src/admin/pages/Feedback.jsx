@@ -1,6 +1,3 @@
-// Feedback.jsx
-// Feedback management — service-driven with fallback.
-
 import { useState, useMemo } from "react";
 import { Search, Star, MessageSquare, TrendingUp, Filter } from "lucide-react";
 import PageWrapper from "../components/common/PageWrapper";
@@ -15,10 +12,7 @@ const SAMPLE = [
   { id: "s5", user: "Karan Patel", event: "Cultural Fest", rating: 5, comment: "Best cultural event I've attended! The performances were outstanding.", date: "28 Aug 2026" },
   { id: "s6", user: "Sneha Reddy", event: "Tech Summit 2026", rating: 4, comment: "Well organized event. Food could be improved though.", date: "30 Aug 2026" },
 ];
-
-// Placeholder fetcher — replace with real getFeedback service when ready
 const fetchFeedback = async () => [];
-
 function RatingStars({ rating }) {
   return (
     <div className="flex items-center gap-0.5">
@@ -32,13 +26,11 @@ function RatingStars({ rating }) {
     </div>
   );
 }
-
 function ratingVariant(rating) {
   if (rating >= 4) return "success";
   if (rating >= 3) return "warning";
   return "danger";
 }
-
 function Feedback() {
   const { data: feedback, loading, usingFallback } =
     useApiWithFallback(fetchFeedback, SAMPLE);
@@ -63,7 +55,6 @@ function Feedback() {
       return matchS && matchF;
     });
   }, [feedback, search, filter]);
-
   const stats = useMemo(() => {
     const total = feedback.length;
     const avg = total > 0
@@ -73,7 +64,6 @@ function Feedback() {
     const lowRatings = feedback.filter((f) => f.rating <= 2).length;
     return { total, avg, fiveStar, lowRatings };
   }, [feedback]);
-
   const statCards = [
     { icon: MessageSquare, label: "Total Reviews", value: stats.total, color: "indigo" },
     { icon: Star, label: "Avg. Rating", value: stats.avg, color: "amber" },
@@ -129,7 +119,6 @@ function Feedback() {
             );
           })}
         </div>
-
         {/* Filters */}
         <div className="card flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex w-full max-w-sm items-center gap-2 rounded-lg border border-theme bg-theme-tertiary px-3 py-2">
@@ -173,7 +162,6 @@ function Feedback() {
                 Demo data — connect backend to see real feedback.
               </div>
             )}
-
             <div className="space-y-4">
               {filtered.map((f, idx) => {
                 const userName = f.user || f.user_name || "Anonymous";
@@ -219,5 +207,4 @@ function Feedback() {
     </PageWrapper>
   );
 }
-
 export default Feedback;

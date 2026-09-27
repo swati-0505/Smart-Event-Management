@@ -1,7 +1,8 @@
 // CalendarPage.jsx
 // Full-page calendar — backend-ready with working filters + create event modal.
-
+import { createEvent } from "../services/eventService";
 import { useState, useEffect, useMemo, useRef } from "react";
+import { getVenues } from "../services/venueService";
 import {
   ChevronLeft,
   ChevronRight,
@@ -259,7 +260,7 @@ function CalendarPage() {
           <div className="h-40 animate-pulse rounded-2xl bg-theme-tertiary" />
           <div className="h-64 animate-pulse rounded-2xl bg-theme-tertiary" />
         </div>
-        <div className="h-[600px] animate-pulse rounded-2xl bg-theme-tertiary" />
+        <div className="h-150 animate-pulse rounded-2xl bg-theme-tertiary" />
       </div>
     );
   }
@@ -374,7 +375,7 @@ function CalendarPage() {
               return (
                 <div
                   key={idx}
-                  className="min-h-[110px] border-b border-r border-theme bg-theme-tertiary/40"
+                  className="min-h-27.5 border-b border-r border-theme bg-theme-tertiary/40"
                 />
               );
             }
@@ -389,7 +390,7 @@ function CalendarPage() {
                 type="button"
                 onClick={() => setSelectedDay(day)}
                 className={[
-                  "group relative flex min-h-[110px] flex-col border-b border-r border-theme p-2 text-left transition-colors",
+                  "group relative flex min-h-27.5 flex-col border-b border-r border-theme p-2 text-left transition-colors",
                   isSelected ? "bg-indigo-50/60" : "hover:bg-theme-hover",
                 ].join(" ")}
               >
@@ -417,7 +418,7 @@ function CalendarPage() {
                   {list.slice(0, 3).map((ev, i) => (
                     <div
                       key={i}
-                      className={`truncate rounded px-1.5 py-[3px] text-[9px] font-semibold text-white ${ev.color} transition group-hover:brightness-110`}
+                      className={`truncate rounded px-1.5 py-0.75 text-[9px] font-semibold text-white ${ev.color} transition group-hover:brightness-110`}
                     >
                       {ev.time} {ev.title}
                     </div>
@@ -492,7 +493,7 @@ function CalendarPage() {
               return (
                 <div
                   key={i}
-                  className="min-h-[56px] border-r border-theme p-1 last:border-r-0"
+                  className="min-h-14 border-r border-theme p-1 last:border-r-0"
                 >
                   {hourEvents.map((ev, j) => (
                     <div
@@ -532,7 +533,7 @@ function CalendarPage() {
                   {h > 12 ? h - 12 : h} {h >= 12 ? "PM" : "AM"}
                 </span>
               </div>
-              <div className="min-h-[64px] flex-1 border-l border-theme p-2 pl-4">
+              <div className="min-h-16 flex-1 border-l border-theme p-2 pl-4">
                 {hourEvents.map((ev, i) => (
                   <div
                     key={i}
@@ -890,7 +891,7 @@ function CalendarPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search events"
-                className="w-[150px] rounded-lg border border-theme bg-theme-tertiary py-1.5 pl-7 pr-2 text-[11px] text-theme-primary outline-none transition placeholder:text-theme-dim focus:border-indigo-400"
+                className="w-37.5 rounded-lg border border-theme bg-theme-tertiary py-1.5 pl-7 pr-2 text-[11px] text-theme-primary outline-none transition placeholder:text-theme-dim focus:border-indigo-400"
               />
             </div>
 
@@ -908,7 +909,7 @@ function CalendarPage() {
                 <SlidersHorizontal size={11} />
                 Filter
                 {activeFilterCount > 0 && (
-                  <span className="ml-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-indigo-600 px-1 text-[9px] font-bold text-white">
+                  <span className="ml-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-[9px] font-bold text-white">
                     {activeFilterCount}
                   </span>
                 )}
@@ -967,29 +968,46 @@ function CreateEventForm({ onClose }) {
     title: "",
     date: "",
     time: "",
-    venue: "",
+    venue_id: "",
     capacity: "",
     category: "Office",
   });
   const [saving, setSaving] = useState(false);
+  const [venues, setVenues] = useState([]);
+
+  useEffect(() => {
+    getVenues().then(setVenues).catch(() => setVenues([]));
+  }, []);
 
   function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setSaving(true);
+   async function handleSubmit(e) {
+  e.preventDefault();
+  setSaving(true);
 
-    // Simulate API call (later: call createEvent service)
-    await new Promise((r) => setTimeout(r, 800));
+  try {
+    const eventDateTime = new Date(`${form.date}T${form.time}`).toISOString();
 
-    setSaving(false);
+    const payload = {
+      title: form.title,
+      event_date: eventDateTime,
+      venue_id: form.venue_id,
+      capacity: parseInt(form.capacity, 10),
+      category: form.category,
+    };
+
+    await createEvent(payload);
+
     alert(`✅ Event "${form.title}" created successfully!`);
     onClose();
+  } catch (err) {
+    alert(`❌ Failed to create event: ${err.message}`);
+  } finally {
+    setSaving(false);
   }
-
-  return (
+}  return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">
@@ -1037,14 +1055,19 @@ function CreateEventForm({ onClose }) {
           <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">
             Venue
           </label>
-          <input
-            type="text"
+          <select
             required
-            value={form.venue}
-            onChange={(e) => update("venue", e.target.value)}
-            placeholder="e.g., Auditorium"
+            value={form.venue_id}
+            onChange={(e) => update("venue_id", e.target.value)}
             className="w-full rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none focus:border-indigo-400"
-          />
+          >
+            <option value="">Select a venue</option>
+            {venues.map((v) => (
+              <option key={v.venue_id || v.id} value={v.venue_id || v.id}>
+                {v.name}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">

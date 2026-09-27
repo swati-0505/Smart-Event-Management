@@ -1,6 +1,12 @@
 import "./Login.css";
+import { useState } from "react";
 
 function Login({ onNavigate }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
   return (
     <main className="login-page">
 
@@ -44,18 +50,37 @@ function Login({ onNavigate }) {
             Sign in to continue to SmartEvent.
           </p>
 
-        <form
-         onSubmit={(e) => {
-         e.preventDefault();
-          onNavigate("profile");
-       }}
-        >
-
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setError("");
+              setLoading(true);
+              try {
+                const response = await fetch("http://localhost:8000/api/auth/login", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ email, password }),
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                  throw new Error(data.detail || "Login failed");
+                }
+                localStorage.setItem("user-auth-token", data.access_token);
+                onNavigate("profile");
+              } catch (err) {
+                setError(err.message);
+              } finally {
+                setLoading(false);
+              }
+            }}
+          >
             <div className="login-field">
               <label>Email Address</label>
               <input
                 type="email"
                 placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
 
@@ -64,6 +89,8 @@ function Login({ onNavigate }) {
               <input
                 type="password"
                 placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
 
@@ -78,9 +105,11 @@ function Login({ onNavigate }) {
               </button>
             </div>
 
-            <button className="login-submit" type="submit">
-  Sign In →
-</button>
+            {error && <p style={{ color: "red", fontSize: "13px" }}>{error}</p>}
+
+            <button className="login-submit" type="submit" disabled={loading}>
+              {loading ? "Signing in..." : "Sign In →"}
+            </button>
 
           </form>
 
@@ -91,11 +120,11 @@ function Login({ onNavigate }) {
           <p className="signup-text">
             Don't have an account?
             <button
-  type="button"
-  onClick={() => onNavigate("register")}
->
-  Create Account
-</button>
+              type="button"
+              onClick={() => onNavigate("register")}
+            >
+              Create Account
+            </button>
           </p>
 
         </div>

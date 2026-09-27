@@ -1,6 +1,3 @@
-// AIAssistant.jsx
-// AI Assistant — full page chat, messages from bottom.
-
 import { useState, useRef, useEffect } from "react";
 import {
   Send,
@@ -351,10 +348,6 @@ function AIAssistant() {
     </PageWrapper>
   );
 }
-
-/* ============================================================
-   Message Bubble
-   ============================================================ */
 function MessageBubble({ msg }) {
   const isUser = msg.role === "user";
 
@@ -387,10 +380,6 @@ function MessageBubble({ msg }) {
     </div>
   );
 }
-
-/* ============================================================
-   Typing Indicator
-   ============================================================ */
 function TypingIndicator() {
   return (
     <div className="flex gap-3">
@@ -411,5 +400,4 @@ function TypingIndicator() {
     </div>
   );
 }
-
 export default AIAssistant;
