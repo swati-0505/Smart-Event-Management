@@ -1,7 +1,5 @@
 import "./MyEvents.css";
 import { useState, useEffect } from "react";
-import { getRegistrationsByUser } from "./admin/services/registrationService";
-import { getEventById } from "./admin/services/eventService";
 
 function MyEvents({ onNavigate }) {
   const [registeredEvents, setRegisteredEvents] = useState([]);
@@ -55,6 +53,14 @@ function MyEvents({ onNavigate }) {
 
     loadMyEvents();
   }, [onNavigate]);
+
+  const now = new Date();
+  const upcomingEvents = registeredEvents.filter(
+    (reg) => reg.event?.event_date && new Date(reg.event.event_date) >= now
+  );
+  const pastEvents = registeredEvents.filter(
+    (reg) => reg.event?.event_date && new Date(reg.event.event_date) < now
+  );
 
   return (
     <main className="my-events-page">
@@ -134,7 +140,7 @@ function MyEvents({ onNavigate }) {
           </div>
 
           <span>
-            {String(registeredEvents.length).padStart(2, "0")} EVENTS
+            {String(upcomingEvents.length).padStart(2, "0")} EVENTS
           </span>
 
         </div>
@@ -150,7 +156,7 @@ function MyEvents({ onNavigate }) {
 
         <div className="my-events-list">
 
-          {registeredEvents.map((reg, index) => (
+          {upcomingEvents.map((reg, index) => (
 
             <div className="my-event-card" key={reg.id || index}>
 
@@ -201,6 +207,48 @@ function MyEvents({ onNavigate }) {
           ))}
 
         </div>
+
+        {pastEvents.length > 0 && (
+          <>
+            <div className="my-events-heading" style={{ marginTop: "40px" }}>
+              <div>
+                <p className="section-label">PAST EVENTS</p>
+                <h2>Events you've attended</h2>
+              </div>
+              <span>{String(pastEvents.length).padStart(2, "0")} EVENTS</span>
+            </div>
+
+            <div className="my-events-list">
+              {pastEvents.map((reg, index) => (
+                <div className="my-event-card" key={reg.id || `past-${index}`}>
+                  <div className="my-event-number">
+                    {String(index + 1).padStart(2, "0")}
+                  </div>
+
+                  <div className="my-event-main">
+                    <p className="my-event-category">
+                      {reg.event?.category || "Event"}
+                    </p>
+                    <h3>{reg.event?.title || "Event details unavailable"}</h3>
+                    <div className="my-event-meta">
+                      <span>
+                        <small>DATE</small>
+                        {reg.event?.event_date
+                          ? new Date(reg.event.event_date).toLocaleDateString()
+                          : "—"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="my-event-status">
+                    <span>●</span>
+                    Completed
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
       </section>
 
