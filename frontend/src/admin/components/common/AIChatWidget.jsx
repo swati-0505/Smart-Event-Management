@@ -1,15 +1,27 @@
 // AIChatWidget.jsx
 // Responsive AI chat widget — floating button bottom-right.
 // Mobile: full screen. Tablet/Desktop: floating panel.
+// Connected to FastAPI: POST /api/chat (JWT required)
 
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, X, Sparkles } from "lucide-react";
+
+// ---- CONFIG: change these if needed ----
+const API_URL = "http://localhost:8000/api/chat";
+const TOKEN_KEY = "admin-auth-token"; // key used in localStorage.setItem(...) at login
+// ----------------------------------------
+
+const getTime = () =>
+  new Date().toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
 const initialMessages = [
   {
     role: "ai",
     text: "Hi! I'm your SmartEvent AI Assistant. How can I help you today?",
-    time: "10:24 AM",
+    time: getTime(),
   },
 ];
 
@@ -24,6 +36,7 @@ function AIChatWidget() {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -52,36 +65,56 @@ function AIChatWidget() {
     };
   }, [open]);
 
-  function handleSend(e) {
+  async function handleSend(e) {
     e?.preventDefault();
-    if (!input.trim()) return;
+    const text = input.trim();
+    if (!text || isTyping) return;
 
-    const userMsg = {
-      role: "user",
-      text: input,
-      time: new Date().toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => [...prev, { role: "user", text, time: getTime() }]);
     setInput("");
     setIsTyping(true);
 
-    setTimeout(() => {
+    try {
+      const token = localStorage.getItem(TOKEN_KEY);
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ message: text, session_id: sessionId }),
+      });
+
+      if (res.status === 401) {
+        throw new Error("Session expired. Please log in again.");
+      }
+      if (!res.ok) {
+        throw new Error(`Server error (${res.status})`);
+      }
+
+      const data = await res.json();
+      if (data.session_id) setSessionId(data.session_id);
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: data.reply, time: getTime() },
+      ]);
+    } catch (err) {
+      console.error("Chat error:", err);
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
-          text: "This is a demo response. Once backend is connected, I'll provide real answers based on your event data.",
-          time: new Date().toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+          text:
+            err.message === "Failed to fetch"
+              ? "Can't reach the server. Check that the backend is running."
+              : err.message || "Something went wrong. Please try again.",
+          time: getTime(),
         },
       ]);
+    } finally {
       setIsTyping(false);
-    }, 1000);
+    }
   }
 
   return (
@@ -91,7 +124,7 @@ function AIChatWidget() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="ai-chat-fab fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg transition hover:scale-110 sm:bottom-6 sm:right-6"
+          className="ai-chat-fab fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-purple-600 text-white shadow-lg transition hover:scale-110 sm:bottom-6 sm:right-6"
           aria-label="Open AI Assistant"
         >
           <Sparkles size={22} />
@@ -107,11 +140,11 @@ function AIChatWidget() {
         <div
           className={[
             "animate-scale-in fixed z-40 flex flex-col overflow-hidden bg-theme-secondary shadow-2xl",
-            "inset-0 h-[100dvh] w-full rounded-none border-0",
-            "sm:inset-auto sm:bottom-6 sm:right-6 sm:h-[560px] sm:max-h-[calc(100vh-3rem)] sm:w-[380px] sm:rounded-2xl sm:border sm:border-theme",
+            "inset-0 h-dvh w-full rounded-none border-0",
+            "sm:inset-auto sm:bottom-6 sm:right-6 sm:h-140 sm:max-h-[calc(100vh-3rem)] sm:w-95 sm:rounded-2xl sm:border sm:border-theme",
           ].join(" ")}
         >
-          <div className="flex items-center justify-between bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-3.5">
+          <div className="flex items-center justify-between bg-linear-to-r from-indigo-500 to-purple-600 px-4 py-3.5">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
                 <Bot size={18} className="text-white" />
@@ -141,14 +174,14 @@ function AIChatWidget() {
                 className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 {msg.role === "ai" && (
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-purple-600">
                     <Bot size={12} className="text-white" />
                   </div>
                 )}
 
                 <div className={`max-w-[85%] sm:max-w-[80%] ${msg.role === "user" ? "text-right" : ""}`}>
                   <div
-                    className={`rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed sm:text-sm ${
+                    className={`whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed sm:text-sm ${
                       msg.role === "user"
                         ? "bg-indigo-600 text-white"
                         : "bg-theme-tertiary text-theme-secondary"
@@ -163,7 +196,7 @@ function AIChatWidget() {
 
             {isTyping && (
               <div className="flex gap-2">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-purple-600">
                   <Bot size={12} className="text-white" />
                 </div>
                 <div className="rounded-2xl bg-theme-tertiary px-4 py-3">
@@ -208,7 +241,7 @@ function AIChatWidget() {
               />
               <button
                 type="submit"
-                disabled={!input.trim()}
+                disabled={!input.trim() || isTyping}
                 className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white transition hover:bg-indigo-700 disabled:opacity-50"
               >
                 <Send size={15} />
