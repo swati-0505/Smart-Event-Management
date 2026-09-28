@@ -1,6 +1,16 @@
 import "./RegistrationSuccess.css";
 
-function RegistrationSuccess({ onNavigate }) {
+function RegistrationSuccess({ onNavigate, event }) {
+  const dateObj = event?.event_date ? new Date(event.event_date) : null;
+  const dateStr = dateObj
+    ? dateObj.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })
+    : "—";
+  const timeStr = dateObj
+    ? dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "—";
+  const venueName = event?.venue_name || event?.venue || "—";
+  const eventTitle = event?.title || "your event";
+
   return (
     <main className="success-page">
 
@@ -22,7 +32,7 @@ function RegistrationSuccess({ onNavigate }) {
         </h1>
 
         <p className="success-message">
-          Your registration for Live Music Night has been
+          Your registration for {eventTitle} has been
           successfully completed. We look forward to seeing you there.
         </p>
 
@@ -31,27 +41,22 @@ function RegistrationSuccess({ onNavigate }) {
 
           <div>
             <span>EVENT</span>
-            <strong>Live Music Night</strong>
+            <strong>{eventTitle}</strong>
           </div>
 
           <div>
             <span>DATE</span>
-            <strong>18 SEP 2026</strong>
+            <strong>{dateStr}</strong>
           </div>
 
           <div>
             <span>TIME</span>
-            <strong>07:00 PM</strong>
+            <strong>{timeStr}</strong>
           </div>
 
           <div>
             <span>LOCATION</span>
-            <strong>Hyderabad</strong>
-          </div>
-
-          <div>
-            <span>REGISTRATION ID</span>
-            <strong>SE-2026-00128</strong>
+            <strong>{venueName}</strong>
           </div>
 
         </div>

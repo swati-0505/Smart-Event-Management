@@ -1,6 +1,55 @@
 import "./EventDetails.css";
+const CATEGORY_IMAGES = {
+  "Tech Conference": "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1400&q=85",
+  "Technology": "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1400&q=85",
+  "Workshop": "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1400&q=85",
+  "Networking": "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=85",
+  "Corporate Event": "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1400&q=85",
+  "Business": "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1400&q=85",
+  "Cultural": "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1400&q=85",
+  "International": "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1400&q=85",
+  "Office": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1400&q=85",
+  "Personal": "https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=1400&q=85",
+  "Misc": "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=1400&q=85",
+  "Holiday": "https://images.unsplash.com/photo-1482517967863-00e15c9b44be?auto=format&fit=crop&w=1400&q=85",
+};
 
-function EventDetails({ onNavigate }) {
+const DEFAULT_EVENT_IMAGE =
+  "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=1400&q=85";
+
+function getEventImage(event) {
+  return event.image || CATEGORY_IMAGES[event.category] || DEFAULT_EVENT_IMAGE;
+}
+
+function EventDetails({ onNavigate, event, onSelectEvent }) {
+  if (!event) {
+    return (
+      <main className="event-details-page">
+        <div style={{ padding: "60px", textAlign: "center" }}>
+          <p>No event selected.</p>
+          <button onClick={() => onNavigate("events")}>← Back to Events</button>
+        </div>
+      </main>
+    );
+  }
+
+  const dateObj = event.event_date ? new Date(event.event_date) : null;
+  const dateStr = dateObj
+    ? dateObj.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })
+    : "Date TBA";
+  const timeStr = dateObj
+    ? dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "";
+  const venueName = event.venue_name || event.venue || "Venue TBA";
+
+  function goToRegistration() {
+    if (onSelectEvent) {
+      onSelectEvent("eventRegistration", event);
+    } else {
+      onNavigate("eventRegistration");
+    }
+  }
+
   return (
     <main className="event-details-page">
 
@@ -47,12 +96,10 @@ function EventDetails({ onNavigate }) {
       <section className="event-details-hero">
 
         <div className="event-details-image">
-
           <img
-            src="https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=85"
-            alt="Live Music Night"
+            src={getEventImage(event)}
+            alt={event.title}
           />
-
         </div>
 
         <div className="event-details-content">
@@ -65,132 +112,42 @@ function EventDetails({ onNavigate }) {
           </button>
 
           <p className="event-details-label">
-            MUSIC · HYDERABAD
+            {(event.category || "EVENT").toUpperCase()} · {venueName.toUpperCase()}
           </p>
 
           <h1>
-            Live Music
-            <br />
-            <span>Night.</span>
+            {event.title}
           </h1>
 
           <p className="event-details-description">
-            A night of live music, great energy, and unforgettable
-            moments with people who love music as much as you do.
+            {event.description || "No description provided for this event."}
           </p>
 
           <div className="event-meta">
 
             <div>
               <span>DATE</span>
-              <strong>18 SEP 2026</strong>
+              <strong>{dateStr}</strong>
             </div>
 
             <div>
               <span>TIME</span>
-              <strong>07:00 PM</strong>
+              <strong>{timeStr || "—"}</strong>
             </div>
 
             <div>
               <span>LOCATION</span>
-              <strong>Hyderabad</strong>
+              <strong>{venueName}</strong>
             </div>
 
           </div>
 
           <button
             className="event-register-btn"
-            onClick={() => onNavigate("eventRegistration")}
+            onClick={goToRegistration}
           >
             Register for Event →
           </button>
-
-        </div>
-
-      </section>
-
-      {/* EVENT OVERVIEW */}
-      <section className="event-overview-section">
-
-        <div className="event-overview-heading">
-
-          <div>
-            <p className="event-details-label">
-              THE EXPERIENCE
-            </p>
-
-            <h2>
-              Music.
-              <br />
-              <span>People. Moments.</span>
-            </h2>
-          </div>
-
-          <p className="event-overview-intro">
-            Everything you need for a memorable night in
-            one unforgettable experience.
-          </p>
-
-        </div>
-
-        <div className="event-overview-grid">
-
-          <div className="overview-card">
-
-            <span className="overview-number">
-              01
-            </span>
-
-            <div className="overview-line"></div>
-
-            <h3>
-              Live Performances
-            </h3>
-
-            <p>
-              Experience live music and performances
-              throughout the evening.
-            </p>
-
-          </div>
-
-          <div className="overview-card">
-
-            <span className="overview-number">
-              02
-            </span>
-
-            <div className="overview-line"></div>
-
-            <h3>
-              Vibrant Atmosphere
-            </h3>
-
-            <p>
-              Enjoy an energetic setting created for
-              music lovers and good moments.
-            </p>
-
-          </div>
-
-          <div className="overview-card">
-
-            <span className="overview-number">
-              03
-            </span>
-
-            <div className="overview-line"></div>
-
-            <h3>
-              Shared Experiences
-            </h3>
-
-            <p>
-              Meet new people, enjoy the music, and
-              make memories together.
-            </p>
-
-          </div>
 
         </div>
 
@@ -202,11 +159,11 @@ function EventDetails({ onNavigate }) {
         <div className="event-cta-content">
 
           <p className="event-details-label">
-            18 SEP 2026 · HYDERABAD
+            {dateStr} · {venueName}
           </p>
 
           <h2>
-            Your night
+            Your experience
             <br />
             <span>starts here.</span>
           </h2>
@@ -216,12 +173,10 @@ function EventDetails({ onNavigate }) {
         <div className="event-cta-action">
 
           <p>
-            Secure your place at Live Music Night.
+            Secure your place at {event.title}.
           </p>
 
-          <button
-            onClick={() => onNavigate("eventRegistration")}
-          >
+          <button onClick={goToRegistration}>
             Register Now
             <span>→</span>
           </button>
