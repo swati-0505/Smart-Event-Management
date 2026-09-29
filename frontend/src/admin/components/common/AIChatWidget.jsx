@@ -1,13 +1,14 @@
 // AIChatWidget.jsx
 // Responsive AI chat widget — floating button bottom-right.
 // Mobile: full screen. Tablet/Desktop: floating panel.
-// Connected to FastAPI: POST /api/chat (JWT required)
+// Connected to FastAPI: POST /api/chat (JWT required) or /api/public/chat (guest)
 
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, X, Sparkles } from "lucide-react";
 
 // ---- CONFIG: change these if needed ----
 const API_URL = "http://localhost:8000/api/chat";
+const GUEST_API_URL = "http://localhost:8000/api/public/chat";
 const TOKEN_KEY = "admin-auth-token"; // key used in localStorage.setItem(...) at login
 // ----------------------------------------
 
@@ -31,7 +32,7 @@ const quickPrompts = [
   "Generate report",
 ];
 
-function AIChatWidget() {
+function AIChatWidget({ guest = false }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
@@ -75,8 +76,10 @@ function AIChatWidget() {
     setIsTyping(true);
 
     try {
-      const token = localStorage.getItem(TOKEN_KEY);
-      const res = await fetch(API_URL, {
+      const token = guest ? null : localStorage.getItem(TOKEN_KEY);
+      const url = guest ? GUEST_API_URL : API_URL;
+
+      const res = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -86,7 +89,11 @@ function AIChatWidget() {
       });
 
       if (res.status === 401) {
-        throw new Error("Session expired. Please log in again.");
+        throw new Error(
+          guest
+            ? "Guest chat isn't available right now."
+            : "Session expired. Please log in again."
+        );
       }
       if (!res.ok) {
         throw new Error(`Server error (${res.status})`);
@@ -178,10 +185,9 @@ function AIChatWidget() {
                     <Bot size={12} className="text-white" />
                   </div>
                 )}
-
                 <div className={`max-w-[85%] sm:max-w-[80%] ${msg.role === "user" ? "text-right" : ""}`}>
                   <div
-                    className={`whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed sm:text-sm ${
+                    className={`whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed text-left sm:text-sm ${
                       msg.role === "user"
                         ? "bg-indigo-600 text-white"
                         : "bg-theme-tertiary text-theme-secondary"
@@ -193,7 +199,6 @@ function AIChatWidget() {
                 </div>
               </div>
             ))}
-
             {isTyping && (
               <div className="flex gap-2">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-purple-600">

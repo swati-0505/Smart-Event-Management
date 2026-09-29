@@ -8,8 +8,7 @@ const gradients = [
   "from-purple-500 to-pink-600",
   "from-orange-500 to-red-600",
 ];
-
-function UpcomingEvents({ onViewAll }) {
+function UpcomingEvents({ onViewAll, onSelectEvent }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -89,8 +88,9 @@ function UpcomingEvents({ onViewAll }) {
               <button
                 key={event.id}
                 type="button"
+                onClick={() => onSelectEvent && onSelectEvent(event)}
                 className="flex w-full items-center gap-4 rounded-xl border border-theme bg-theme-secondary p-3 text-left transition hover:border-indigo-200 hover:bg-theme-hover"
-              >
+                >
                 {/* Image */}
                 {image ? (
                   <img
