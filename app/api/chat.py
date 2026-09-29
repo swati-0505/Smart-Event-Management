@@ -60,8 +60,29 @@ def chat(
         latency_ms=round(result.latency_ms, 2),
         status=result.status,
     )
-
-
+@router.post("/public/chat", response_model=ChatResponse)
+def public_chat(
+    payload: ChatRequest,
+    db: Session = Depends(get_db),
+) -> ChatResponse:
+    """Guest chat — no login required. General info only, no personal data."""
+    result = run_agent(
+        db=db,
+        user_id=None,
+        role="guest",
+        message=payload.message,
+        session_id=payload.session_id,
+    )
+    return ChatResponse(
+        reply=result.reply,
+        session_id=result.session_id,
+        run_id=result.run_id,
+        intent=result.intent,
+        tools_used=result.tools_used,
+        sources=result.sources,
+        latency_ms=round(result.latency_ms, 2),
+        status=result.status,
+    )
 @router.get("/chat/sessions", response_model=list[SessionSummary])
 def list_sessions(
     db: Session = Depends(get_db),

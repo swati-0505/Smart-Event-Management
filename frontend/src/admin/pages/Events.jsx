@@ -1,7 +1,7 @@
 // Events.jsx
 // Events management — with advanced filters + CSV export.
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Plus, Search, MoreVertical, Clock, MapPin, Users,
   Edit2, Trash2, Calendar, Check, Download,
@@ -21,6 +21,7 @@ import {
   getEvents, createEvent, updateEvent, deleteEvent,
 } from "../services/eventService";
 import { toast } from "sonner";
+import { getVenues } from "../services/venueService";
 
 const STATUS_VARIANT = {
   Upcoming: "info",
@@ -69,6 +70,15 @@ const EMPTY_FORM = {
 function Events() {
   const { data: events, setData: setEvents, loading, usingFallback } =
     useApiWithFallback(getEvents, SAMPLE);
+      const [venues, setVenuesList] = useState([]);
+      useEffect(() => {
+        getVenues()
+        .then((data) => {
+          const list = Array.isArray(data) ? data : data?.venues || data?.data || [];
+          setVenuesList(list);
+        })
+        .catch(() => setVenuesList([]));
+    }, []);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -165,9 +175,10 @@ function Events() {
       };
       console.log("Submitting event form:", payload);
       if (editing) {
-        const updatedEvent = await updateEvent(editing.id, payload);
+        const eventId = editing.event_id || editing.id;
+        const updatedEvent = await updateEvent(eventId, payload);
         setEvents((prev) =>
-          prev.map((x) => (x.id === editing.id ? {...x, ...payload, ...updatedEvent ||{}} : x))
+          prev.map((x) => ((x.event_id || x.id) === eventId ? {...x, ...payload, ...updatedEvent ||{}} : x))
         );
         toast.success("Event updated");
       } else {
@@ -181,7 +192,7 @@ function Events() {
   setEditing(null);
   setForm(EMPTY_FORM);
     } catch (err) {
-      toast.error(error?.message || "Failed to save event");
+      toast.error(err?.message || "Failed to save event");
     }
   }
   async function confirmDelete() {
@@ -421,16 +432,21 @@ function Events() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
+              <div>
               <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">Venue</label>
-              <input
-                type="text"
+              <select
                 required
                 value={form.venue}
                 onChange={(e) => setForm({ ...form, venue: e.target.value })}
-                placeholder="Auditorium"
                 className="w-full rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none focus:border-indigo-400"
-              />
+              >
+                <option value="">Select a venue</option>
+                {venues.map((v) => (
+                  <option key={v.id || v.venue_id} value={v.name}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">Capacity</label>

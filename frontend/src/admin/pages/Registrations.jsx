@@ -386,12 +386,9 @@ function Registrations() {
             </div>
           </div>
         ) : (
-          <div className="card overflow-hidden">
-            {usingFallback && (
-              <div className="border-b border-amber-300 bg-amber-100 px-5 py-2.5 text-[11px] font-bold text-amber-900">
-                Demo data — connect backend to see real attendees.
-              </div>
-            )}
+            <div className="card overflow-hidden">
+            <div className="overflow-x-auto">
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-187.5">
                 <thead>
