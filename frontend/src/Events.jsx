@@ -1,26 +1,71 @@
 import { useEffect, useState } from "react";
 import "./Events.css";
 import eventService from "./admin/services/eventService";
-const CATEGORY_IMAGES = {
-  "Tech Conference": "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=85",
-  "Technology": "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=85",
-  "Workshop": "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=85",
-  "Networking": "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=85",
-  "Corporate Event": "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=900&q=85",
-  "Business": "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=900&q=85",
-  "Cultural": "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=85",
-  "International": "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=85",
-  "Office": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=900&q=85",
-  "Personal": "https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=900&q=85",
-  "Misc": "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=900&q=85",
-  "Holiday": "https://images.unsplash.com/photo-1482517967863-00e15c9b44be?auto=format&fit=crop&w=900&q=85",
+
+const IMG = (id) =>
+  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=900&q=85`;
+
+const IMAGES = {
+  tech: IMG("photo-1505373877841-8d25f7d46678"),
+  workshop: IMG("photo-1517048676732-d65bc937f952"),
+  networking: IMG("photo-1511578314322-379afb476865"),
+  business: IMG("photo-1540575467063-178a50c2df87"),
+  cultural: IMG("photo-1492684223066-81342ee5ff30"),
+  office: IMG("photo-1522071820081-009f0129c71c"),
+  personal: IMG("photo-1531058020387-3be344556be6"),
+  misc: IMG("photo-1501281668745-f7f57925c3b4"),
+  holiday: IMG("photo-1482517967863-00e15c9b44be"),
 };
 
-const DEFAULT_EVENT_IMAGE =
-  "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=900&q=85";
+// "TECHNICA;", "Tech Conference", "Technology" sab ko tech image milti hai
+const CATEGORY_KEYWORDS = [
+  { match: ["tech", "ai", "ml", "hack", "coding", "summit"], image: IMAGES.tech },
+  { match: ["workshop", "training", "class", "seminar"], image: IMAGES.workshop },
+  { match: ["network", "meetup", "startup"], image: IMAGES.networking },
+  { match: ["business", "corporate", "conference"], image: IMAGES.business },
+  { match: ["cultur", "fest", "music", "concert", "international", "dance"], image: IMAGES.cultural },
+  { match: ["office", "team"], image: IMAGES.office },
+  { match: ["personal", "party", "birthday", "wedding"], image: IMAGES.personal },
+  { match: ["holiday", "trip", "travel"], image: IMAGES.holiday },
+];
 
-function getEventImage(event) {
-  return event.image || CATEGORY_IMAGES[event.category] || DEFAULT_EVENT_IMAGE;
+// Kuch match na ho to event id se alag-alag image milti hai
+const FALLBACK_POOL = Object.values(IMAGES);
+
+function hashKey(value) {
+  const s = String(value ?? "");
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+function getEventImage(event, index) {
+  const own = event.image || event.image_url;
+  if (own) return own;
+
+  const text = `${event.category || ""} ${event.title || ""}`.toLowerCase();
+  for (const group of CATEGORY_KEYWORDS) {
+    if (group.match.some((k) => text.includes(k))) return group.image;
+  }
+
+  return FALLBACK_POOL[hashKey(event.id ?? event.title ?? index) % FALLBACK_POOL.length];
+}
+
+// "TECHNICA;" -> "TECHNICA"
+function cleanLabel(value) {
+  return String(value || "").replace(/[;:,.\s]+$/, "").trim();
+}
+
+function toDate(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function formatDate(value) {
+  const d = toDate(value);
+  if (!d) return value || "Date TBA";
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 function Events({ onNavigate, onSelectEvent }) {
@@ -31,15 +76,32 @@ function Events({ onNavigate, onSelectEvent }) {
   const loadEvents = async () => {
     try {
       setLoading(true);
+      setError("");
 
       const data = await eventService.getEvents();
+      const list = Array.isArray(data) ? data : [];
 
-      console.log("EVENTS FROM BACKEND:", data);
+      // Sirf upcoming events (aaj ya uske baad), jaldi wale pehle
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-      setEvents(data);
-    } catch (error) {
-      console.error("FAILED TO LOAD EVENTS:", error);
-      setError("Failed to load events.");
+      const upcoming = list
+        .filter((e) => {
+          const d = toDate(e.date);
+          return !d || d >= today;
+        })
+        .sort((a, b) => {
+          const da = toDate(a.date);
+          const db = toDate(b.date);
+          if (!da) return 1;
+          if (!db) return -1;
+          return da - db;
+        });
+
+      setEvents(upcoming);
+    } catch (err) {
+      console.error("FAILED TO LOAD EVENTS:", err);
+      setError("Failed to load events. Check that the backend is running.");
     } finally {
       setLoading(false);
     }
@@ -49,57 +111,36 @@ function Events({ onNavigate, onSelectEvent }) {
     loadEvents();
   }, []);
 
-  return (
-    <div className="events-page">
-
-      {/* NAVBAR */}
-      <nav className="events-nav">
-
-        <div className="logo">
-          Smart<span>Event</span>
-        </div>
-
-        <div className="events-nav-links">
-          <button onClick={() => onNavigate("home")}>
-            Home
-          </button>
-
-          <button
-  onClick={() => {
+  const openEvent = (event) => {
     if (onSelectEvent) {
       onSelectEvent("eventDetails", event);
     } else {
       onNavigate("eventDetails");
     }
-  }}
->
-  View Event →
-</button>
+  };
 
-          <button onClick={() => onNavigate("about")}>
-            About
-          </button>
-
-          <button onClick={() => onNavigate("contact")}>
-            Contact
-          </button>
+  return (
+    <div className="events-page">
+      {/* NAVBAR */}
+      <nav className="events-nav">
+        <div className="logo">
+          Smart<span>Event</span>
         </div>
 
-        <button
-          className="login-btn"
-          onClick={() => onNavigate("login")}
-        >
+        <div className="events-nav-links">
+          <button onClick={() => onNavigate("home")}>Home</button>
+          <button onClick={() => onNavigate("about")}>About</button>
+          <button onClick={() => onNavigate("contact")}>Contact</button>
+        </div>
+
+        <button className="login-btn" onClick={() => onNavigate("login")}>
           Login
         </button>
-
       </nav>
 
       {/* HERO */}
       <section className="events-hero">
-
-        <p className="eyebrow">
-          SMART EVENT MANAGEMENT
-        </p>
+        <p className="eyebrow">SMART EVENT MANAGEMENT</p>
 
         <h1>
           Discover experiences
@@ -111,81 +152,61 @@ function Events({ onNavigate, onSelectEvent }) {
           Explore concerts, technology summits, business gatherings,
           cultural festivals and more — all in one place.
         </p>
-
       </section>
 
       {/* EVENTS */}
       <section className="events-list">
-
         <div className="events-heading">
-          <p className="eyebrow">
-            EXPLORE
-          </p>
-
-          <h2>
-            Upcoming Events
-          </h2>
-
-          <p>
-            Find experiences that match your interests.
-          </p>
+          <p className="eyebrow">EXPLORE</p>
+          <h2>Upcoming Events</h2>
+          <p>Find experiences that match your interests.</p>
         </div>
+
+        {loading && <p className="events-intro">Loading events...</p>}
+
+        {!loading && error && (
+          <div className="events-intro">
+            <p>{error}</p>
+            <button onClick={loadEvents}>Try again</button>
+          </div>
+        )}
+
+        {!loading && !error && events.length === 0 && (
+          <p className="events-intro">No upcoming events right now. Check back soon.</p>
+        )}
 
         <div className="events-grid">
-
           {events.map((event, index) => (
-            <div className="event-card" key={index}>
-
-            <div className="event-image">
-  <img
-    src={getEventImage(event)}
-    alt={event.title}
-  />
-</div>
-
-              <div className="event-info">
-
-                <span className="event-category">
-                  {event.category}
-                </span>
-
-                <h3>
-                  {event.title}
-                </h3>
-
-                <p className="event-location">
-                  📍 {event.location}
-                </p>
-
-                <div className="event-bottom">
-
-                  <span>
-                    {event.date}
-                  </span>
-
-                  <button
-                    onClick={() => {
-                      if (onSelectEvent) {
-                        onSelectEvent("eventDetails", event);
-                      } else {
-                        onNavigate("eventDetails");
-                      }
-                    }}
-                  >
-                    View Event →
-                  </button>
-
-                </div>
-
+            <div className="event-card" key={event.id ?? index}>
+              <div className="event-image">
+                <img
+                  src={getEventImage(event, index)}
+                  alt={event.title}
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = IMAGES.misc;
+                  }}
+                />
               </div>
 
+              <div className="event-info">
+                <span className="event-category">{cleanLabel(event.category)}</span>
+
+                <h3>{event.title}</h3>
+
+                <p className="event-location">📍 {event.location || "TBA"}</p>
+
+                <div className="event-bottom">
+                  <span>{formatDate(event.date)}</span>
+
+                  <button onClick={() => openEvent(event)}>View Event →</button>
+                </div>
+              </div>
             </div>
           ))}
-
         </div>
-
       </section>
-
     </div>
   );
 }

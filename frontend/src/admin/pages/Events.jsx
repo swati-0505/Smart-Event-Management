@@ -1,516 +1,219 @@
-// Events.jsx
-// Events management — with advanced filters + CSV export.
+import { useEffect, useState } from "react";
+import "../../Events.css";
+import eventService from "../services/eventService";
 
-import { useState, useMemo, useEffect } from "react";
-import {
-  Plus, Search, MoreVertical, Clock, MapPin, Users,
-  Edit2, Trash2, Calendar, Check, Download,
-} from "lucide-react";
-import Badge from "../components/common/Badge";
-import Modal from "../components/common/Modal";
-import ConfirmDialog from "../components/common/ConfirmDialog";
-import AdvancedFilters, {
-  FilterSection,
-  FilterChips,
-  FilterCheckboxList,
-  FilterTrigger,
-} from "../components/common/AdvancedFilters";
-import { useApiWithFallback } from "../hooks/useApiWithFallback";
-import { exportToCsv } from "../utils/exportCsv";
-import {
-  getEvents, createEvent, updateEvent, deleteEvent,
-} from "../services/eventService";
-import { toast } from "sonner";
-import { getVenues } from "../services/venueService";
+const IMG = (id) =>
+  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=900&q=85`;
 
-const STATUS_VARIANT = {
-  Upcoming: "info",
-  Active: "success",
-  Today: "warning",
-  Cancelled: "danger",
-  Completed: "neutral",
+const IMAGES = {
+  tech: IMG("photo-1505373877841-8d25f7d46678"),
+  workshop: IMG("photo-1517048676732-d65bc937f952"),
+  networking: IMG("photo-1511578314322-379afb476865"),
+  business: IMG("photo-1540575467063-178a50c2df87"),
+  cultural: IMG("photo-1492684223066-81342ee5ff30"),
+  office: IMG("photo-1522071820081-009f0129c71c"),
+  personal: IMG("photo-1531058020387-3be344556be6"),
+  misc: IMG("photo-1501281668745-f7f57925c3b4"),
+  holiday: IMG("photo-1482517967863-00e15c9b44be"),
 };
 
-const CATEGORIES = [
-  "Tech Conference",
-  "Workshop",
-  "Networking",
-  "Corporate Event",
-  "Technology",
-  "Business",
-  "Cultural",
+// Category text is matched by keyword, so "TECHNICA;", "Tech Conference" and
+// "Technology" all get the tech image.
+const CATEGORY_KEYWORDS = [
+  { match: ["tech", "ai", "ml", "hack", "coding", "summit"], image: IMAGES.tech },
+  { match: ["workshop", "training", "class", "seminar"], image: IMAGES.workshop },
+  { match: ["network", "meetup", "startup"], image: IMAGES.networking },
+  { match: ["business", "corporate", "conference"], image: IMAGES.business },
+  { match: ["cultur", "fest", "music", "concert", "international", "dance"], image: IMAGES.cultural },
+  { match: ["office", "team"], image: IMAGES.office },
+  { match: ["personal", "party", "birthday", "wedding"], image: IMAGES.personal },
+  { match: ["holiday", "trip", "travel"], image: IMAGES.holiday },
 ];
 
-const DATE_RANGES = ["Today", "This Week", "This Month", "This Year"];
+// Used when nothing matches: pick by event id so different events
+// get different images instead of all sharing one.
+const FALLBACK_POOL = Object.values(IMAGES);
 
-const CSV_COLUMNS = [
-  { key: "title", label: "Title" },
-  { key: "category", label: "Category" },
-  { key: "date", label: "Date" },
-  { key: "time", label: "Time" },
-  { key: "venue", label: "Venue", transform: (e) => e.venue || e.venue_name || "" },
-  { key: "capacity", label: "Capacity" },
-  { key: "registered", label: "Registered" },
-  { key: "status", label: "Status" },
-];
+function hashKey(value) {
+  const s = String(value ?? "");
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
 
-const SAMPLE = [
-  { id: "s1", title: "AI for a Better Tomorrow", category: "Tech Conference", date: "20 Sep 2026", time: "9:00 AM - 5:00 PM", venue: "Chennai Convention Center", capacity: 500, registered: 420, status: "Upcoming" },
-  { id: "s2", title: "Product Innovation Workshop", category: "Workshop", date: "25 Sep 2026", time: "10:00 AM - 1:00 PM", venue: "T-Hub, Chennai", capacity: 120, registered: 98, status: "Upcoming" },
-  { id: "s3", title: "Networking Night", category: "Networking", date: "28 Sep 2026", time: "6:00 PM - 9:00 PM", venue: "ITC Grand Chola, Chennai", capacity: 200, registered: 156, status: "Upcoming" },
-  { id: "s4", title: "Annual Company Meet", category: "Corporate Event", date: "10 Oct 2026", time: "9:00 AM - 6:00 PM", venue: "Chennai Trade Center", capacity: 800, registered: 650, status: "Active" },
-  { id: "s5", title: "Tech Summit 2026", category: "Technology", date: "15 Nov 2026", time: "10:00 AM - 4:00 PM", venue: "Main Auditorium", capacity: 500, registered: 340, status: "Upcoming" },
-  { id: "s6", title: "Startup Pitch Night", category: "Business", date: "22 Nov 2026", time: "5:00 PM - 9:00 PM", venue: "Innovation Hub", capacity: 150, registered: 120, status: "Upcoming" },
-];
+function getEventImage(event, index) {
+  // 1. Image saved with the event
+  const own = event.image || event.image_url;
+  if (own) return own;
 
-const EMPTY_FORM = {
-  title: "", date: "", time: "", venue: "", capacity: "", category: "", status: "Upcoming",
-};
-
-function Events() {
-  const { data: events, setData: setEvents, loading, usingFallback } =
-    useApiWithFallback(getEvents, SAMPLE);
-      const [venues, setVenuesList] = useState([]);
-      useEffect(() => {
-        getVenues()
-        .then((data) => {
-          const list = Array.isArray(data) ? data : data?.venues || data?.data || [];
-          setVenuesList(list);
-        })
-        .catch(() => setVenuesList([]));
-    }, []);
-
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [categories, setCategories] = useState([]);
-  const [dateRange, setDateRange] = useState("All");
-  const [showFilters, setShowFilters] = useState(false);
-
-  const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [openMenu, setOpenMenu] = useState(null);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-
-  const activeFilterCount = useMemo(() => {
-    let n = 0;
-    if (categories.length > 0) n++;
-    if (dateRange !== "All") n++;
-    return n;
-  }, [categories, dateRange]);
-
-  const filtered = useMemo(() => {
-    const s = search.trim().toLowerCase();
-    const now = new Date();
-
-    return events.filter((e) => {
-      const title = (e.title || "").toLowerCase();
-      const venue = (e.venue || e.venue_name || "").toLowerCase();
-      if (s && !title.includes(s) && !venue.includes(s)) return false;
-
-      if (statusFilter !== "All" && e.status !== statusFilter) return false;
-
-      if (categories.length > 0 && !categories.includes(e.category)) return false;
-
-      if (dateRange !== "All" && e.date) {
-        const eventDate = new Date(e.date);
-        if (isNaN(eventDate)) return false;
-        const diffDays = Math.floor((eventDate - now) / (1000 * 60 * 60 * 24));
-        if (dateRange === "Today" && diffDays !== 0) return false;
-        if (dateRange === "This Week" && (diffDays < 0 || diffDays > 7)) return false;
-        if (dateRange === "This Month" && (diffDays < 0 || diffDays > 30)) return false;
-        if (dateRange === "This Year" && (diffDays < 0 || diffDays > 365)) return false;
-      }
-
-      return true;
-    });
-  }, [events, search, statusFilter, categories, dateRange]);
-
-  function resetFilters() {
-    setCategories([]);
-    setDateRange("All");
+  // 2. Match by category / title keywords
+  const text = `${event.category || ""} ${event.title || ""}`.toLowerCase();
+  for (const group of CATEGORY_KEYWORDS) {
+    if (group.match.some((k) => text.includes(k))) return group.image;
   }
 
-  function handleExport() {
+  // 3. Different fallback for each event
+  return FALLBACK_POOL[hashKey(event.id ?? event.title ?? index) % FALLBACK_POOL.length];
+}
+
+// "TECHNICA;" -> "TECHNICA"
+function cleanLabel(value) {
+  return String(value || "").replace(/[;:,.\s]+$/, "").trim();
+}
+
+// Returns a Date, or null if the value can't be parsed
+function toDate(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function formatDate(value) {
+  const d = toDate(value);
+  if (!d) return value || "Date TBA";
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function Events({ onNavigate, onSelectEvent }) {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadEvents = async () => {
     try {
-      exportToCsv(filtered, CSV_COLUMNS, "events");
-      toast.success(`Exported ${filtered.length} events`);
+      setLoading(true);
+      setError("");
+
+      const data = await eventService.getEvents();
+      const list = Array.isArray(data) ? data : [];
+
+      // Show only upcoming events (today or later), soonest first.
+      // Events whose date can't be read are kept so nothing disappears silently.
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const upcoming = list
+        .filter((e) => {
+          const d = toDate(e.date);
+          return !d || d >= today;
+        })
+        .sort((a, b) => {
+          const da = toDate(a.date);
+          const db = toDate(b.date);
+          if (!da) return 1;
+          if (!db) return -1;
+          return da - db;
+        });
+
+      setEvents(upcoming);
     } catch (err) {
-      toast.error(err.message || "Export failed");
+      console.error("FAILED TO LOAD EVENTS:", err);
+      setError("Failed to load events. Check that the backend is running.");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  function openCreate() {
-    setEditing(null);
-    setForm(EMPTY_FORM);
-    setShowModal(true);
-  }
+  useEffect(() => {
+    loadEvents();
+  }, []);
 
-  function openEdit(ev) {
-    setEditing(ev);
-    setForm({
-      title: ev.title || "",
-      date: ev.date || "",
-      time: ev.time || "",
-      venue: ev.venue || ev.venue_name || "",
-      capacity: ev.capacity || "",
-      category: ev.category || "",
-      status: ev.status || "Upcoming",
-    });
-    setShowModal(true);
-    setOpenMenu(null);
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    try{
-      const payload={
-        title: form.title,
-        date: form.date,
-        time: form.time,
-        venue: form.venue,
-        capacity: parseInt(form.capacity, 10),
-        category: form.category,
-        status: form.status,
-      };
-      console.log("Submitting event form:", payload);
-      if (editing) {
-        const eventId = editing.event_id || editing.id;
-        const updatedEvent = await updateEvent(eventId, payload);
-        setEvents((prev) =>
-          prev.map((x) => ((x.event_id || x.id) === eventId ? {...x, ...payload, ...updatedEvent ||{}} : x))
-        );
-        toast.success("Event updated");
-      } else {
-        const createdEvent = await createEvent(payload);
-        console.log("Created event:", createdEvent);
-        setEvents((prev) => [...prev, createdEvent || {id:'new-${Date.now()}', ...payload, registered: 0},
-          ...prev,]);
-    toast.success("Event updated Successfully");
-  }
-  setShowModal(false);
-  setEditing(null);
-  setForm(EMPTY_FORM);
-    } catch (err) {
-      toast.error(err?.message || "Failed to save event");
+  const openEvent = (event) => {
+    if (onSelectEvent) {
+      onSelectEvent("eventDetails", event);
+    } else {
+      onNavigate("eventDetails");
     }
-  }
-  async function confirmDelete() {
-    const id = deleteTarget?.id;
-    if (!id) return;
-    setEvents((prev) => prev.filter((x) => x.id !== id));
-    try { await deleteEvent(id); } catch { /* offline ok */ }
-    toast.success("Event deleted");
-  }
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-theme-primary">Events</h1>
-          <p className="mt-1 text-sm text-theme-muted">
-            Create, manage, and monitor all your events.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleExport}
-            disabled={filtered.length === 0}
-            className="btn-secondary disabled:opacity-50"
-          >
-            <Download size={16} />
-            Export
-          </button>
-          <button type="button" onClick={openCreate} className="btn-primary">
-            <Plus size={16} /> Create Event
-          </button>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="card relative flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex w-full max-w-sm items-center gap-2 rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5">
-          <Search size={15} className="text-theme-muted" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search events..."
-            className="min-w-0 flex-1 bg-transparent text-sm text-theme-primary outline-none placeholder:text-theme-dim"
-          />
+    <div className="events-page">
+      {/* NAVBAR */}
+      <nav className="events-nav">
+        <div className="logo">
+          Smart<span>Event</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none"
-          >
-            {["All", "Upcoming", "Active", "Today", "Cancelled"].map((o) => (
-              <option key={o}>{o}</option>
-            ))}
-          </select>
+        <div className="events-nav-links">
+          <button onClick={() => onNavigate("home")}>Home</button>
+          <button onClick={() => onNavigate("about")}>About</button>
+          <button onClick={() => onNavigate("contact")}>Contact</button>
+        </div>
 
-          <div className="relative">
-            <FilterTrigger
-              onClick={() => setShowFilters((v) => !v)}
-              activeCount={activeFilterCount}
-            />
+        <button className="login-btn" onClick={() => onNavigate("login")}>
+          Login
+        </button>
+      </nav>
 
-            <AdvancedFilters
-              isOpen={showFilters}
-              onClose={() => setShowFilters(false)}
-              onReset={resetFilters}
-              activeCount={activeFilterCount}
-            >
-              <FilterSection title="Date Range">
-                <FilterChips
-                  options={["All", ...DATE_RANGES]}
-                  value={dateRange}
-                  onChange={setDateRange}
-                />
-              </FilterSection>
+      {/* HERO */}
+      <section className="events-hero">
+        <p className="eyebrow">SMART EVENT MANAGEMENT</p>
 
-              <FilterSection title="Categories">
-                <FilterCheckboxList
-                  options={CATEGORIES}
-                  value={categories}
-                  onChange={setCategories}
-                />
-              </FilterSection>
-            </AdvancedFilters>
+        <h1>
+          Discover experiences
+          <br />
+          <span>worth remembering.</span>
+        </h1>
+
+        <p className="events-intro">
+          Explore concerts, technology summits, business gatherings,
+          cultural festivals and more — all in one place.
+        </p>
+      </section>
+
+      {/* EVENTS */}
+      <section className="events-list">
+        <div className="events-heading">
+          <p className="eyebrow">EXPLORE</p>
+          <h2>Upcoming Events</h2>
+          <p>Find experiences that match your interests.</p>
+        </div>
+
+        {loading && <p className="events-intro">Loading events...</p>}
+
+        {!loading && error && (
+          <div className="events-intro">
+            <p>{error}</p>
+            <button onClick={loadEvents}>Try again</button>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Content */}
-      {loading ? (
-        <div className="card p-12 text-center text-sm text-theme-muted">
-          Loading events...
-        </div>
-      ) : (
-        <>
-          {usingFallback && (
-            <div className="rounded-lg border border-amber-300 bg-amber-100 px-4 py-2.5 text-[11px] font-bold text-amber-900">
-              Demo data — connect backend to see real events.
-            </div>
-          )}
+        {!loading && !error && events.length === 0 && (
+          <p className="events-intro">No upcoming events right now. Check back soon.</p>
+        )}
 
-          {filtered.length === 0 ? (
-            <div className="card">
-              <div className="empty-state">
-                <div className="empty-state__icon">
-                  <Calendar size={24} />
+        <div className="events-grid">
+          {events.map((event, index) => (
+            <div className="event-card" key={event.id ?? index}>
+              <div className="event-image">
+                <img
+                  src={getEventImage(event, index)}
+                  alt={event.title}
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = IMAGES.misc;
+                  }}
+                />
+              </div>
+
+              <div className="event-info">
+                <span className="event-category">{cleanLabel(event.category)}</span>
+
+                <h3>{event.title}</h3>
+
+                <p className="event-location">📍 {event.location || "TBA"}</p>
+
+                <div className="event-bottom">
+                  <span>{formatDate(event.date)}</span>
+
+                  <button onClick={() => openEvent(event)}>View Event →</button>
                 </div>
-                <p className="empty-state__title">No events found</p>
-                <p className="empty-state__desc">
-                  Try adjusting filters or create a new event to get started.
-                </p>
               </div>
             </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {filtered.map((event, idx) => (
-                <div
-                  key={event.id}
-                  className={`card card--metric card-interactive animate-fade-in-up stagger-${(idx % 6) + 1} relative p-5`}
-                >
-                  <div className="flex items-start justify-between">
-                    <Badge variant={STATUS_VARIANT[event.status] || "neutral"}>
-                      {event.status}
-                    </Badge>
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setOpenMenu(openMenu === event.id ? null : event.id)}
-                        className="btn-ghost"
-                      >
-                        <MoreVertical size={16} />
-                      </button>
-                      {openMenu === event.id && (
-                        <div className="animate-scale-in absolute right-0 top-full z-20 mt-1 w-36 overflow-hidden rounded-xl border border-theme bg-theme-secondary shadow-lg">
-                          <button
-                            type="button"
-                            onClick={() => openEdit(event)}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-xs text-theme-secondary transition hover:bg-theme-hover"
-                          >
-                            <Edit2 size={12} /> Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDeleteTarget(event);
-                              setOpenMenu(null);
-                            }}
-                            className="flex w-full items-center gap-2 border-t border-theme px-3 py-2 text-xs text-red-500 transition hover:bg-red-50"
-                          >
-                            <Trash2 size={12} /> Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <h3 className="mt-3 text-lg font-bold text-theme-primary">
-                    {event.title}
-                  </h3>
-                  <p className="mt-1 text-xs font-medium text-indigo-600">
-                    {event.category}
-                  </p>
-
-                  <div className="mt-4 space-y-2 text-xs text-theme-muted">
-                    <p className="flex items-center gap-2"><Calendar size={13} /> {event.date}</p>
-                    <p className="flex items-center gap-2"><Clock size={13} /> {event.time}</p>
-                    <p className="flex items-center gap-2"><MapPin size={13} /> {event.venue || event.venue_name}</p>
-                    <p className="flex items-center gap-2">
-                      <Users size={13} /> {event.registered || 0}/{event.capacity} registered
-                    </p>
-                  </div>
-
-                  <div className="mt-4 progress-bar">
-                    <div
-                      className="progress-fill bg-indigo-500"
-                      style={{
-                        width: `${event.capacity ? ((event.registered || 0) / event.capacity) * 100 : 0}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Create/Edit Modal */}
-      <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title={editing ? "Edit Event" : "Create New Event"}
-        maxWidth="max-w-2xl"
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">
-              Event Title
-            </label>
-            <input
-              type="text"
-              required
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="e.g., Tech Fest 2025"
-              className="w-full rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none focus:border-indigo-400"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">Date</label>
-              <input
-                type="text"
-                required
-                value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-                placeholder="08 Jul 2025"
-                className="w-full rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none focus:border-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">Time</label>
-              <input
-                type="text"
-                required
-                value={form.time}
-                onChange={(e) => setForm({ ...form, time: e.target.value })}
-                placeholder="10:00 AM - 4:00 PM"
-                className="w-full rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none focus:border-indigo-400"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-              <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">Venue</label>
-              <select
-                required
-                value={form.venue}
-                onChange={(e) => setForm({ ...form, venue: e.target.value })}
-                className="w-full rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none focus:border-indigo-400"
-              >
-                <option value="">Select a venue</option>
-                {venues.map((v) => (
-                  <option key={v.id || v.venue_id} value={v.name}>
-                    {v.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">Capacity</label>
-              <input
-                type="number"
-                required
-                value={form.capacity}
-                onChange={(e) => setForm({ ...form, capacity: e.target.value })}
-                placeholder="500"
-                className="w-full rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none focus:border-indigo-400"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">Category</label>
-              <input
-                type="text"
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-                placeholder="Technology"
-                className="w-full rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none focus:border-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-theme-secondary">Status</label>
-              <select
-                value={form.status}
-                onChange={(e) => setForm({ ...form, status: e.target.value })}
-                className="w-full rounded-xl border border-theme bg-theme-tertiary px-3 py-2.5 text-sm text-theme-primary outline-none focus:border-indigo-400"
-              >
-                {["Upcoming", "Active", "Today", "Cancelled", "Completed"].map((s) => (
-                  <option key={s}>{s}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={() => setShowModal(false)}
-              className="btn-secondary w-full sm:w-auto"
-            >
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary w-full sm:w-auto">
-              <Check size={14} />
-              {editing ? "Update Event" : "Create Event"}
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      <ConfirmDialog
-        isOpen={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={confirmDelete}
-        title="Delete Event?"
-        message={`Are you sure you want to delete "${deleteTarget?.title}"? This action cannot be undone.`}
-        confirmText="Delete"
-        variant="danger"
-      />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
