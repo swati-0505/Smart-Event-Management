@@ -4,6 +4,10 @@ import PageWrapper from "../components/common/PageWrapper";
 import Badge from "../components/common/Badge";
 import { useApiWithFallback } from "../hooks/useApiWithFallback";
 
+// Change this if your backend runs somewhere else
+const API = "http://localhost:8000";
+
+// Only shown when VITE_DEMO_MODE=true and the API request fails
 const SAMPLE = [
   { id: "s1", user: "Rahul Sharma", event: "Tech Summit 2026", rating: 5, comment: "Great event! Very well organized. The speakers were excellent and the venue was perfect.", date: "20 Aug 2026" },
   { id: "s2", user: "Ananya Verma", event: "Design Workshop", rating: 4, comment: "Good workshop, could be more hands-on. The theory part was a bit long.", date: "22 Aug 2026" },
@@ -12,7 +16,16 @@ const SAMPLE = [
   { id: "s5", user: "Karan Patel", event: "Cultural Fest", rating: 5, comment: "Best cultural event I've attended! The performances were outstanding.", date: "28 Aug 2026" },
   { id: "s6", user: "Sneha Reddy", event: "Tech Summit 2026", rating: 4, comment: "Well organized event. Food could be improved though.", date: "30 Aug 2026" },
 ];
-const fetchFeedback = async () => [];
+
+// Real request to the backend. Throws on any bad response so the hook can show the error.
+const fetchFeedback = async () => {
+  const res = await fetch(`${API}/api/feedback`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
+  if (!res.ok) throw new Error(`Request failed (${res.status})`);
+  return res.json();
+};
+
 function RatingStars({ rating }) {
   return (
     <div className="flex items-center gap-0.5">
@@ -26,13 +39,15 @@ function RatingStars({ rating }) {
     </div>
   );
 }
+
 function ratingVariant(rating) {
   if (rating >= 4) return "success";
   if (rating >= 3) return "warning";
   return "danger";
 }
+
 function Feedback() {
-  const { data: feedback, loading, usingFallback } =
+  const { data: feedback, loading, error, usingFallback, reload } =
     useApiWithFallback(fetchFeedback, SAMPLE);
 
   const [search, setSearch] = useState("");
@@ -55,15 +70,18 @@ function Feedback() {
       return matchS && matchF;
     });
   }, [feedback, search, filter]);
+
   const stats = useMemo(() => {
     const total = feedback.length;
-    const avg = total > 0
-      ? (feedback.reduce((sum, f) => sum + f.rating, 0) / total).toFixed(1)
-      : "0.0";
+    const avg =
+      total > 0
+        ? (feedback.reduce((sum, f) => sum + (f.rating || 0), 0) / total).toFixed(1)
+        : "0.0";
     const fiveStar = feedback.filter((f) => f.rating === 5).length;
     const lowRatings = feedback.filter((f) => f.rating <= 2).length;
     return { total, avg, fiveStar, lowRatings };
   }, [feedback]);
+
   const statCards = [
     { icon: MessageSquare, label: "Total Reviews", value: stats.total, color: "indigo" },
     { icon: Star, label: "Avg. Rating", value: stats.avg, color: "amber" },
@@ -96,6 +114,20 @@ function Feedback() {
           )}
         </div>
 
+        {/* Error banner: shows the real reason instead of hiding it */}
+        {error && (
+          <div className="flex flex-col gap-2 rounded-lg border border-red-300 bg-red-100 px-4 py-3 text-xs font-bold text-red-900 sm:flex-row sm:items-center sm:justify-between">
+            <span>Could not load feedback: {error}</span>
+            <button
+              type="button"
+              onClick={reload}
+              className="self-start rounded-md border border-red-400 px-3 py-1 text-xs font-bold hover:bg-red-200"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {statCards.map((s) => {
@@ -119,6 +151,7 @@ function Feedback() {
             );
           })}
         </div>
+
         {/* Filters */}
         <div className="card flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex w-full max-w-sm items-center gap-2 rounded-lg border border-theme bg-theme-tertiary px-3 py-2">
@@ -152,14 +185,26 @@ function Feedback() {
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
               <MessageSquare size={24} />
             </div>
-            <p className="text-sm font-semibold text-theme-primary">No feedback found</p>
-            <p className="text-xs text-theme-muted">Try changing filters or search terms.</p>
+            <p className="text-sm font-semibold text-theme-primary">
+              {error
+                ? "Feedback could not be loaded"
+                : feedback.length === 0
+                ? "No feedback yet"
+                : "No feedback found"}
+            </p>
+            <p className="text-xs text-theme-muted">
+              {error
+                ? "Check that the backend is running, then try again."
+                : feedback.length === 0
+                ? "Reviews will appear here after attendees submit them."
+                : "Try changing filters or search terms."}
+            </p>
           </div>
         ) : (
           <>
             {usingFallback && (
               <div className="rounded-lg border border-amber-300 bg-amber-100 px-4 py-2.5 text-[11px] font-bold text-amber-900">
-                Demo data — connect backend to see real feedback.
+                Demo data. Connect the backend to see real feedback.
               </div>
             )}
             <div className="space-y-4">
@@ -207,4 +252,5 @@ function Feedback() {
     </PageWrapper>
   );
 }
+
 export default Feedback;
