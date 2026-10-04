@@ -41,13 +41,13 @@ function EventRegistration({ onNavigate, event }) {
 
     setLoading(true);
     try {
-      const meResponse = await fetch("http://localhost:8000/api/auth/me", {
+      const meResponse = await fetch("/api/auth/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!meResponse.ok) throw new Error("Could not verify your account. Please log in again.");
       const me = await meResponse.json();
 
-      const regResponse = await fetch("http://localhost:8000/api/registrations/", {
+      const regResponse = await fetch("/api/registrations/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,5 +1,6 @@
 // Settings.jsx
-// Admin settings — fetches from service, with fallback when backend is empty.
+// Admin settings — loads from the backend, defaults apply only for keys
+// the backend has not saved yet. Real errors are shown (no demo data).
 
 import { useState, useEffect } from "react";
 import {
@@ -9,9 +10,7 @@ import {
 import { getSettings, updateSettings } from "../services/settingsService";
 import { toast } from "sonner";
 
-// ============================================
-// FALLBACK SETTINGS — Used when backend returns empty
-// ============================================
+// Defaults for a fresh install (backend returns {} until something is saved)
 const FALLBACK_SETTINGS = {
   siteName: "SmartEvent",
   siteUrl: "https://smartevent.com",
@@ -22,12 +21,19 @@ const FALLBACK_SETTINGS = {
   language: "en",
 };
 
-// Validate — must have required keys
-function isValidSettings(data) {
-  if (!data || typeof data !== "object") return false;
-  if (typeof data.siteName !== "string") return false;
-  if (typeof data.language !== "string") return false;
-  return true;
+// Defined outside Settings so it is not re-created on every render
+function Toggle({ name, checked, onChange, variant = "" }) {
+  return (
+    <label className={`toggle-switch ${variant}`}>
+      <input
+        type="checkbox"
+        name={name}
+        checked={!!checked}
+        onChange={onChange}
+      />
+      <span className="toggle-slider" />
+    </label>
+  );
 }
 
 function Settings() {
@@ -36,7 +42,6 @@ function Settings() {
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [usingFallback, setUsingFallback] = useState(false);
 
   useEffect(() => {
     load();
@@ -49,19 +54,15 @@ function Settings() {
 
       const data = await getSettings();
 
-      if (isValidSettings(data)) {
-        // Merge with fallback — in case backend returns partial data
-        setSettings({ ...FALLBACK_SETTINGS, ...data });
-        setUsingFallback(false);
-      } else {
-        setSettings(FALLBACK_SETTINGS);
-        setUsingFallback(true);
-      }
+      // Backend {} -> show defaults, partial data -> merge with defaults
+      setSettings({
+        ...FALLBACK_SETTINGS,
+        ...(data && typeof data === "object" ? data : {}),
+      });
     } catch (err) {
-      console.warn("Settings service failed, using fallback:", err);
-      setSettings(FALLBACK_SETTINGS);
-      setUsingFallback(true);
-      setError(null);
+      console.error("FAILED TO LOAD SETTINGS:", err);
+      setSettings(null);
+      setError(err?.message || "Failed to load settings from backend.");
     } finally {
       setLoading(false);
     }
@@ -84,24 +85,10 @@ function Settings() {
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to save settings");
+      toast.error(err?.message || "Failed to save settings");
     } finally {
       setSaving(false);
     }
-  }
-
-  function Toggle({ name, checked, onChange, variant = "" }) {
-    return (
-      <label className={`toggle-switch ${variant}`}>
-        <input
-          type="checkbox"
-          name={name}
-          checked={checked}
-          onChange={onChange}
-        />
-        <span className="toggle-slider" />
-      </label>
-    );
   }
 
   /* ---------- LOADING ---------- */
@@ -126,12 +113,14 @@ function Settings() {
   }
 
   /* ---------- ERROR ---------- */
-  if (error) {
+  if (error || !settings) {
     return (
       <div className="space-y-10">
         <h1 className="text-3xl font-bold text-theme-primary">Settings</h1>
         <div className="card flex flex-col items-center gap-3 p-12 text-center">
-          <p className="text-sm text-red-500">{error}</p>
+          <p className="text-sm text-red-500">
+            {error || "Settings are not available."}
+          </p>
           <button type="button" onClick={load} className="btn-primary">
             <RefreshCw size={14} /> Retry
           </button>
@@ -150,13 +139,6 @@ function Settings() {
           Manage system preferences and configuration.
         </p>
       </div>
-
-      {/* Fallback Notice */}
-      {usingFallback && (
-        <div className="rounded-lg border border-amber-300 bg-amber-100 px-4 py-2.5 text-[11px] font-bold text-amber-900">
-          Demo settings shown — connect backend to see real configuration.
-        </div>
-      )}
 
       {/* Grid */}
       <div className="grid gap-6 lg:grid-cols-2">

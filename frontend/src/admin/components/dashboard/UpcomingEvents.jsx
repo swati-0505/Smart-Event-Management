@@ -86,7 +86,7 @@ function UpcomingEvents({ onViewAll, onSelectEvent }) {
 
             return (
               <button
-                key={event.id}
+                key={event.event_id ?? event.id ?? index}
                 type="button"
                 onClick={() => onSelectEvent && onSelectEvent(event)}
                 className="flex w-full items-center gap-4 rounded-xl border border-theme bg-theme-secondary p-3 text-left transition hover:border-indigo-200 hover:bg-theme-hover"

@@ -7,8 +7,8 @@ import { useState, useRef, useEffect } from "react";
 import { Bot, Send, X, Sparkles } from "lucide-react";
 
 // ---- CONFIG: change these if needed ----
-const API_URL = "http://localhost:8000/api/chat";
-const GUEST_API_URL = "http://localhost:8000/api/public/chat";
+const API_URL = "/api/chat";
+const GUEST_API_URL = "/api/public/chat";
 const TOKEN_KEY = "admin-auth-token"; // key used in localStorage.setItem(...) at login
 // ----------------------------------------
 

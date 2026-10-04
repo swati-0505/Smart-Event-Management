@@ -5,6 +5,14 @@ import { fileURLToPath } from "node:url";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    host: true,
+    proxy: {
+      "/api": "http://localhost:8000",
+     "/uploads": "http://localhost:8000"
+    },
+    allowedHosts: [".devtunnels.ms"],
+  },
   build: {
     rollupOptions: {
       input: {

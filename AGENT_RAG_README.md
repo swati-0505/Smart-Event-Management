@@ -102,7 +102,7 @@ Verify the index is populated:
 
 ```bash
 curl -H "Authorization: Bearer <admin-jwt>" \
-  http://localhost:8000/api/admin/knowledge/status
+  /api/admin/knowledge/status
 ```
 
 ---

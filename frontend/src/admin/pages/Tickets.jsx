@@ -11,6 +11,16 @@ import {
 import PageWrapper from "../components/common/PageWrapper";
 import { getPayments } from "../services/paymentService";
 
+function normalizePayment(p) {
+  return {
+    ...p,
+    id: p.payment_id ?? p.id,
+    status: String(p.payment_status ?? p.status ?? "").toLowerCase(),
+    method: p.method ?? p.payment_method ?? null,
+    created_at: p.payment_date ?? p.created_at,
+  };
+}
+
 const STATUS_VARIANT = {
   paid: "success",
   completed: "success",
@@ -77,31 +87,31 @@ function Tickets() {
   }, []);
 
   async function load() {
-    try {
-      setLoading(true);
-      setError(null);
+  try {
+    setLoading(true);
+    setError(null);
 
-      const data = await getPayments();
-      const list = Array.isArray(data) ? data : [data].filter(Boolean);
+    const data = await getPayments();
+    console.log("PAYMENTS FROM BACKEND:", data);
 
-      if (list.length === 0) {
-        // Backend returned empty → show sample
-        setPayments(SAMPLE_PAYMENTS);
-        setUsingSample(true);
-      } else {
-        setPayments(list);
-        setUsingSample(false);
-      }
-    } catch (err) {
-      console.warn("Backend failed, using sample data:", err);
-      // Backend fail → use sample
-      setPayments(SAMPLE_PAYMENTS);
-      setUsingSample(true);
-      setError(null);
-    } finally {
-      setLoading(false);
-    }
+    // Handle [..], { payments: [..] } and { data: [..] }
+    const list = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.payments)
+      ? data.payments
+      : Array.isArray(data?.data)
+      ? data.data
+      : [];
+    setPayments(list.map(normalizePayment));
+    setUsingSample(false);
+  } catch (err) {
+    console.error("FAILED TO LOAD PAYMENTS:", err);
+    setPayments([]);
+    setError(err?.message || "Failed to load payments from backend.");
+  } finally {
+    setLoading(false);
   }
+}
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();

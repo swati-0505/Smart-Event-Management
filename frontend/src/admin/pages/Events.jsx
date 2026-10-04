@@ -1,67 +1,7 @@
-import { useEffect, useState } from "react";
-import "../../Events.css";
+import { useEffect, useMemo, useState } from "react";
+import { CalendarDays, MapPin, Users, Search, Filter } from "lucide-react";
 import eventService from "../services/eventService";
 
-const IMG = (id) =>
-  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=900&q=85`;
-
-const IMAGES = {
-  tech: IMG("photo-1505373877841-8d25f7d46678"),
-  workshop: IMG("photo-1517048676732-d65bc937f952"),
-  networking: IMG("photo-1511578314322-379afb476865"),
-  business: IMG("photo-1540575467063-178a50c2df87"),
-  cultural: IMG("photo-1492684223066-81342ee5ff30"),
-  office: IMG("photo-1522071820081-009f0129c71c"),
-  personal: IMG("photo-1531058020387-3be344556be6"),
-  misc: IMG("photo-1501281668745-f7f57925c3b4"),
-  holiday: IMG("photo-1482517967863-00e15c9b44be"),
-};
-
-// Category text is matched by keyword, so "TECHNICA;", "Tech Conference" and
-// "Technology" all get the tech image.
-const CATEGORY_KEYWORDS = [
-  { match: ["tech", "ai", "ml", "hack", "coding", "summit"], image: IMAGES.tech },
-  { match: ["workshop", "training", "class", "seminar"], image: IMAGES.workshop },
-  { match: ["network", "meetup", "startup"], image: IMAGES.networking },
-  { match: ["business", "corporate", "conference"], image: IMAGES.business },
-  { match: ["cultur", "fest", "music", "concert", "international", "dance"], image: IMAGES.cultural },
-  { match: ["office", "team"], image: IMAGES.office },
-  { match: ["personal", "party", "birthday", "wedding"], image: IMAGES.personal },
-  { match: ["holiday", "trip", "travel"], image: IMAGES.holiday },
-];
-
-// Used when nothing matches: pick by event id so different events
-// get different images instead of all sharing one.
-const FALLBACK_POOL = Object.values(IMAGES);
-
-function hashKey(value) {
-  const s = String(value ?? "");
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return h;
-}
-
-function getEventImage(event, index) {
-  // 1. Image saved with the event
-  const own = event.image || event.image_url;
-  if (own) return own;
-
-  // 2. Match by category / title keywords
-  const text = `${event.category || ""} ${event.title || ""}`.toLowerCase();
-  for (const group of CATEGORY_KEYWORDS) {
-    if (group.match.some((k) => text.includes(k))) return group.image;
-  }
-
-  // 3. Different fallback for each event
-  return FALLBACK_POOL[hashKey(event.id ?? event.title ?? index) % FALLBACK_POOL.length];
-}
-
-// "TECHNICA;" -> "TECHNICA"
-function cleanLabel(value) {
-  return String(value || "").replace(/[;:,.\s]+$/, "").trim();
-}
-
-// Returns a Date, or null if the value can't be parsed
 function toDate(value) {
   if (!value) return null;
   const d = new Date(value);
@@ -70,42 +10,31 @@ function toDate(value) {
 
 function formatDate(value) {
   const d = toDate(value);
-  if (!d) return value || "Date TBA";
-  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  if (!d) return "Date TBA";
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
-function Events({ onNavigate, onSelectEvent }) {
+function cleanLabel(value) {
+  return String(value || "").replace(/[;:,.\s]+$/, "").trim();
+}
+
+function Events({ searchQuery = "", onSelectEvent }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("All");
 
   const loadEvents = async () => {
     try {
       setLoading(true);
       setError("");
-
       const data = await eventService.getEvents();
-      const list = Array.isArray(data) ? data : [];
-
-      // Show only upcoming events (today or later), soonest first.
-      // Events whose date can't be read are kept so nothing disappears silently.
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const upcoming = list
-        .filter((e) => {
-          const d = toDate(e.date);
-          return !d || d >= today;
-        })
-        .sort((a, b) => {
-          const da = toDate(a.date);
-          const db = toDate(b.date);
-          if (!da) return 1;
-          if (!db) return -1;
-          return da - db;
-        });
-
-      setEvents(upcoming);
+      setEvents(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("FAILED TO LOAD EVENTS:", err);
       setError("Failed to load events. Check that the backend is running.");
@@ -118,102 +47,163 @@ function Events({ onNavigate, onSelectEvent }) {
     loadEvents();
   }, []);
 
-  const openEvent = (event) => {
-    if (onSelectEvent) {
-      onSelectEvent("eventDetails", event);
-    } else {
-      onNavigate("eventDetails");
-    }
-  };
+  // Chips are built from the categories that actually exist
+  const categories = useMemo(() => {
+    const set = new Set(
+      events.map((e) => cleanLabel(e.category)).filter(Boolean)
+    );
+    return ["All", ...set];
+  }, [events]);
+
+  const visible = useMemo(() => {
+    const q = `${query} ${searchQuery}`.trim().toLowerCase();
+    return events
+      .filter((e) => category === "All" || cleanLabel(e.category) === category)
+      .filter((e) => {
+        if (!q) return true;
+        return `${e.title} ${e.description} ${e.category}`
+          .toLowerCase()
+          .includes(q);
+      })
+      .sort((a, b) => (toDate(a.date) ?? 0) - (toDate(b.date) ?? 0));
+  }, [events, category, query, searchQuery]);
 
   return (
-    <div className="events-page">
-      {/* NAVBAR */}
-      <nav className="events-nav">
-        <div className="logo">
-          Smart<span>Event</span>
+    <div className="px-6 py-8 max-w-7xl mx-auto">
+      {/* Heading */}
+      <p className="text-xs font-semibold tracking-widest text-indigo-500 uppercase">
+        Live Schedule
+      </p>
+      <h1 className="mt-2 text-4xl font-bold">Published Events</h1>
+      <p className="mt-3 opacity-70">
+        Discover upcoming conferences, seminars, and technical workshops
+        available for enrollment.
+      </p>
+
+      {/* Search + category filter */}
+      <div className="mt-8 flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm text-slate-800">
+        <div className="flex flex-1 min-w-55 items-center gap-3 px-3">
+          <Search size={18} className="text-slate-400" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by title, description, or keyword..."
+            className="w-full bg-transparent py-2 text-sm outline-none placeholder:text-slate-400"
+          />
         </div>
 
-        <div className="events-nav-links">
-          <button onClick={() => onNavigate("home")}>Home</button>
-          <button onClick={() => onNavigate("about")}>About</button>
-          <button onClick={() => onNavigate("contact")}>Contact</button>
-        </div>
-
-        <button className="login-btn" onClick={() => onNavigate("login")}>
-          Login
-        </button>
-      </nav>
-
-      {/* HERO */}
-      <section className="events-hero">
-        <p className="eyebrow">SMART EVENT MANAGEMENT</p>
-
-        <h1>
-          Discover experiences
-          <br />
-          <span>worth remembering.</span>
-        </h1>
-
-        <p className="events-intro">
-          Explore concerts, technology summits, business gatherings,
-          cultural festivals and more — all in one place.
-        </p>
-      </section>
-
-      {/* EVENTS */}
-      <section className="events-list">
-        <div className="events-heading">
-          <p className="eyebrow">EXPLORE</p>
-          <h2>Upcoming Events</h2>
-          <p>Find experiences that match your interests.</p>
-        </div>
-
-        {loading && <p className="events-intro">Loading events...</p>}
-
-        {!loading && error && (
-          <div className="events-intro">
-            <p>{error}</p>
-            <button onClick={loadEvents}>Try again</button>
-          </div>
-        )}
-
-        {!loading && !error && events.length === 0 && (
-          <p className="events-intro">No upcoming events right now. Check back soon.</p>
-        )}
-
-        <div className="events-grid">
-          {events.map((event, index) => (
-            <div className="event-card" key={event.id ?? index}>
-              <div className="event-image">
-                <img
-                  src={getEventImage(event, index)}
-                  alt={event.title}
-                  loading="lazy"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = IMAGES.misc;
-                  }}
-                />
-              </div>
-
-              <div className="event-info">
-                <span className="event-category">{cleanLabel(event.category)}</span>
-
-                <h3>{event.title}</h3>
-
-                <p className="event-location">📍 {event.location || "TBA"}</p>
-
-                <div className="event-bottom">
-                  <span>{formatDate(event.date)}</span>
-
-                  <button onClick={() => openEvent(event)}>View Event →</button>
-                </div>
-              </div>
-            </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="flex items-center gap-1 text-sm text-slate-500">
+            <Filter size={14} /> Category:
+          </span>
+          {categories.map((c) => (
+            <button
+              key={c}
+              onClick={() => setCategory(c)}
+              className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
+                category === c
+                  ? "border-indigo-500 bg-indigo-500 text-white"
+                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              {c}
+            </button>
           ))}
         </div>
-      </section>
+      </div>
+
+      {/* States */}
+      {loading && (
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((n) => (
+            <div
+              key={n}
+              className="h-80 animate-pulse rounded-2xl bg-slate-200/60"
+            />
+          ))}
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className="mt-8 space-y-3">
+          <p>{error}</p>
+          <button
+            onClick={loadEvents}
+            className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && visible.length === 0 && (
+        <p className="mt-8 opacity-70">No events found.</p>
+      )}
+
+      {/* Cards */}
+      {!loading && !error && visible.length > 0 && (
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {visible.map((event, i) => {
+            const venue = event.venue_id ?? event.venueId ?? event.venue;
+            const capacity =
+              event.capacity ?? event.max_attendees ?? event.maxAttendees;
+
+            return (
+              <div
+                key={event.id ?? i}
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-800 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+              >
+                {/* Gradient header */}
+                <div className="flex h-52 items-center justify-center bg-linear-to-br from-[#1e1b4b] to-[#4338ca]">
+                  <CalendarDays size={48} strokeWidth={1.5} className="text-white/80" />
+                </div>
+
+                <div className="p-6">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-medium text-indigo-500">
+                      {cleanLabel(event.category) || "General"}
+                    </span>
+                    <span className="text-slate-400">·</span>
+                    <span className="text-slate-500">{formatDate(event.date)}</span>
+                  </div>
+
+                  <h3 className="mt-2 text-xl font-bold">{event.title}</h3>
+
+                  <p className="mt-2 line-clamp-2 text-sm text-slate-500">
+                    {event.description || "Join us for this exclusive event experience."}
+                  </p>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+                    {venue && (
+                      <span className="flex items-center gap-1">
+                        <MapPin size={14} />
+                        {String(venue).length > 14
+                          ? `Venue ID: ${String(venue).slice(0, 8)}...`
+                          : venue}
+                      </span>
+                    )}
+                    {capacity && (
+                      <span className="flex items-center gap-1">
+                        <Users size={14} />
+                        {capacity} capacity
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-5 border-t border-slate-100 pt-4">
+                    <button
+                      onClick={() => onSelectEvent?.("eventDetails", event)}
+                      className="w-full rounded-lg border border-slate-200 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

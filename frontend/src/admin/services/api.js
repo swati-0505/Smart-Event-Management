@@ -4,7 +4,7 @@
 // 🚀 When backend is ready, only VITE_API_URL needs updating.
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+  import.meta.env.VITE_API_URL || "/api";
 
 // Request timeout (ms)
 const REQUEST_TIMEOUT = 60000;

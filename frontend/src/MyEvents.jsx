@@ -15,14 +15,14 @@ function MyEvents({ onNavigate }) {
       }
 
       try {
-        const meResponse = await fetch("http://localhost:8000/api/auth/me", {
+        const meResponse = await fetch("/api/auth/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!meResponse.ok) throw new Error("Could not verify user");
         const me = await meResponse.json();
 
         const regResponse = await fetch(
-          `http://localhost:8000/api/registrations/user/${me.id}`,
+          `/api/registrations/user/${me.id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (!regResponse.ok) throw new Error("Could not load registrations");
@@ -32,7 +32,7 @@ function MyEvents({ onNavigate }) {
           registrations.map(async (reg) => {
             try {
               const eventRes = await fetch(
-                `http://localhost:8000/api/events/${reg.event_id}`,
+                `/api/events/${reg.event_id}`,
                 { headers: { Authorization: `Bearer ${token}` } }
               );
               const event = eventRes.ok ? await eventRes.json() : null;

@@ -11,6 +11,8 @@ from app.api.admin import router as admin_router
 from app.api import auth
 from app.api.chat import router as ai_router
 from fastapi.middleware.cors import CORSMiddleware
+from app.models.setting import AppSetting  
+from app.routers import settings as settings_router 
 app = FastAPI(
     title="Smart Event Management System",
     version="1.0.0"
@@ -22,6 +24,7 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://localhost",
         "http://127.0.0.1",
+        "https://1d832bsx-5173.inc1.devtunnels.ms",
     ],
         allow_credentials=True,
         allow_methods=["*"],
@@ -36,6 +39,7 @@ app.include_router(admin_router)
 app.include_router(payment_router)
 app.include_router(user_router)
 app.include_router(auth.router)
+app.include_router(settings_router.router)
 
 app.include_router(ai_router)
 @app.get("/health")
