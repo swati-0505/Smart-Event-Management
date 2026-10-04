@@ -17,9 +17,9 @@ import { toast } from "sonner";
 
 const KPI_CONFIG = {
   total_events: { label: "Total Events", icon: Calendar, color: "indigo" },
-  total_registrations: { label: "Total Registrations", icon: Users, color: "blue" },
-  avg_attendance: { label: "Avg. Attendance", icon: Activity, color: "green" },
-  cancellations: { label: "Cancellations", icon: TrendingDown, color: "orange" },
+  tickets_sold: { label: "Tickets Sold", icon: Users, color: "blue" },
+  revenue: { label: "Revenue", icon: Activity, color: "green" },
+  cancellations: { label: "Refunds / Failed", icon: TrendingDown, color: "orange" },
 };
 
 const COLOR_MAP = {
