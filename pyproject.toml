@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "AGENT_RAG_README.md"
 authors = [
-    { name = "Swati Swagatika Sahoo", email = "swatiswagatikasahoo32@gmail.com" }
+    { name = "Swati Swagatika Sahoo", email = "swagatikaswati40@gmail.com" }
 ]
 requires-python = ">=3.11"
 dependencies = [

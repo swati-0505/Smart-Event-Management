@@ -17,12 +17,6 @@ router = APIRouter(
     prefix="/api/registrations",
     tags=["Registrations"]
 )
-
-
-
-
-
-
 @router.get(
     "/",
     response_model=list[RegistrationResponse]
@@ -31,11 +25,6 @@ def get_registrations(
     db: Session = Depends(get_db)
 ):
     return registration_service.get_all_registrations(db)
-
-
-
-
-
 
 @router.get(
     "/{registration_id}",
@@ -57,12 +46,6 @@ def get_registration(
         )
 
     return registration
-
-
-
-
-
-
 @router.post(
     "/",
     response_model=RegistrationResponse,
@@ -109,12 +92,6 @@ def create_registration(
             status_code=400,
             detail=str(e)
         )
-
-
-
-
-
-
 @router.get(
     "/user/{user_id}",
     response_model=list[RegistrationResponse]
@@ -128,11 +105,6 @@ def get_user_registrations(
         user_id
     )
 
-
-
-
-
-
 @router.get(
     "/event/{event_id}",
     response_model=list[RegistrationResponse]
@@ -145,12 +117,6 @@ def get_event_registrations(
         db,
         event_id
     )
-
-
-
-
-
-
 @router.put(
     "/{registration_id}/cancel",
     response_model=RegistrationResponse
