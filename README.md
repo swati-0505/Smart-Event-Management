@@ -573,3 +573,22 @@ The current implementation provides a foundation for building intelligent workfl
 This project was developed as part of the Infosys Springboard Virtual Internship Program for educational and professional learning purposes.
 
 A formal open-source license can be added if the project is later released publicly.
+
+## Documentation
+
+Detailed project documentation is available in the [`docs/`](./docs/) directory.
+
+### Documentation Contents
+
+- [Project Overview](./docs/overview.md)
+- [System Architecture](./docs/architecture.md)
+- [Development Setup](./docs/setup.md)
+- [Project Structure](./docs/project-structure.md)
+- [Application Modules](./docs/modules.md)
+- [Database Documentation](./docs/database.md)
+- [API Documentation](./docs/api.md)
+- [AI and RAG Documentation](./docs/ai-rag.md)
+- [User Guide](./docs/user-guide.md)
+- [Admin Guide](./docs/admin-guide.md)
+- [Testing Documentation](./docs/testing.md)
+- [Troubleshooting](./docs/troubleshooting.md)
