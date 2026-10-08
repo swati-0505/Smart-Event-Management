@@ -1,64 +1,58 @@
 # AI and RAG Documentation
 
-## 1. Overview
+The Smart Event Management System contains an Agentic AI and Retrieval-Augmented Generation (RAG) layer.
 
-The Smart Event Management System includes an AI-powered assistant that uses an agent-based workflow and Retrieval-Augmented Generation (RAG).
+Detailed implementation documentation for this layer is available in:
 
-The AI system can retrieve relevant information from the project's knowledge base and generate responses based on the retrieved information.
+[`documents/AGENT_RAG_README.md`](../documents/AGENT_RAG_README.md)
 
----
+The existing AI/RAG documentation covers:
 
-## 2. AI Components
+- LangGraph agent architecture
+- Agent state and workflow
+- Business tools
+- RAG tools
+- Tool permissions and RBAC
+- Knowledge document ingestion
+- Document conversion and chunking
+- Embeddings
+- PostgreSQL pgvector storage
+- Sparse text search
+- Dense vector search
+- Reciprocal Rank Fusion (RRF)
+- Reranking
+- Grounding and hallucination checking
+- Conversation memory
+- AI configuration
+- AI agent monitoring
+- AI/RAG tests
+- AI/RAG troubleshooting
+- Current limitations and roadmap coverage
 
-The AI functionality uses:
+## Knowledge Documents
 
-- LangGraph
-- LangChain
-- OpenAI
-- pgvector
-- MarkItDown
+The AI knowledge base is maintained in the `documents/` directory.
 
----
+Current knowledge documents include:
 
-## 3. Knowledge Base
+- `attendance_policy.md`
+- `cancellation_policy.md`
+- `event_policy.md`
+- `faq.md`
+- `registration_policy.md`
+- `venue_policy.md`
 
-The project's `documents/` directory contains knowledge documents used by the AI system.
+These documents are processed and indexed for retrieval by the RAG pipeline.
 
-Examples include:
+## AI API
 
-- Event policies
-- Registration policies
-- Cancellation policies
-- Attendance policies
-- Venue policies
-- FAQs
-
----
-
-## 4. RAG Workflow
-
-The RAG workflow follows these steps:
+The main AI endpoints are:
 
 ```text
-User Question
-      │
-      ▼
-AI Chat API
-      │
-      ▼
-AI Agent
-      │
-      ▼
-Knowledge Retrieval
-      │
-      ▼
-Vector Search
-      │
-      ▼
-Relevant Documents
-      │
-      ▼
-Language Model
-      │
-      ▼
-Generated Response
+POST /api/chat
+GET /api/chat/sessions
+GET /api/chat/sessions/{session_id}
+GET /api/admin/agent-activity
+GET /api/admin/agent-activity/{run_id}
+POST /api/admin/knowledge/ingest
+GET /api/admin/knowledge/status
