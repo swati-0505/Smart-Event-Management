@@ -1,8 +1,35 @@
+# --- Environment / secrets ---
 .env
-.env.local
+.env.*
+!.env.example
+
+# --- Python ---
 __pycache__/
 *.pyc
-node_modules/
-venv/
+*.pyo
+*.pyd
+*.pdb
+.pytest_cache/
+*.egg-info/
+.eggs/
+dist/
+build/
+.mypy_cache/
+.ruff_cache/
+
+# --- Virtual environments ---
 .venv/
+venv/
+env/
+
+# --- Node / Frontend ---
+node_modules/
+frontend/dist/
+frontend2/dist/
+
+# --- IDE ---
+.vscode/
+.idea/
+
+# --- Misc ---
 documents/*.pdfs

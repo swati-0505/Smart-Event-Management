@@ -292,13 +292,36 @@ cd Smart-Event-Management
 
 ## 2️⃣ Backend Setup
 
-Install dependencies:
+Open a terminal in the backend directory:
 
+```powershell
+cd backend
+```
+
+Copy `.env.example` to `.env` from inside `backend/` (or use your existing
+local `backend/.env`), then set `DATABASE_URL` and a Hugging Face token
+with **Make calls to Inference Providers** permission. The AI chat uses
+`openai/gpt-oss-120b` through Hugging Face; the RAG embedding model is
+`BAAI/bge-small-en-v1.5`.
+
+Install dependencies from `backend/`:
+
+```powershell
 uv sync
+```
+
+Apply database migrations (the current embedding model uses 384-dimensional
+vectors):
+
+```powershell
+uv run alembic upgrade head
+```
 
 Start the FastAPI development server:
 
+```powershell
 uv run uvicorn app.main:app --reload
+```
 
 Backend:
 
@@ -322,14 +345,22 @@ http://127.0.0.1:8000/docs
 
 FastAPI provides an interactive Swagger API interface for testing the available endpoints.
 
+After applying the embedding migration, re-index existing knowledge documents
+from the admin API with `POST /api/admin/knowledge/ingest?force=true`.
+
 
 ## 3️⃣ Frontend Setup
 
-Open another terminal:
+Open a separate terminal from the repository root:
 
-cd frontend
+```powershell
+cd frontend2
+```
+
+```powershell
 npm install
 npm run dev
+```
 
 Frontend:
 
@@ -337,7 +368,7 @@ http://localhost:5173
 
 Admin dashboard:
 
-http://localhost:5173/admin.html
+http://localhost:5173/admin
 
 ## 🔌 API Overview
 
@@ -451,14 +482,27 @@ RAG can be extended to support event information, organizational knowledge, FAQs
 
 Frontend Production Build
 
-cd frontend
+```powershell
+cd frontend2
 npm run build
+```
 
 A successful build confirms that the frontend compiles correctly.
 
 Backend
 
+From `backend/`:
+
+```powershell
 uv run uvicorn app.main:app --reload
+```
+
+Docker Compose (run from the repository root after configuring
+`backend/.env`):
+
+```powershell
+docker compose up --build
+```
 
 Health Check
 

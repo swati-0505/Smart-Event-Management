@@ -1,22 +1,57 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: smart-event-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1 --loglevel warning
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
   backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     container_name: smart-event-backend
     ports:
       - "8000:8000"
     env_file:
-      - .env
+      - path: ./backend/.env
+        required: false
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - APP_ENV=production
+      - ENABLE_API_DOCS=false
+    depends_on:
+      redis:
+        condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   frontend:
     build:
-      context: ./frontend
+      context: ./frontend2
       dockerfile: Dockerfile
     container_name: smart-event-frontend
     ports:
       - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  redis_data:
+    driver: local
