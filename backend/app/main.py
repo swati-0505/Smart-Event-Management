@@ -43,11 +43,9 @@ app.include_router(user_router)
 app.include_router(auth.router)
 app.include_router(ai_router)
 
-
 @app.get('/health', tags=['Health'])
 def health_check():
     return {'status': 'ok'}
-
 
 def main() -> None:
     uvicorn.run(app, host='0.0.0.0', port=8000)

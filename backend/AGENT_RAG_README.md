@@ -8,7 +8,6 @@ Built against the Infosys *Agentic AI Smart Event Management System* roadmap
 from the hybrid-search design in the team's pipeline diagram.
 
 ---
-
 ## 1. What this layer does
 
 ```
@@ -65,7 +64,7 @@ Docker: use the `pgvector/pgvector:pg16` image instead of plain `postgres`.
 
 ```bash
 cd backend
-uv sync                 # or: pip install -e .
+uv sync
 cp .env.example .env    # then replace the DATABASE_URL with your shared cloud DB
 ```
 
@@ -74,7 +73,7 @@ For a group project, do not use localhost as the database host. Use one shared P
 ### Migrate
 
 ```bash
-alembic upgrade head
+uv run alembic upgrade head
 ```
 
 Migration `a1b2c3d4e5f6` creates the vector extension, the two knowledge
@@ -87,15 +86,15 @@ the legacy index.
 ### Index the policy documents
 
 ```bash
-python scripts/ingest_knowledge.py
+uv run python scripts/ingest_knowledge.py
 ```
 
 Expect roughly 38 chunks across the six documents in `documents/`. Re-running
 is safe — unchanged files are skipped by content hash.
 
 ```bash
-python scripts/ingest_knowledge.py --force   # after changing model or chunk size
-python scripts/ingest_knowledge.py --clear   # wipe the index first
+uv run python scripts/ingest_knowledge.py --force   # after changing model or chunk size
+uv run python scripts/ingest_knowledge.py --clear   # wipe the index first
 ```
 
 ### Stage and validate OpenRouter embeddings
@@ -107,13 +106,13 @@ vectors before storage and search. The staged table stores full-precision
 2048-dimensional vectors; its HNSW indexes use pgvector `halfvec(2048)`
 expression indexes, which require pgvector 0.7.0 or newer.
 
-1. Back up the database, then apply migrations with `alembic upgrade head`.
+1. Back up the database, then apply migrations with `uv run alembic upgrade head`.
    This adds a new `knowledge_chunks_nvidia` table and leaves the current
    `knowledge_chunks` index untouched.
 2. Populate the staged index without clearing the legacy index:
 
    ```bash
-   python scripts/ingest_knowledge.py --target-index nvidia --force
+   uv run python scripts/ingest_knowledge.py --target-index nvidia --force
    ```
 
    This uses `OPENROUTER_API_KEY` and `OPENROUTER_EMBEDDING_MODEL`. Failed
@@ -141,7 +140,7 @@ staging model marker nullable.
 ### Run
 
 ```bash
-uvicorn app.main:app --reload
+uv run uvicorn app.main:app --reload
 ```
 
 To run the installed console entry point without auto-reload:

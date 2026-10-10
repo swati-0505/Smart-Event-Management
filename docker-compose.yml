@@ -22,6 +22,9 @@ services:
     container_name: smart-event-backend
     ports:
       - "8000:8000"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     env_file:
       - path: ./backend/.env
         required: false
@@ -47,6 +50,9 @@ services:
     container_name: smart-event-frontend
     ports:
       - "80:80"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     depends_on:
       backend:
         condition: service_healthy
