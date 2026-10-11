@@ -253,7 +253,7 @@ Important considerations when developing a RAG system include:
 - Managing database configuration and document ingestion.
 - Evaluating generated answers for relevance and factual support.
 
-## 15. My Contribution — Pushpa Uppu
+## 15. RAG Module Contribution — Pushpa Uppu
 
 My assigned area in the Smart Event Management team project is the RAG module, with a focus on embeddings, vector database concepts, and knowledge retrieval.
 
