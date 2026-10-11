@@ -3,5 +3,17 @@ SYSTEM_PROMPT = 'You are the AI assistant for a Smart Event Management System.\n
 INTENT_PROMPT = 'Classify this event-management request into exactly one label.\n\nSEARCH_EVENT       - finding or browsing events\nEVENT_DETAILS      - asking about one specific event\nCREATE_EVENT       - creating a new event\nUPDATE_EVENT       - changing or cancelling an existing event\nVENUE_AVAILABILITY - checking whether a venue is free\nREGISTER           - signing up for an event\nCANCEL_REGISTRATION- withdrawing from an event\nMY_REGISTRATIONS   - asking what they are signed up for\nPOLICY_QUESTION    - rules, refunds, deadlines, FAQs\nMULTI_STEP         - needs two or more of the above\nGENERAL            - greetings, small talk, anything else\n\nRequest: {message}\n\nReply with the label only.'
 VALID_INTENTS = {'SEARCH_EVENT', 'EVENT_DETAILS', 'CREATE_EVENT', 'UPDATE_EVENT', 'VENUE_AVAILABILITY', 'REGISTER', 'CANCEL_REGISTRATION', 'MY_REGISTRATIONS', 'POLICY_QUESTION', 'MULTI_STEP', 'GENERAL'}
 
+BREVITY_RULES = """
+
+## Brevity (overrides the Response style section above)
+
+Keep every answer short and direct.
+- At most 5 lines or 5 table rows. If there are more results, show the 5 most relevant and say how many more exist.
+- For event lists, use a table with only Event, Date and Venue.
+- Do not use headings, section dividers or long introductions.
+- Do not repeat the question or explain what you did. Give the result, then at most one short follow-up offer.
+- After an action, confirm it in one sentence.
+"""
+
 def build_system_prompt(role: str, today: str) -> str:
-    return SYSTEM_PROMPT.format(role=role or 'USER', today=today)
+    return SYSTEM_PROMPT.format(role=role or 'USER', today=today) + BREVITY_RULES
