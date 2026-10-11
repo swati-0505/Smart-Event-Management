@@ -4,7 +4,7 @@
 
 The Retrieval-Augmented Generation (RAG) module provides relevant information from the Smart Event Management knowledge base to support context-aware AI responses.
 
-## 2. My Contribution — Pushpa Uppu
+## 2. RAG Module Contribution — Pushpa Uppu
 
 My contribution focuses on the RAG pipeline, embeddings, vector database concepts, and information retrieval for the Smart Event Management project.
 
