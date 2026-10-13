@@ -1,6 +1,10 @@
 from __future__ import annotations
+
 from typing import Any
+
 import httpx
+
+
 class LLMProviderError(RuntimeError):
     def __init__(
         self,
@@ -20,10 +24,14 @@ class LLMProviderError(RuntimeError):
             detail = f'{provider}: {detail}'
         super().__init__(detail)
 
+
 class LLMConfigurationError(LLMProviderError):
     pass
+
+
 class LLMUnavailableError(LLMProviderError):
     pass
+
 
 def _error_body_text(error: Any) -> str:
     body = getattr(error, 'body', None)

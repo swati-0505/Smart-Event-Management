@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models.user import User
 from app.services.admin_service import get_dashboard_stats
-
 router = APIRouter(prefix='/api/admin', tags=['Admin'])
 
 @router.get('/dashboard')

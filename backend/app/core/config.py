@@ -2,7 +2,7 @@ from __future__ import annotations
 import sys
 from typing import List
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 
 _INSECURE_SECRETS = {
     'change-this-in-production',
@@ -10,10 +10,7 @@ _INSECURE_SECRETS = {
     'changeme',
     '',
 }
-model_config = SettingsConfigDict(
-    env_file=".env",
-    extra="ignore",
-)
+
 class Settings(BaseSettings):
     DATABASE_URL: str = 'postgresql://postgres:password@localhost:5432/eventdb'
     SECRET_KEY: str = 'change-this-in-production'
@@ -51,6 +48,10 @@ class Settings(BaseSettings):
 
     def get_cors_origins(self) -> List[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(',') if origin.strip()]
+
+    class Config:
+        env_file = '.env'
+        extra = 'ignore'
 
 
 settings = Settings()

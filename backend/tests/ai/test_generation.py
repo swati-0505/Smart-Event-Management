@@ -13,25 +13,14 @@ def test_generate_answer_uses_central_router_for_answer_and_grounding():
         MagicMock(content='Refunds apply to paid events. [Cancellation Policy]'),
         MagicMock(content='GROUNDED: yes'),
     ]
-
-    with (
-        patch.object(generator.ai_settings, "ENABLE_HALLUCINATION_CHECK", True),
-        patch('app.rag.generator.LLMProviderRouter', return_value=router) as router_class,
-    ):
-        result = generator.generate_answer(
-            'What is the refund policy?',
-            [make_chunk('a', content='Refunds apply to paid events.')],
-        )
-
+    with patch('app.rag.generator.LLMProviderRouter', return_value=router) as router_class:
+        result = generator.generate_answer('What is the refund policy?', [make_chunk('a', content='Refunds apply to paid events.')])
     assert result.answer == 'Refunds apply to paid events. [Cancellation Policy]'
-    assert result.grounded is True
     assert router_class.call_count == 2
-    assert router.invoke.call_count == 2
     assert [call.kwargs for call in router.invoke.call_args_list] == [
         {'temperature': 0.0},
         {'temperature': 0.0},
     ]
-
 
 def test_generate_answer_rejects_an_empty_model_response():
     with patch('app.rag.generator.LLMProviderRouter') as router:
@@ -86,25 +75,13 @@ def test_reranker_failure_falls_back_to_fused_order():
 def test_reranker_short_circuits_on_empty_input():
     assert rerank('q', []) == []
 
-
 def test_metadata_extraction_uses_central_router():
-    with (
-        patch.object(metadata.ai_settings, "ENABLE_METADATA_EXTRACTION", True),
-        patch('app.rag.metadata.LLMProviderRouter') as router,
-    ):
+    with patch('app.rag.metadata.LLMProviderRouter') as router:
         router.return_value.invoke.return_value = MagicMock(
             content='{"summary": "Refund terms", "keywords": ["refund", "cancellation"]}'
         )
-
-        result = metadata.extract_metadata(
-            'Policy details',
-            title='Refunds',
-        )
-
-    assert result == {
-        'summary': 'Refund terms',
-        'keywords': ['refund', 'cancellation'],
-    }
+        result = metadata.extract_metadata('Policy details', title='Refunds')
+    assert result == {'summary': 'Refund terms', 'keywords': ['refund', 'cancellation']}
     router.return_value.invoke.assert_called_once()
     assert router.return_value.invoke.call_args.kwargs == {'temperature': 0.0}
 

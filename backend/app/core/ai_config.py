@@ -1,6 +1,7 @@
 from typing import Literal
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
 from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings
 
 class AISettings(BaseSettings):
     HUGGINGFACE_API_KEY: str = ''
@@ -29,10 +30,9 @@ class AISettings(BaseSettings):
     MEMORY_WINDOW_MESSAGES: int = 10
     KNOWLEDGE_DOCS_DIR: str = 'documents'
 
-    model_config = SettingsConfigDict(
-    env_file=".env",
-    extra="ignore",
-)
+    class Config:
+        env_file = '.env'
+        extra = 'ignore'
 
     @field_validator('OPENROUTER_EMBEDDING_DIM')
     @classmethod
