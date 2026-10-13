@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Any
 from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 
 class LLMSettings(BaseSettings):
     OPENROUTER_API_KEY: str = ''
@@ -12,10 +12,9 @@ class LLMSettings(BaseSettings):
     LLM_TIMEOUT_SECONDS: int = Field(default=60, ge=5, le=300)
     LLM_MAX_RETRIES: int = Field(default=1, ge=0, le=3)
 
-    model_config = SettingsConfigDict(
-    env_file=".env",
-    extra="ignore",
-)
+    class Config:
+        env_file = '.env'
+        extra = 'ignore'
 
     def provider_config(self, provider: str) -> dict[str, Any]:
         provider_name = provider.lower().strip()
