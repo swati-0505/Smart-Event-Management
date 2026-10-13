@@ -1,5 +1,5 @@
 import os
-os.environ['DATABASE_URL'] = 'postgresql://postgres:password@localhost:5432/event_management_test'
+os.environ['DATABASE_URL'] = 'postgresql://neondb_owner:npg_l6MOGRpf1JXY@ep-round-glitter-b5q2flme-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
 import pytest
 os.environ.setdefault('OPENROUTER_MODEL', 'test/openrouter-chat-model')
 os.environ.setdefault('OPENROUTER_EMBEDDING_MODEL', 'test/openrouter-embedding-model')
