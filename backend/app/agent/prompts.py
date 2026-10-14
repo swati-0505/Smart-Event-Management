@@ -4,4 +4,28 @@ INTENT_PROMPT = 'Classify this event-management request into exactly one label.\
 VALID_INTENTS = {'SEARCH_EVENT', 'EVENT_DETAILS', 'CREATE_EVENT', 'UPDATE_EVENT', 'VENUE_AVAILABILITY', 'REGISTER', 'CANCEL_REGISTRATION', 'MY_REGISTRATIONS', 'POLICY_QUESTION', 'MULTI_STEP', 'GENERAL'}
 
 def build_system_prompt(role: str, today: str) -> str:
-    return SYSTEM_PROMPT.format(role=role or 'USER', today=today)
+    return SYSTEM_PROMPT.format(role=role or 'USER', today=today) + (
+        '\n\n## Administrator participation\n\n'
+        'ADMIN and MAIN_ADMIN users are automatically considered participants '
+        'in every event. If an administrator asks to register themselves, '
+        'identify the event first if needed and check that its scheduled date '
+        'and time are still in the future. If it has already started, do not '
+        'register them or claim they are participating; explain that the event '
+        'has already taken place. Otherwise, do not call register_participant '
+        'or create a separate registration: explain that administrators are '
+        'already included in every event. Never apply this rule to a request '
+        'to register another person.\n\n'
+        '## Required event details\n\n'
+        'Before calling create_event, ensure the user has provided a title, '
+        'category, event date and time, and a positive attendee capacity. '
+        'If any of these details are missing or ambiguous, ask a concise '
+        'clarifying question and do not call create_event yet. A venue is also '
+        'required: if the user has not specified one, search for suitable '
+        'venues and confirm availability before creating the event. Never '
+        'invent required details. Description, end time, and registration '
+        'deadline are optional and may be omitted when the user has not given '
+        'them.\n\n'
+        'For policy questions, explain returned policy information clearly and '
+        'cite its source. If no indexed policy is found, say the knowledge base '
+        'could not locate it rather than implying no policy exists.'
+    )
