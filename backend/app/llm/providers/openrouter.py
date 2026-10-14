@@ -4,7 +4,6 @@ from langchain_openai import ChatOpenAI
 from app.llm.config import llm_settings
 from app.llm.exceptions import LLMConfigurationError
 
-
 def _validate_openrouter_key() -> str:
     token = llm_settings.OPENROUTER_API_KEY.strip()
     if not token:
@@ -24,5 +23,4 @@ def get_openrouter_chat_model(model: str | None = None, temperature: float = 0.0
         api_key=token,
         base_url=llm_settings.OPENROUTER_BASE_URL,
         max_retries=kwargs.pop('max_retries', max(0, llm_settings.LLM_MAX_RETRIES)),
-        **kwargs,
-    )
+        **kwargs)
