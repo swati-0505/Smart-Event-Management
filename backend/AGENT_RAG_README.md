@@ -91,6 +91,9 @@ uv run python scripts/ingest_knowledge.py
 
 Expect roughly 38 chunks across the six documents in `documents/`. Re-running
 is safe — unchanged files are skipped by content hash.
+Database migrations create the knowledge tables but do not populate them. If
+the assistant cannot find a policy, verify that the documents were ingested
+into the same active index and database used by the backend.
 
 ```bash
 uv run python scripts/ingest_knowledge.py --force   # after changing model or chunk size
