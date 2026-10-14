@@ -2,6 +2,7 @@ from __future__ import annotations
 import uuid
 import pytest
 from pydantic import ValidationError
+from app.agent.prompts import build_system_prompt
 from app.schemas.user import UserCreate
 from app.tools.context import PermissionDenied, ToolContext, get_tool_context, require_admin, use_tool_context
 from app.tools.formatting import parse_datetime, parse_uuid
@@ -65,6 +66,26 @@ def test_users_do_not_receive_admin_tools():
 
 def test_admins_receive_every_tool():
     assert len(get_tools_for_role('ADMIN')) == len(ALL_TOOLS)
+
+@pytest.mark.parametrize('role', ['ADMIN', 'MAIN_ADMIN'])
+def test_admins_can_manage_events_and_use_attendee_tools(role):
+    names = {tool.name for tool in get_tools_for_role(role)}
+    assert {'register_participant', 'my_registrations', 'search_event_policy'}.issubset(names)
+    assert {'create_event', 'get_event_registrations'}.issubset(names)
+
+def test_assistant_prompt_explains_automatic_admin_participation_and_policy_answers():
+    prompt = build_system_prompt('ADMIN', 'Wednesday, 14 October 2026')
+    assert 'automatically considered participants in every event' in prompt
+    assert 'do not call register_participant' in prompt
+    assert 'search_event_policy' in prompt
+    assert 'cite its source' in prompt
+    assert 'Never apply this rule to a request to register another person' in prompt
+
+def test_assistant_prompt_requires_missing_event_details_before_creation():
+    prompt = build_system_prompt('ADMIN', 'Wednesday, 14 October 2026')
+    assert 'ask a concise clarifying question' in prompt
+    assert 'do not call create_event yet' in prompt
+    assert 'Never invent required details' in prompt
 
 def test_guests_receive_only_public_read_only_tools():
     names = {tool.name for tool in get_tools_for_role('GUEST')}
