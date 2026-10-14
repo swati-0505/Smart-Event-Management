@@ -21,4 +21,4 @@ class PaymentResponse(BaseModel):
     currency: str
     payment_status: str
     transaction_id: str | None
-    created_at: datetime | None = None
+    payment_date: datetime | None = None

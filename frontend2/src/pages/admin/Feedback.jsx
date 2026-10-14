@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { MessageSquare, Star, Trash2 } from "lucide-react";
 import { getAllFeedback, deleteFeedback } from "../../services/feedbackService";
+import { getAllEvents } from "../../services/eventService";
+import { getUsers } from "../../services/userService";
 import PageLoader from "../../components/common/PageLoader";
 import ErrorState from "../../components/common/ErrorState";
 import EmptyState from "../../components/common/EmptyState";
@@ -8,6 +10,8 @@ import ConfirmDialog from "../../components/common/ConfirmDialog";
 
 export default function AdminFeedback() {
   const [feedback, setFeedback] = useState([]);
+  const [eventsMap, setEventsMap] = useState({});
+  const [usersMap, setUsersMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -17,8 +21,12 @@ export default function AdminFeedback() {
   const loadFeedback = () => {
     setLoading(true);
     setError("");
-    getAllFeedback()
-      .then((data) => setFeedback(Array.isArray(data) ? data : []))
+    Promise.all([getAllFeedback(), getAllEvents(), getUsers()])
+      .then(([feedbackData, eventsData, usersData]) => {
+        setFeedback(Array.isArray(feedbackData) ? feedbackData : []);
+        setEventsMap(Object.fromEntries((eventsData || []).map((event) => [event.event_id, event])));
+        setUsersMap(Object.fromEntries((usersData || []).map((user) => [user.id, user])));
+      })
       .catch((err) => setError(err.message || "Failed to load feedback entries."))
       .finally(() => setLoading(false));
   };
@@ -65,7 +73,9 @@ export default function AdminFeedback() {
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1.25rem" }}>
           {feedback.map((item) => {
-            const fId = item.id || item.feedback_id;
+            const fId = item.feedback_id || item.id;
+            const event = eventsMap[item.event_id];
+            const user = usersMap[item.user_id];
             return (
               <div key={fId} className="card" style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -97,6 +107,9 @@ export default function AdminFeedback() {
                   "{item.comments || item.comment || "No written comments."}"
                 </p>
 
+                <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+                  {event?.title || `Event ${item.event_id}`} · {user?.name || `User ${item.user_id}`}
+                </div>
                 <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", borderTop: "1px solid var(--border-color)", paddingTop: "0.75rem" }}>
                   Submitted on {item.created_at ? new Date(item.created_at).toLocaleDateString() : "Recently"}
                 </div>

@@ -16,3 +16,11 @@ def create_feedback(db: Session, user_id, event_id, rating: int, comment: str | 
     db.commit()
     db.refresh(feedback)
     return feedback
+
+def delete_feedback(db: Session, feedback_id):
+    feedback = db.query(Feedback).filter(Feedback.feedback_id == feedback_id).first()
+    if not feedback:
+        return False
+    db.delete(feedback)
+    db.commit()
+    return True

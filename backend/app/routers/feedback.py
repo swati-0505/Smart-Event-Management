@@ -21,6 +21,10 @@ def get_event_feedback(event_id: UUID, db: Session=Depends(get_db), _: User=Depe
 def get_user_feedback(user_id: UUID, db: Session=Depends(get_db), _: User=Depends(require_admin)):
     return feedback_service.get_feedback_by_user(db, user_id)
 
+@router.delete('/{feedback_id}', status_code=204)
+def delete_feedback(feedback_id: UUID, db: Session=Depends(get_db), _: User=Depends(require_admin)):
+    if not feedback_service.delete_feedback(db, feedback_id):
+        raise HTTPException(status_code=404, detail='Feedback not found')
 @router.post('/', response_model=FeedbackResponse, status_code=201)
 def create_feedback(feedback_data: FeedbackCreate, db: Session=Depends(get_db), current_user: User=Depends(get_current_user)):
     if current_user.role not in ('ADMIN', 'MAIN_ADMIN') and feedback_data.user_id != current_user.id:
