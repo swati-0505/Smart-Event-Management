@@ -1,9 +1,11 @@
 from typing import Literal
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class AISettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file='.env', extra='ignore')
+
     HUGGINGFACE_API_KEY: str = ''
     CHAT_TEMPERATURE: float = 0.0
     CHAT_TIMEOUT_SECONDS: int = 60
@@ -29,10 +31,6 @@ class AISettings(BaseSettings):
     AGENT_MAX_TOOL_LOOPS: int = 6
     MEMORY_WINDOW_MESSAGES: int = 10
     KNOWLEDGE_DOCS_DIR: str = 'documents'
-
-    class Config:
-        env_file = '.env'
-        extra = 'ignore'
 
     @field_validator('OPENROUTER_EMBEDDING_DIM')
     @classmethod

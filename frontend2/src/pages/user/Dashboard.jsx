@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   Ticket,
   Calendar,
-  User,
   ArrowRight,
   CheckCircle2,
   Star,
@@ -26,7 +25,7 @@ const DashboardCanvas = lazy(() =>
 export default function UserDashboard() {
   const { user } = useAuth();
   const [registrations, setRegistrations] = useState([]);
-  const [eventsMap, setEventsMap] = useState();
+  const [eventsMap, setEventsMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -78,9 +77,16 @@ export default function UserDashboard() {
 
   const validRegs = registrations.filter((r) => r.status?.toLowerCase() !== "cancelled");
   const confirmedCount = validRegs.filter((r) => r.status?.toLowerCase() === "confirmed" || r.status?.toUpperCase() === "CONFIRMED").length;
-  const upcomingEvents = Object.values(eventsMap).filter(
+  const eventList = Object.values(eventsMap);
+  const upcomingEvents = eventList.filter(
     (e) => e?.event_date && new Date(e.event_date) > new Date()
   );
+  const attendedEvents = validRegs.filter((registration) => {
+    const event = eventsMap[registration.event_id];
+    return registration.status?.toLowerCase() === "confirmed"
+      && event?.event_date
+      && new Date(event.event_date) <= new Date();
+  }).length;
 
   const stats = [
     {
@@ -106,8 +112,8 @@ export default function UserDashboard() {
     },
     {
       icon: <Star size={22} />,
-      value: registrations.length,
-      label: "Total Attended",
+      value: attendedEvents,
+      label: "Past Events",
       bg: "rgba(168, 85, 247, 0.12)",
       color: "#9333ea",
     },

@@ -66,7 +66,7 @@ class RedisCacheManager:
             ttl = settings.REDIS_CACHE_TTL_SECONDS
         try:
             serialized = json.dumps(value, cls=JSONEncoderCustom)
-            self.client.setex(key, ttl, serialized)
+            self.client.set(key, serialized, ex=ttl)
             logger.debug('Cache SET for key: %s (TTL: %ds)', key, ttl)
             return True
         except Exception as exc:

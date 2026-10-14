@@ -252,7 +252,20 @@ Alembic is used to manage database schema migrations. Migration files are mainta
 
 Review the existing migration scripts before applying schema changes to a shared or production database.
 
-## 7. Relevant Source Files
+## 7. Sample Data
+
+The backend includes an idempotent sample-data script that inserts related records for every application table without updating or deleting existing rows. It uses reserved `.example` user email addresses and leaves vector embeddings empty; the sample knowledge text and full-text search data are populated.
+
+From the `backend` directory, apply migrations and seed the configured database with:
+
+```powershell
+.\.venv\Scripts\python.exe -m alembic upgrade head
+.\.venv\Scripts\python.exe scripts\seed_sample_data.py
+```
+
+The script reports how many rows were inserted or reused in each table. Database credentials belong in the ignored `.env` files, not in source control.
+
+## 8. Relevant Source Files
 
 - `backend/app/db/database.py` — Database engine and session configuration.
 - `backend/app/models/user.py` — User model.
@@ -264,3 +277,4 @@ Review the existing migration scripts before applying schema changes to a shared
 - `backend/app/models/agent.py` — AI sessions, messages, runs, and tool calls.
 - `backend/app/models/knowledge.py` — Knowledge documents, chunks, and embeddings.
 - `backend/alembic/` — Database migration files.
+- `backend/scripts/seed_sample_data.py` — Idempotent sample-data seeding.

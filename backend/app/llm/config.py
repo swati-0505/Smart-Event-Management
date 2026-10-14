@@ -1,9 +1,11 @@
 from __future__ import annotations
 from typing import Any
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class LLMSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file='.env', extra='ignore')
+
     OPENROUTER_API_KEY: str = ''
     OPENROUTER_BASE_URL: str = 'https://openrouter.ai/api/v1'
     OPENROUTER_MODEL: str = Field(min_length=1)
@@ -11,10 +13,6 @@ class LLMSettings(BaseSettings):
 
     LLM_TIMEOUT_SECONDS: int = Field(default=60, ge=5, le=300)
     LLM_MAX_RETRIES: int = Field(default=1, ge=0, le=3)
-
-    class Config:
-        env_file = '.env'
-        extra = 'ignore'
 
     def provider_config(self, provider: str) -> dict[str, Any]:
         provider_name = provider.lower().strip()
