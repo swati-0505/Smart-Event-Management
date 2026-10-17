@@ -1,7 +1,9 @@
 from __future__ import annotations
 import json
 import logging
+import re
 import time
+from uuid import uuid4
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from app.agent import memory
 from app.agent.prompts import INTENT_PROMPT, VALID_INTENTS, build_system_prompt
@@ -40,6 +42,31 @@ def load_memory(state: AgentState) -> dict:
     return {'messages': messages}
 
 def reason(state: AgentState) -> dict:
+    if state.get('intent') == 'POLICY_QUESTION':
+        last_message = state['messages'][-1] if state.get('messages') else None
+        if isinstance(last_message, ToolMessage) and last_message.name == 'search_event_policy':
+            return {
+                'messages': [AIMessage(content=str(last_message.content))],
+                'loop_count': state.get('loop_count', 0) + 1,
+            }
+
+        words = set(re.findall(r'\b[a-z]+\b', state.get('message', '').lower()))
+        policy_area = 'cancellation_policy' if words.intersection({'cancel', 'cancellation', 'refund', 'refunds'}) else ''
+        call_args = {'question': state.get('message', '')}
+        if policy_area:
+            call_args['policy_area'] = policy_area
+        return {
+            'messages': [AIMessage(
+                content='',
+                tool_calls=[{
+                    'name': 'search_event_policy',
+                    'args': call_args,
+                    'id': str(uuid4()),
+                }],
+            )],
+            'loop_count': state.get('loop_count', 0) + 1,
+        }
+
     tools = get_tools_for_role(state.get('role', 'USER'))
     logger.info('reason(): routing agent request through primary provider chain for role=%s', state.get('role', 'USER'))
     try:
