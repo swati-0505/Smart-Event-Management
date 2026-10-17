@@ -12,6 +12,10 @@ export async function getUserFeedback(userId) {
   return apiGet(`/feedback/user/${encodeURIComponent(userId)}`);
 }
 
+export async function getMyFeedback() {
+  return apiGet("/feedback/mine");
+}
+
 export async function createFeedback(feedbackData) {
   return apiPost("/feedback/", feedbackData);
 }
@@ -19,4 +23,3 @@ export async function createFeedback(feedbackData) {
 export async function deleteFeedback(feedbackId) {
   return apiDelete(`/feedback/${encodeURIComponent(feedbackId)}`);
 }
-
