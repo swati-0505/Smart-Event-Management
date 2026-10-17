@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.payment import Payment
+from app.models.registration import Registration
+from app.services import registration_service
 
 def get_all_payments(db: Session):
     return db.query(Payment).all()
@@ -24,7 +26,23 @@ def update_payment_status(db: Session, payment_id, status: str):
     payment = get_payment_by_id(db, payment_id)
     if not payment:
         return None
-    payment.payment_status = status
-    db.commit()
-    db.refresh(payment)
-    return payment
+    try:
+        if status == 'completed' and payment.payment_status != 'completed':
+            registration = db.query(Registration).filter(
+                Registration.user_id == payment.user_id,
+                Registration.event_id == payment.event_id,
+            ).first()
+            if not registration or (registration.status or '').lower() == 'cancelled':
+                registration_service.create_registration(
+                    db=db,
+                    user_id=payment.user_id,
+                    event_id=payment.event_id,
+                    commit=False,
+                )
+        payment.payment_status = status
+        db.commit()
+        db.refresh(payment)
+        return payment
+    except Exception:
+        db.rollback()
+        raise
