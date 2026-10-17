@@ -330,7 +330,7 @@ export default function ChatMessageContent({ text, isUser = false }) {
                 fontSize: "0.75rem",
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
-                whiteSpace: "nowrap",
+                whiteSpace: "normal",
               }}
             >
               {children}
@@ -343,7 +343,8 @@ export default function ChatMessageContent({ text, isUser = false }) {
                 color: "var(--text-primary)",
                 verticalAlign: "middle",
                 lineHeight: 1.4,
-                whiteSpace: "nowrap",
+                whiteSpace: "normal",
+                overflowWrap: "anywhere",
               }}
             >
               <CellContent>{children}</CellContent>

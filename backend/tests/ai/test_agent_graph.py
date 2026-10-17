@@ -243,6 +243,8 @@ def test_system_prompt_states_the_routing_rule():
     assert 'search_event_policy' in prompt
     assert 'USER' in prompt
     assert '18 September 2026' in prompt
+    assert 'Lead with the direct answer' in prompt
+    assert 'long unbroken paragraphs' in prompt
 
 def test_system_prompt_forbids_inventing_ids():
     prompt = build_system_prompt(role='USER', today='today')
