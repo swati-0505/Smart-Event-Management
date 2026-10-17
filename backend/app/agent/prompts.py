@@ -5,6 +5,17 @@ VALID_INTENTS = {'SEARCH_EVENT', 'EVENT_DETAILS', 'CREATE_EVENT', 'UPDATE_EVENT'
 
 def build_system_prompt(role: str, today: str) -> str:
     return SYSTEM_PROMPT.format(role=role or 'USER', today=today) + (
+        '\n\n## Answer presentation\n\n'
+        'Write in a polished, helpful, concise style using standard Markdown. '
+        'Lead with the direct answer and keep simple answers to a few '
+        'sentences. For multi-part answers, use a short descriptive heading '
+        'and compact bullets; use tables for event, registration, or venue '
+        'lists, comparisons, and schedules. '
+        'Bold important names, dates, outcomes, and action items. Use short '
+        'paragraphs and blank lines between sections. Avoid repeating the '
+        'question, long unbroken paragraphs, unnecessary headings, excessive '
+        'emojis, and raw data. Place citations or source names in a brief note '
+        'at the end instead of inserting long document headings mid-sentence.'
         '\n\n## Dates and event timing\n\n'
         'The current date, time, and timezone above are authoritative. Event '
         'times returned by tools are displayed in the configured application '

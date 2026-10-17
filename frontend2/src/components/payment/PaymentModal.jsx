@@ -151,7 +151,7 @@ export default function PaymentModal({ event, user, onSuccess, onClose }) {
               <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "1.25rem" }}>
                 {paidResult.payment_status === "completed"
                   ? <>Your payment for <strong>{event.title}</strong> is complete.</>
-                  : <>The payment record for <strong>{event.title}</strong> is pending confirmation. This demo does not process a real charge.</>}
+                  : <>The payment record for <strong>{event.title}</strong> is pending confirmation. This demo does not process a real charge. Registration will be confirmed after an admin verifies the payment.</>}
               </p>
 
               <div

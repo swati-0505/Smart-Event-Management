@@ -16,7 +16,7 @@ def get_user_registrations(db: Session, user_id):
 def get_event_registrations(db: Session, event_id):
     return db.query(Registration).filter(Registration.event_id == event_id).all()
 
-def create_registration(db: Session, user_id, event_id):
+def create_registration(db: Session, user_id, event_id, commit: bool = True):
     event = db.query(Event).filter(Event.event_id == event_id).first()
     if not event:
         raise ValueError('Event not found')
@@ -33,16 +33,18 @@ def create_registration(db: Session, user_id, event_id):
             raise ValueError('No seats available')
         existing.status = 'confirmed'
         event.available_seats -= 1
-        db.commit()
-        db.refresh(existing)
+        if commit:
+            db.commit()
+            db.refresh(existing)
         return existing
     if event.available_seats <= 0:
         raise ValueError('No seats available')
     registration = Registration(user_id=user_id, event_id=event_id, status='confirmed')
     event.available_seats -= 1
     db.add(registration)
-    db.commit()
-    db.refresh(registration)
+    if commit:
+        db.commit()
+        db.refresh(registration)
     return registration
 
 def cancel_registration(db: Session, registration_id):
