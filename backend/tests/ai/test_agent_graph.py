@@ -102,6 +102,30 @@ def test_reason_uses_provider_defaults_and_preserves_tool_binding():
     assert router.return_value.invoke.call_args.kwargs['tools'] == tools
     assert 'model' not in router.return_value.invoke.call_args.kwargs
 
+def test_policy_question_routes_to_cancellation_policy_tool_without_chat_model():
+    state = _state(intent='POLICY_QUESTION', message='What are the cancellation policies?')
+    with patch('app.agent.nodes.LLMProviderRouter') as router:
+        result = reason(state)
+    call = result['messages'][0].tool_calls[0]
+    assert call['name'] == 'search_event_policy'
+    assert call['args'] == {
+        'question': 'What are the cancellation policies?',
+        'policy_area': 'cancellation_policy',
+    }
+    router.return_value.invoke.assert_not_called()
+
+def test_policy_tool_result_is_returned_without_an_unrelated_chat_answer():
+    policy_result = 'Cancellations are accepted before the event starts.\n\nSources: Cancellation Policy'
+    state = _state(
+        intent='POLICY_QUESTION',
+        messages=[ToolMessage(content=policy_result, tool_call_id='policy-call', name='search_event_policy')],
+        loop_count=1,
+    )
+    with patch('app.agent.nodes.LLMProviderRouter') as router:
+        result = reason(state)
+    assert result['messages'][0].content == policy_result
+    router.return_value.invoke.assert_not_called()
+
 def test_reason_returns_controlled_message_when_all_providers_fail():
     from app.llm.exceptions import LLMUnavailableError
     with patch('app.agent.nodes.LLMProviderRouter') as router:
