@@ -106,9 +106,10 @@ Base path: `/api/feedback`
 | GET | `/api/feedback/` | Retrieve all feedback | Admin |
 | GET | `/api/feedback/event/{event_id}` | Retrieve feedback for an event | Admin |
 | GET | `/api/feedback/user/{user_id}` | Retrieve feedback for a user | Admin |
-| POST | `/api/feedback/` | Submit feedback | Verify authentication and ownership checks in the implementation |
+| GET | `/api/feedback/mine` | Retrieve the signed-in user's feedback | Authenticated user |
+| POST | `/api/feedback/` | Submit feedback for an ended event with an active registration | Authenticated user |
 
-Feedback operations use the feedback service and feedback schemas.
+Feedback submissions use the signed-in user's identity, require an active registration, and are accepted only after the event end time (or event start time when no end time is set). Each user can submit one rating per event; ratings range from 1 to 5 and comments are optional.
 
 ## 8. Administration API
 

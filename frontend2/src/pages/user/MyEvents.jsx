@@ -1,35 +1,47 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Ticket, Calendar, MapPin, XCircle, ArrowLeft } from "lucide-react";
+import { Ticket, Calendar, MapPin, XCircle, MessageSquare, Star } from "lucide-react";
 import { useAuth } from "../../auth/AuthProvider";
 import { getUserRegistrations, cancelRegistration } from "../../services/registrationService";
 import { getEventById } from "../../services/eventService";
+import { createFeedback, getMyFeedback } from "../../services/feedbackService";
 import PageLoader from "../../components/common/PageLoader";
 import ErrorState from "../../components/common/ErrorState";
 import EmptyState from "../../components/common/EmptyState";
 import Badge from "../../components/common/Badge";
 import ConfirmDialog from "../../components/common/ConfirmDialog";
+import Modal from "../../components/common/Modal";
 
 export default function MyEvents() {
   const { user } = useAuth();
   const [registrations, setRegistrations] = useState([]);
-  const [eventsMap, setEventsMap] = useState();
+  const [eventsMap, setEventsMap] = useState({});
+  const [feedbackMap, setFeedbackMap] = useState({});
+  const [currentTime] = useState(() => Date.now());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelling, setCancelling] = useState(false);
+  const [feedbackTarget, setFeedbackTarget] = useState(null);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [feedbackError, setFeedbackError] = useState("");
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
 
   const loadData = () => {
     setLoading(true);
     setError("");
 
-    getUserRegistrations(user.id)
-      .then(async (regs) => {
+    Promise.all([getUserRegistrations(user.id), getMyFeedback()])
+      .then(async ([regs, feedback]) => {
         const activeList = Array.isArray(regs)
           ? regs.filter((r) => r.status?.toLowerCase() !== "cancelled")
           : [];
         setRegistrations(activeList);
+        setFeedbackMap(Object.fromEntries(
+          (Array.isArray(feedback) ? feedback : []).map((item) => [item.event_id, item])
+        ));
 
         const eventIds = [...new Set(activeList.map((r) => r.event_id))];
         const map = {};
@@ -81,6 +93,29 @@ export default function MyEvents() {
     }
   }
 
+  async function handleSubmitFeedback(event) {
+    event.preventDefault();
+    if (!feedbackTarget) return;
+
+    setSubmittingFeedback(true);
+    setFeedbackError("");
+    try {
+      const submitted = await createFeedback({
+        event_id: feedbackTarget.event_id,
+        rating,
+        comment: comment.trim() || null,
+      });
+      setFeedbackMap((previous) => ({ ...previous, [feedbackTarget.event_id]: submitted }));
+      setFeedbackTarget(null);
+      setComment("");
+      setRating(5);
+    } catch (err) {
+      setFeedbackError(err.message || "Failed to submit feedback.");
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  }
+
   if (loading) {
     return <PageLoader message="Loading your event passes..." />;
   }
@@ -118,6 +153,9 @@ export default function MyEvents() {
             const event = eventsMap[reg.event_id];
             const isCancelled = reg.status === "CANCELLED";
             const dateObj = event?.event_date ? new Date(event.event_date) : null;
+            const eventEndDate = event?.end_time || event?.event_date;
+            const isCompleted = eventEndDate && new Date(eventEndDate).getTime() <= currentTime;
+            const hasFeedback = Boolean(feedbackMap[reg.event_id]);
 
             return (
               <div
@@ -184,6 +222,22 @@ export default function MyEvents() {
                       View Event
                     </Link>
                   )}
+                  {isCompleted && !hasFeedback && (
+                    <button
+                      onClick={() => {
+                        setFeedbackTarget(event);
+                        setFeedbackError("");
+                      }}
+                      className="btn btn-primary btn-sm"
+                    >
+                      <MessageSquare size={16} /> Leave feedback
+                    </button>
+                  )}
+                  {isCompleted && hasFeedback && (
+                    <span style={{ color: "var(--color-success)", fontSize: "0.85rem", fontWeight: 600 }}>
+                      Feedback submitted
+                    </span>
+                  )}
                   {!isCancelled && (
                     <button
                       onClick={() => setCancelTarget(reg)}
@@ -212,6 +266,53 @@ export default function MyEvents() {
         confirmVariant="danger"
         loading={cancelling}
       />
+      <Modal
+        isOpen={Boolean(feedbackTarget)}
+        onClose={() => {
+          if (!submittingFeedback) setFeedbackTarget(null);
+        }}
+        title={`Feedback${feedbackTarget ? ` for ${feedbackTarget.title}` : ""}`}
+      >
+        <form onSubmit={handleSubmitFeedback} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <div>
+            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>
+              Your rating
+            </label>
+            <div role="group" aria-label="Rating from 1 to 5 stars" style={{ display: "flex", gap: "0.25rem" }}>
+              {[1, 2, 3, 4, 5].map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setRating(value)}
+                  aria-label={`${value} star${value === 1 ? "" : "s"}`}
+                  aria-pressed={rating === value}
+                  style={{ color: "#f59e0b", background: "none", border: 0, cursor: "pointer", padding: "0.25rem" }}
+                >
+                  <Star size={28} fill={value <= rating ? "#f59e0b" : "none"} />
+                </button>
+              ))}
+            </div>
+          </div>
+          <label style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontWeight: 600 }}>
+            Comment (optional)
+            <textarea
+              value={comment}
+              onChange={(event) => setComment(event.target.value)}
+              rows={4}
+              maxLength={2000}
+              placeholder="Tell us what you thought about the event..."
+              className="form-textarea"
+              style={{ resize: "vertical", fontWeight: 400 }}
+            />
+          </label>
+          {feedbackError && (
+            <p role="alert" style={{ color: "var(--color-danger)", margin: 0 }}>{feedbackError}</p>
+          )}
+          <button type="submit" className="btn btn-primary" disabled={submittingFeedback}>
+            {submittingFeedback ? "Submitting..." : "Submit feedback"}
+          </button>
+        </form>
+      </Modal>
     </div>
   );
 }
