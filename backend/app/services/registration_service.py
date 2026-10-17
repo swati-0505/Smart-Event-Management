@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 from app.models.registration import Registration
 from app.models.event import Event
+from app.core.time import as_utc
+from app.tools.formatting import format_datetime
 
 def get_all_registrations(db: Session):
     return db.query(Registration).all()
@@ -21,14 +23,8 @@ def create_registration(db: Session, user_id, event_id):
     from datetime import datetime, timezone
     now = datetime.now(timezone.utc)
     event_dt = event.event_date
-    if event_dt:
-        if event_dt.tzinfo is None:
-            event_dt = event_dt.replace(tzinfo=timezone.utc)
-        else:
-            event_dt = event_dt.astimezone(timezone.utc)
-        if event_dt < now:
-            formatted_date = event.event_date.strftime('%d %B %Y')
-            raise ValueError(f"This event ('{event.title}') has already been completed on {formatted_date}, so registration is closed.")
+    if event_dt and as_utc(event_dt) < now:
+        raise ValueError(f"This event ('{event.title}') has already started on {format_datetime(event.event_date)}, so registration is closed.")
     existing = db.query(Registration).filter(Registration.user_id == user_id, Registration.event_id == event_id).first()
     if existing:
         if existing.status and existing.status.lower() != 'cancelled':

@@ -76,20 +76,26 @@ export default function AdminFeedback() {
             const fId = item.feedback_id || item.id;
             const event = eventsMap[item.event_id];
             const user = usersMap[item.user_id];
+            const rating = Number(item.rating ?? 5);
             return (
               <div key={fId} className="card" style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", color: "#f59e0b" }}>
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        size={16}
-                        fill={i < (item.rating || 5) ? "#f59e0b" : "none"}
-                        style={{ opacity: i < (item.rating || 5) ? 1 : 0.3 }}
-                      />
-                    ))}
+                    {[...Array(5)].map((_, i) => {
+                      const fillPercentage = Math.max(0, Math.min(1, rating - i)) * 100;
+                      return (
+                        <span key={i} style={{ position: "relative", display: "inline-flex" }}>
+                          <Star size={16} fill="none" style={{ opacity: fillPercentage === 0 ? 0.3 : 1 }} />
+                          {fillPercentage > 0 && (
+                            <span style={{ position: "absolute", inset: 0, width: `${fillPercentage}%`, overflow: "hidden" }}>
+                              <Star size={16} fill="#f59e0b" />
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })}
                     <span style={{ fontSize: "0.875rem", fontWeight: 700, marginLeft: "0.35rem", color: "var(--text-primary)" }}>
-                      {item.rating || 5}.0
+                      {rating.toFixed(1)}
                     </span>
                   </div>
 

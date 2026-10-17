@@ -1,9 +1,10 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 from app.core.config import settings
+from app.core.time import as_utc
 from app.models.event import Event
 from app.models.venue import Venue
 DEFAULT_EVENT_DURATION_HOURS = settings.EVENT_DEFAULT_DURATION_HOURS
@@ -29,8 +30,8 @@ def check_venue_availability(db: Session, venue_id, requested_time: datetime, du
         return AvailabilityResult(available=False, reason=f'{venue.name} holds {venue.capacity} people, which is fewer than the {required_capacity} required.', venue_name=venue.name, venue_capacity=venue.capacity)
     if requested_end_time is None:
         requested_end_time = requested_time + timedelta(hours=duration_hours)
-    start_utc = requested_time.replace(tzinfo=timezone.utc) if requested_time.tzinfo is None else requested_time.astimezone(timezone.utc)
-    end_utc = requested_end_time.replace(tzinfo=timezone.utc) if requested_end_time.tzinfo is None else requested_end_time.astimezone(timezone.utc)
+    start_utc = as_utc(requested_time)
+    end_utc = as_utc(requested_end_time)
     if end_utc <= start_utc:
         raise ValueError('requested_end_time must be later than requested_time')
     legacy_window_start = start_utc - timedelta(hours=duration_hours)

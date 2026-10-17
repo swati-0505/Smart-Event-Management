@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, UniqueConstraint, CheckConstraint, func
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, UniqueConstraint, CheckConstraint, func, Numeric
 from sqlalchemy.dialects.postgresql import UUID
 from app.db.database import Base
 
@@ -9,6 +9,6 @@ class Feedback(Base):
     feedback_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False, index=True)
     event_id = Column(UUID(as_uuid=True), ForeignKey('events.event_id'), nullable=False, index=True)
-    rating = Column(Integer, nullable=False, index=True)
+    rating = Column(Numeric(2, 1), nullable=False, index=True)
     comment = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

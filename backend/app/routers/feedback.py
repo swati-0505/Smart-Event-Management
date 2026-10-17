@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -6,8 +5,6 @@ from app.core.security import get_current_user, require_admin
 from app.db.database import get_db
 from app.models.user import User
 from app.models.event import Event
-from app.models.feedback import Feedback
-from app.models.registration import Registration
 from app.schemas.feedback import FeedbackCreate, FeedbackResponse
 from app.services import feedback_service
 router = APIRouter(prefix='/api/feedback', tags=['Feedback'])
@@ -43,30 +40,15 @@ def create_feedback(
     if not event:
         raise HTTPException(status_code=404, detail='Event not found')
 
-    registration = db.query(Registration).filter(
-        Registration.user_id == current_user.id,
-        Registration.event_id == feedback_data.event_id,
-    ).first()
-    if not registration or (registration.status or '').lower() == 'cancelled':
-        raise HTTPException(status_code=403, detail='You must have an active registration to submit feedback')
-
-    event_end = event.end_time or event.event_date
-    if event_end.tzinfo is None:
-        event_end = event_end.replace(tzinfo=timezone.utc)
-    if event_end > datetime.now(timezone.utc):
-        raise HTTPException(status_code=400, detail='Feedback can only be submitted after the event has ended')
-
-    existing_feedback = db.query(Feedback).filter(
-        Feedback.user_id == current_user.id,
-        Feedback.event_id == feedback_data.event_id,
-    ).first()
-    if existing_feedback:
-        raise HTTPException(status_code=400, detail='You have already submitted feedback for this event')
-
-    return feedback_service.create_feedback(
-        db=db,
-        user_id=current_user.id,
-        event_id=feedback_data.event_id,
-        rating=feedback_data.rating,
-        comment=feedback_data.comment,
-    )
+    try:
+        return feedback_service.submit_feedback(
+            db=db,
+            user_id=current_user.id,
+            event_id=feedback_data.event_id,
+            rating=feedback_data.rating,
+            comment=feedback_data.comment,
+            event=event,
+            automatic_participant=(current_user.role or '').upper() in ('ADMIN', 'MAIN_ADMIN'),
+        )
+    except feedback_service.FeedbackSubmissionError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
