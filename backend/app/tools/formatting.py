@@ -2,13 +2,25 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
+from app.core.time import as_local, now_local
+
 def format_datetime(value: datetime | None) -> str:
     if not value:
         return 'unspecified'
-    return value.strftime('%a %d %b %Y at %I:%M %p')
+    return as_local(value).strftime('%a %d %b %Y at %I:%M %p %Z')
+
+def get_event_time_status(event, now: datetime | None=None) -> str:
+    current = as_local(now) if now else now_local()
+    start = as_local(event.event_date)
+    end = as_local(getattr(event, 'end_time', None) or event.event_date)
+    if end <= current:
+        return 'Completed'
+    if start <= current:
+        return 'In progress'
+    return 'Upcoming'
 
 def format_event(event, venue_name: str | None=None, detailed: bool=False) -> str:
-    lines = [f'- {event.title} (event_id: {event.event_id})', f'  Category: {event.category}', f'  When: {format_datetime(event.event_date)}' + (f' - {format_datetime(event.end_time)}' if getattr(event, 'end_time', None) else ''), f'  Seats left: {event.available_seats} of {event.capacity}', f'  Status: {event.status}']
+    lines = [f'- {event.title} (event_id: {event.event_id})', f'  Category: {event.category}', f'  When: {format_datetime(event.event_date)}' + (f' - {format_datetime(event.end_time)}' if getattr(event, 'end_time', None) else ''), f'  Timing: {get_event_time_status(event)}', f'  Seats left: {event.available_seats} of {event.capacity}', f'  Status: {event.status}']
     if venue_name:
         lines.insert(2, f'  Venue: {venue_name}')
     if detailed:
@@ -38,12 +50,12 @@ def parse_uuid(value: str, field_name: str='id') -> UUID:
 def parse_datetime(value: str) -> datetime:
     text = str(value).strip().replace('Z', '+00:00')
     try:
-        return datetime.fromisoformat(text)
+        return as_local(datetime.fromisoformat(text))
     except ValueError:
         pass
     for pattern in ('%Y-%m-%d %H:%M', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d', '%d/%m/%Y %H:%M'):
         try:
-            return datetime.strptime(text, pattern)
+            return as_local(datetime.strptime(text, pattern))
         except ValueError:
             continue
     raise ValueError(f"Could not read '{value}' as a date and time. Use ISO format, for example 2026-03-15T14:30:00.")

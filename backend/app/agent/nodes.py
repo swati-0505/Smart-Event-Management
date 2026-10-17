@@ -2,12 +2,13 @@ from __future__ import annotations
 import json
 import logging
 import time
-from datetime import date
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from app.agent import memory
 from app.agent.prompts import INTENT_PROMPT, VALID_INTENTS, build_system_prompt
 from app.agent.state import AgentState
 from app.core.ai_config import ai_settings
+from app.core.config import settings
+from app.core.time import now_local
 from app.llm.exceptions import LLMProviderError
 from app.llm.router import LLMProviderRouter
 from app.observability.logger import log_tool_call
@@ -33,7 +34,9 @@ def classify_intent(state: AgentState) -> dict:
 def load_memory(state: AgentState) -> dict:
     context = get_tool_context()
     history = memory.load_history(db=context.db, session_id=state['session_id'], limit=ai_settings.MEMORY_WINDOW_MESSAGES)
-    messages = [SystemMessage(content=build_system_prompt(role=state.get('role', 'USER'), today=date.today().strftime('%A, %d %B %Y'))), *history, HumanMessage(content=state['message'])]
+    current_time = now_local()
+    today = f"{current_time.strftime('%A, %d %B %Y')} ({settings.APP_TIMEZONE}, {current_time.strftime('%Z %z')}); current time {current_time.strftime('%I:%M %p')}"
+    messages = [SystemMessage(content=build_system_prompt(role=state.get('role', 'USER'), today=today)), *history, HumanMessage(content=state['message'])]
     return {'messages': messages}
 
 def reason(state: AgentState) -> dict:

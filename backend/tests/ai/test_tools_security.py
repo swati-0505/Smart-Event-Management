@@ -81,6 +81,13 @@ def test_assistant_prompt_explains_automatic_admin_participation_and_policy_answ
     assert 'cite its source' in prompt
     assert 'Never apply this rule to a request to register another person' in prompt
 
+def test_assistant_prompt_grounds_event_timing_and_feedback():
+    prompt = build_system_prompt('USER', 'Saturday, 17 October 2026 (Asia/Kolkata)')
+    assert 'completed_today' in prompt
+    assert 'after its end time' in prompt
+    assert 'Do not invent feedback instructions' in prompt
+    assert 'submit_event_feedback' in prompt
+
 def test_assistant_prompt_requires_missing_event_details_before_creation():
     prompt = build_system_prompt('ADMIN', 'Wednesday, 14 October 2026')
     assert 'ask a concise clarifying question' in prompt
@@ -90,6 +97,10 @@ def test_assistant_prompt_requires_missing_event_details_before_creation():
 def test_guests_receive_only_public_read_only_tools():
     names = {tool.name for tool in get_tools_for_role('GUEST')}
     assert names == {'search_events', 'get_event_details', 'search_venues', 'check_venue_availability', 'search_event_policy'}
+    assert 'submit_event_feedback' not in names
+
+def test_signed_in_users_can_submit_feedback():
+    assert 'submit_event_feedback' in {tool.name for tool in get_tools_for_role('USER')}
 
 def test_unknown_role_is_treated_as_a_plain_user():
     assert len(get_tools_for_role('superuser')) == len(USER_TOOLS)
@@ -105,7 +116,7 @@ def test_user_creation_accepts_only_canonical_privileged_roles():
     assert user.role == 'ADMIN'
 
 def test_every_roadmap_tool_is_registered():
-    required = {'search_events', 'create_event', 'update_event', 'cancel_event', 'check_venue_availability', 'register_participant', 'cancel_registration', 'get_event_details', 'search_event_policy'}
+    required = {'search_events', 'create_event', 'update_event', 'cancel_event', 'check_venue_availability', 'register_participant', 'cancel_registration', 'get_event_details', 'submit_event_feedback', 'search_event_policy'}
     registered = {tool.name for tool in ALL_TOOLS}
     assert required.issubset(registered), required - registered
 

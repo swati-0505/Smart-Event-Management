@@ -1,6 +1,7 @@
 from __future__ import annotations
 import sys
 from typing import List
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -18,6 +19,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = 'change-this-in-production'
     ALGORITHM: str = 'HS256'
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    APP_TIMEZONE: str = 'Asia/Kolkata'
     EVENT_DEFAULT_DURATION_HOURS: float = Field(default=3, gt=0)
     REDIS_URL: str = Field(default='redis://localhost:6379/0')
     ENABLE_REDIS_CACHE: bool = Field(default=True)
@@ -47,6 +49,15 @@ class Settings(BaseSettings):
                 )
                 sys.exit(1)
         return v
+
+    @field_validator('APP_TIMEZONE')
+    @classmethod
+    def timezone_must_be_valid(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except ZoneInfoNotFoundError as exc:
+            raise ValueError(f'APP_TIMEZONE must be a valid IANA timezone, got {value!r}.') from exc
+        return value
 
     def get_cors_origins(self) -> List[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(',') if origin.strip()]
