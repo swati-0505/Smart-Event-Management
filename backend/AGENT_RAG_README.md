@@ -68,6 +68,11 @@ uv sync
 cp .env.example .env    # then replace the DATABASE_URL with your shared cloud DB
 ```
 
+`APP_TIMEZONE` defaults to `Asia/Kolkata`. The assistant uses this timezone for
+"today" queries and for interpreting timestamps that have no UTC offset; event
+times returned in chat are labeled in that timezone. Set it to another IANA
+timezone name if the deployment has a different authoritative local timezone.
+
 For a group project, do not use localhost as the database host. Use one shared PostgreSQL database in Neon, Supabase, Render, or Railway. Everyone on the team should point their local `.env` file to the same `DATABASE_URL` so you all work on the same data set.
 
 ### Migrate
@@ -172,6 +177,18 @@ curl -H "Authorization: Bearer <admin-jwt>" \
 | GET | `/api/admin/agent-activity/{run_id}` | admin | One run with its tool calls |
 | POST | `/api/admin/knowledge/ingest` | admin | Reindex the documents |
 | GET | `/api/admin/knowledge/status` | admin | What is currently indexed |
+
+### Event timing and feedback
+
+The chat assistant uses event start/end timestamps to distinguish completed,
+in-progress, and upcoming events. Queries such as "what completed today" use
+the configured `APP_TIMEZONE` and the event end time, not the event's status
+label alone. Signed-in attendees can submit feedback only after the event ends
+and only if they have an active registration; this rule is shared by the chat
+tool and `POST /api/feedback/`. The attendee feedback form is available under
+My Events for eligible events, and submitted entries appear in the admin
+Feedback page. Ratings support one decimal place from 1.0 to 5.0; apply the
+`c7d8e9f0a1b2` Alembic migration before deploying the schema change.
 
 ### Request / response
 

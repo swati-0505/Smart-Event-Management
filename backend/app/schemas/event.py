@@ -1,12 +1,7 @@
 from datetime import datetime
-from datetime import timezone
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-
-def _as_utc(value: datetime) -> datetime:
-    if value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
-    return value.astimezone(timezone.utc)
+from app.core.time import as_utc
 
 class EventCreate(BaseModel):
     title: str
@@ -21,7 +16,7 @@ class EventCreate(BaseModel):
 
     @model_validator(mode='after')
     def end_must_follow_start(self):
-        if self.end_time is not None and _as_utc(self.end_time) <= _as_utc(self.event_date):
+        if self.end_time is not None and as_utc(self.end_time) <= as_utc(self.event_date):
             raise ValueError('end_time must be later than event_date')
         return self
 
@@ -39,7 +34,7 @@ class EventUpdate(BaseModel):
 
     @model_validator(mode='after')
     def end_must_follow_start_when_both_are_given(self):
-        if self.event_date is not None and self.end_time is not None and (_as_utc(self.end_time) <= _as_utc(self.event_date)):
+        if self.event_date is not None and self.end_time is not None and (as_utc(self.end_time) <= as_utc(self.event_date)):
             raise ValueError('end_time must be later than event_date')
         return self
 
