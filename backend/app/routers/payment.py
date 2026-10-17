@@ -42,7 +42,10 @@ def create_payment(payment_data: PaymentCreate, db: Session=Depends(get_db), cur
 
 @router.put('/{payment_id}/status', response_model=PaymentResponse)
 def update_payment_status(payment_id: UUID, status_data: PaymentStatusUpdate, db: Session=Depends(get_db), _: User=Depends(require_admin)):
-    payment = payment_service.update_payment_status(db=db, payment_id=payment_id, status=status_data.payment_status)
+    try:
+        payment = payment_service.update_payment_status(db=db, payment_id=payment_id, status=status_data.payment_status)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     if not payment:
         raise HTTPException(status_code=404, detail='Payment not found')
     return payment

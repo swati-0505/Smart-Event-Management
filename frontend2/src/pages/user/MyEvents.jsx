@@ -238,6 +238,11 @@ export default function MyEvents() {
                       Feedback submitted
                     </span>
                   )}
+                  {event && !isCompleted && !hasFeedback && (
+                    <span style={{ color: "var(--text-muted)", fontSize: "0.8rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+                      <MessageSquare size={14} /> Feedback opens after the event ends
+                    </span>
+                  )}
                   {!isCancelled && (
                     <button
                       onClick={() => setCancelTarget(reg)}
