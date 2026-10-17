@@ -95,7 +95,7 @@ Base path: `/api/payments`
 | POST | `/api/payments/` | Create a payment record | Authenticated user |
 | PUT | `/api/payments/{payment_id}/status` | Update payment status | Admin |
 
-Payment routes use the payment service and payment schemas. These routes document the backend interface; they do not, by themselves, confirm integration with a live payment gateway.
+Payment routes use the payment service and payment schemas. These routes do not integrate with a live payment gateway: new records remain `pending` until an admin verifies and marks them `completed`. Completing a payment creates or reactivates the attendee's registration in the same database transaction; if registration cannot be completed (for example, no seats remain), the payment stays unchanged and the API returns an error.
 
 ## 7. Feedback API
 
@@ -109,7 +109,7 @@ Base path: `/api/feedback`
 | GET | `/api/feedback/mine` | Retrieve the signed-in user's feedback | Authenticated user |
 | POST | `/api/feedback/` | Submit feedback for an ended event with an active registration | Authenticated user |
 
-Feedback submissions use the signed-in user's identity, require an active registration, and are accepted only after the event end time (or event start time when no end time is set). Each user can submit one rating per event; ratings range from 1 to 5 and comments are optional.
+Feedback submissions use the signed-in user's identity, require an active registration, and are accepted only after the event end time (or event start time when no end time is set). The attendee UI explains that feedback opens after the event ends. Each user can submit one rating per event; ratings range from 1 to 5 and comments are optional.
 
 ## 8. Administration API
 

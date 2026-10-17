@@ -1,5 +1,6 @@
 from datetime import datetime
 from uuid import UUID
+from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 class PaymentCreate(BaseModel):
@@ -10,7 +11,7 @@ class PaymentCreate(BaseModel):
     transaction_id: str | None = None
 
 class PaymentStatusUpdate(BaseModel):
-    payment_status: str
+    payment_status: Literal['pending', 'completed', 'failed', 'refunded']
 
 class PaymentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
