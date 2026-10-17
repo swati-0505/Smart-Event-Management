@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Ticket, Calendar, MapPin, XCircle, MessageSquare, Star } from "lucide-react";
+import { Ticket, Calendar, MapPin, XCircle, MessageSquare } from "lucide-react";
 import { useAuth } from "../../auth/AuthProvider";
 import { getUserRegistrations, cancelRegistration } from "../../services/registrationService";
 import { getEventById } from "../../services/eventService";
@@ -274,25 +274,19 @@ export default function MyEvents() {
         title={`Feedback${feedbackTarget ? ` for ${feedbackTarget.title}` : ""}`}
       >
         <form onSubmit={handleSubmitFeedback} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <div>
-            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>
-              Your rating
-            </label>
-            <div role="group" aria-label="Rating from 1 to 5 stars" style={{ display: "flex", gap: "0.25rem" }}>
-              {[1, 2, 3, 4, 5].map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setRating(value)}
-                  aria-label={`${value} star${value === 1 ? "" : "s"}`}
-                  aria-pressed={rating === value}
-                  style={{ color: "#f59e0b", background: "none", border: 0, cursor: "pointer", padding: "0.25rem" }}
-                >
-                  <Star size={28} fill={value <= rating ? "#f59e0b" : "none"} />
-                </button>
-              ))}
-            </div>
-          </div>
+          <label style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontWeight: 600 }}>
+            Your rating (1.0-5.0)
+            <input
+              type="number"
+              min="1"
+              max="5"
+              step="0.1"
+              required
+              value={rating}
+              onChange={(event) => setRating(event.target.value === "" ? "" : Number(event.target.value))}
+              className="form-input"
+            />
+          </label>
           <label style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontWeight: 600 }}>
             Comment (optional)
             <textarea

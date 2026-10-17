@@ -1,10 +1,10 @@
 from __future__ import annotations
 from langchain_core.tools import BaseTool
-from app.tools.event_tools import cancel_event, create_event, get_event_details, search_events, update_event
+from app.tools.event_tools import cancel_event, create_event, get_event_details, search_events, submit_event_feedback, update_event
 from app.tools.rag_tools import search_event_policy
 from app.tools.registration_tools import cancel_registration, get_event_registrations, my_registrations, register_participant
 from app.tools.venue_tools import check_venue_availability, search_venues
-USER_TOOLS: list[BaseTool] = [search_events, get_event_details, search_venues, check_venue_availability, register_participant, cancel_registration, my_registrations, search_event_policy]
+USER_TOOLS: list[BaseTool] = [search_events, get_event_details, search_venues, check_venue_availability, register_participant, cancel_registration, my_registrations, submit_event_feedback, search_event_policy]
 GUEST_TOOLS: list[BaseTool] = [search_events, get_event_details, search_venues, check_venue_availability, search_event_policy]
 ADMIN_ONLY_TOOLS: list[BaseTool] = [create_event, update_event, cancel_event, get_event_registrations]
 ALL_TOOLS: list[BaseTool] = USER_TOOLS + ADMIN_ONLY_TOOLS

@@ -18,16 +18,12 @@ def register_participant(event_id: str) -> str:
     if event.status != 'published':
         return f"'{event.title}' is not open for registration yet."
     from datetime import datetime, timezone
+    from app.core.time import as_utc
     now = datetime.now(timezone.utc)
     event_dt = event.event_date
-    if event_dt:
-        if event_dt.tzinfo is None:
-            event_dt = event_dt.replace(tzinfo=timezone.utc)
-        else:
-            event_dt = event_dt.astimezone(timezone.utc)
-        if event_dt < now:
-            formatted_date = format_datetime(event.event_date)
-            return f'This event has already been completed on {formatted_date}, so I cannot register you for it.'
+    if event_dt and as_utc(event_dt) < now:
+        formatted_date = format_datetime(event.event_date)
+        return f'This event has already started on {formatted_date}, so I cannot register you for it.'
     try:
         registration = registration_service.create_registration(db=db, user_id=context.user_id, event_id=event_uuid)
     except ValueError as exc:

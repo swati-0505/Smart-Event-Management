@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Literal
 from langchain_core.tools import tool
 from app.models.venue import Venue
 from app.services import event_service
@@ -13,11 +14,26 @@ def _venue_names(db, events) -> dict:
     return {venue.venue_id: venue.name for venue in rows}
 
 @tool
-def search_events(keyword: str='', category: str='', city: str='', only_with_seats: bool=False) -> str:
-    """Search for events matching keyword, category, city, or seat availability."""
+def search_events(keyword: str='', category: str='', city: str='', only_with_seats: bool=False, time_filter: Literal['upcoming', 'completed', 'completed_today', 'today', 'all'] | None=None) -> str:
+    """Search published events. Use time_filter completed_today for events whose end time has passed today, completed for all completed events, today for events starting today, upcoming for future/in-progress events, or all for any date. Times use the application timezone."""
     context = get_tool_context()
     db = context.db
-    if keyword:
+    if time_filter:
+        events = event_service.get_events_by_period(db, time_filter)
+        if keyword:
+            events = [e for e in events if keyword.lower() in (e.title or '').lower()]
+        if category:
+            events = [e for e in events if category.lower() in (e.category or '').lower()]
+        if city:
+            venue_ids = {e.venue_id for e in events if e.venue_id}
+            city_names = {
+                venue.venue_id: venue.city.lower()
+                for venue in db.query(Venue).filter(Venue.venue_id.in_(venue_ids)).all()
+            }
+            events = [e for e in events if city.lower() in city_names.get(e.venue_id, '')]
+        if only_with_seats:
+            events = [e for e in events if e.available_seats > 0]
+    elif keyword:
         events = event_service.search_events_by_title(db, keyword)
     elif category:
         events = event_service.search_events_by_category(db, category)
@@ -48,6 +64,31 @@ def get_event_details(event_id: str) -> str:
     if venue:
         details += f'\n  Address: {venue.address}, {venue.city}'
     return details
+
+@tool
+def submit_event_feedback(event_id: str, rating: float, comment: str='') -> str:
+    """Submit a 1.0-5.0 rating (one decimal place) and optional comment for an event the signed-in user attended after it has ended."""
+    from app.services import feedback_service
+
+    context = get_tool_context()
+    if context.user_id is None:
+        return 'Sign in to submit event feedback.'
+    event = event_service.get_event_by_id(context.db, parse_uuid(event_id, 'event_id'))
+    if not event:
+        return f'No event exists with id {event_id}.'
+    try:
+        feedback_service.submit_feedback(
+            db=context.db,
+            user_id=context.user_id,
+            event_id=event.event_id,
+            rating=rating,
+            comment=comment or None,
+            event=event,
+            automatic_participant=context.is_admin,
+        )
+    except feedback_service.FeedbackSubmissionError as exc:
+        return f"Could not submit feedback for '{event.title}': {exc.detail}"
+    return f"Feedback submitted for '{event.title}' with a {float(rating):.1f}/5 rating."
 
 @tool
 def create_event(title: str, category: str, venue_id: str, event_date: str, capacity: int, end_time: str='', description: str='', registration_deadline: str='') -> str:
