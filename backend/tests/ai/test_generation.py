@@ -17,6 +17,10 @@ def test_generate_answer_uses_central_router_for_answer_and_grounding():
         result = generator.generate_answer('What is the refund policy?', [make_chunk('a', content='Refunds apply to paid events.')])
     assert result.answer == 'Refunds apply to paid events. [Cancellation Policy]'
     assert router_class.call_count == 2
+    answer_prompt = router.invoke.call_args_list[0].args[0]
+    assert 'polished Markdown' in answer_prompt
+    assert 'Markdown table for refund schedules' in answer_prompt
+    assert 'Avoid long paragraphs' in answer_prompt
     assert [call.kwargs for call in router.invoke.call_args_list] == [
         {'temperature': 0.0},
         {'temperature': 0.0},
