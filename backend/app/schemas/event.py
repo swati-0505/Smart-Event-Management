@@ -1,13 +1,20 @@
 from datetime import datetime
+from datetime import timezone
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, Field, model_validator
-from app.core.time import as_utc
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
+from app.core.event_status import is_event_completed
+
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
 
 class EventCreate(BaseModel):
     title: str
     description: str | None = None
     category: str
-    venue_id: UUID
+    venue_id: UUID | None = None
+    address: str | None = None
     event_date: datetime
     end_time: datetime | None = None
     registration_deadline: datetime | None = None
@@ -16,7 +23,11 @@ class EventCreate(BaseModel):
 
     @model_validator(mode='after')
     def end_must_follow_start(self):
-        if self.end_time is not None and as_utc(self.end_time) <= as_utc(self.event_date):
+        if self.address is not None:
+            self.address = self.address.strip() or None
+        if (self.venue_id is None) == (self.address is None):
+            raise ValueError('Provide either venue_id or a custom address')
+        if self.end_time is not None and _as_utc(self.end_time) <= _as_utc(self.event_date):
             raise ValueError('end_time must be later than event_date')
         return self
 
@@ -25,6 +36,7 @@ class EventUpdate(BaseModel):
     description: str | None = None
     category: str | None = None
     venue_id: UUID | None = None
+    address: str | None = None
     event_date: datetime | None = None
     end_time: datetime | None = None
     registration_deadline: datetime | None = None
@@ -34,7 +46,11 @@ class EventUpdate(BaseModel):
 
     @model_validator(mode='after')
     def end_must_follow_start_when_both_are_given(self):
-        if self.event_date is not None and self.end_time is not None and (as_utc(self.end_time) <= as_utc(self.event_date)):
+        if self.address is not None:
+            self.address = self.address.strip() or None
+        if self.venue_id is not None and self.address is not None:
+            raise ValueError('Provide either venue_id or a custom address')
+        if self.event_date is not None and self.end_time is not None and (_as_utc(self.end_time) <= _as_utc(self.event_date)):
             raise ValueError('end_time must be later than event_date')
         return self
 
@@ -44,7 +60,8 @@ class EventResponse(BaseModel):
     title: str
     description: str | None
     category: str
-    venue_id: UUID
+    venue_id: UUID | None
+    address: str | None
     event_date: datetime
     end_time: datetime | None
     registration_deadline: datetime | None
@@ -54,3 +71,8 @@ class EventResponse(BaseModel):
     status: str
     ticket_price: float = 0.0
     created_at: datetime | None = None
+
+    @computed_field
+    @property
+    def is_completed(self) -> bool:
+        return is_event_completed(self.event_date, self.end_time)

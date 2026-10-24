@@ -168,7 +168,7 @@ export default function AdminEvents() {
                         <Badge variant="primary">{ev.category}</Badge>
                       </td>
                       <td style={{ padding: "1rem 1.25rem", color: "var(--text-secondary)" }}>
-                        {venue ? `${venue.name} (${venue.city})` : "Venue TBA"}
+                        {venue ? `${venue.name} (${venue.city})` : ev.address || "Venue TBA"}
                       </td>
                       <td style={{ padding: "1rem 1.25rem", color: "var(--text-secondary)" }}>
                         {dateObj ? dateObj.toLocaleDateString() : "TBA"}
@@ -177,9 +177,12 @@ export default function AdminEvents() {
                         <span style={{ fontWeight: 600 }}>{ev.available_seats}</span> / {ev.capacity}
                       </td>
                       <td style={{ padding: "1rem 1.25rem" }}>
-                        <Badge variant={ev.status === "published" ? "success" : "warning"}>
-                          {ev.status || "published"}
-                        </Badge>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", flexWrap: "wrap" }}>
+                          <Badge variant={ev.status === "published" ? "success" : "warning"}>
+                            {ev.status || "published"}
+                          </Badge>
+                          {ev.is_completed && <Badge variant="neutral">Completed</Badge>}
+                        </div>
                       </td>
                       <td style={{ padding: "1rem 1.25rem", textAlign: "right" }}>
                         <div style={{ display: "inline-flex", gap: "0.5rem" }}>

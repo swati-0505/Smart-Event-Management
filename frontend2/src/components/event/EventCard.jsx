@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, Users } from "lucide-react";
+import { Calendar, MapPin, Users, CheckCircle2 } from "lucide-react";
 import Badge from "../common/Badge";
 import { getEventImageUrl } from "../../utils/eventImage";
 
@@ -15,7 +15,7 @@ export default function EventCard({ event, isRegistered, actionLabel, onAction }
     ? dateObj.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })
     : "TBA";
 
-  const venueName = event.venue_name || event.venue || "Venue TBA";
+  const venueName = event.venue_name || event.venue || event.address || "Venue TBA";
 
   const defaultBtnLabel = isRegistered ? "Registered • View Pass" : "Register Event →";
   const btnLabel = actionLabel || defaultBtnLabel;
@@ -40,6 +40,13 @@ export default function EventCard({ event, isRegistered, actionLabel, onAction }
         />
         <div style={{ position: "absolute", top: "12px", left: "12px", display: "flex", gap: "0.5rem" }}>
           <Badge variant="primary">{event.category || "General"}</Badge>
+          {event.is_completed && (
+            <Badge variant="neutral">
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                <CheckCircle2 size={12} /> Completed
+              </span>
+            </Badge>
+          )}
           {isRegistered && <Badge variant="success">Registered</Badge>}
         </div>
         <div style={{ position: "absolute", top: "12px", right: "12px" }}>
@@ -86,17 +93,19 @@ export default function EventCard({ event, isRegistered, actionLabel, onAction }
           )}
         </div>
 
-        <div style={{ paddingTop: "0.75rem", borderTop: "1px solid var(--border-color)", marginTop: "0.25rem" }}>
-          {onAction ? (
-            <button onClick={() => onAction(event)} className={`btn btn-sm ${isRegistered ? "btn-secondary" : "btn-primary"}`} style={{ width: "100%" }}>
-              {btnLabel}
-            </button>
-          ) : (
-            <Link to={`/events/${eventId}`} className={`btn btn-sm ${isRegistered ? "btn-secondary" : "btn-primary"}`} style={{ width: "100%" }}>
-              {btnLabel}
-            </Link>
-          )}
-        </div>
+        {!event.is_completed && (
+          <div style={{ paddingTop: "0.75rem", borderTop: "1px solid var(--border-color)", marginTop: "0.25rem" }}>
+            {onAction ? (
+              <button onClick={() => onAction(event)} className={`btn btn-sm ${isRegistered ? "btn-secondary" : "btn-primary"}`} style={{ width: "100%" }}>
+                {btnLabel}
+              </button>
+            ) : (
+              <Link to={`/events/${eventId}`} className={`btn btn-sm ${isRegistered ? "btn-secondary" : "btn-primary"}`} style={{ width: "100%" }}>
+                {btnLabel}
+              </Link>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

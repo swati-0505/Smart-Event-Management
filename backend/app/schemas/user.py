@@ -1,16 +1,16 @@
 import uuid
 from datetime import datetime
-from typing import Literal
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr
+from app.core.permissions import Role
 
 class UserCreate(BaseModel):
     name: str
     email: EmailStr
     password: str
-    role: Literal['USER', 'ADMIN', 'MAIN_ADMIN'] = 'USER'
+    role: Role = Role.USER
 
 class UserRoleUpdate(BaseModel):
-    role: str = Field(..., pattern='^(USER|ADMIN|MAIN_ADMIN)$')
+    role: Role
 
 class UserLogin(BaseModel):
     email: EmailStr

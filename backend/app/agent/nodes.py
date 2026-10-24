@@ -1,22 +1,27 @@
 from __future__ import annotations
 import json
 import logging
-import re
 import time
-from uuid import uuid4
+from datetime import date
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from app.agent import memory
 from app.agent.prompts import INTENT_PROMPT, VALID_INTENTS, build_system_prompt
 from app.agent.state import AgentState
 from app.core.ai_config import ai_settings
-from app.core.config import settings
-from app.core.time import now_local
+from app.core.permissions import AuthorizationError, GUEST_ROLE
 from app.llm.exceptions import LLMProviderError
 from app.llm.router import LLMProviderRouter
 from app.observability.logger import log_tool_call
 from app.tools.context import PermissionDenied, get_tool_context
 from app.tools.registry import TOOLS_BY_NAME, get_tools_for_role
 logger = logging.getLogger(__name__)
+_SENSITIVE_TOOL_ARGUMENTS = frozenset({'password', 'secret', 'token', 'api_key', 'authorization'})
+
+def _redact_tool_arguments(arguments: dict) -> dict:
+    return {
+        key: '[REDACTED]' if key.lower() in _SENSITIVE_TOOL_ARGUMENTS else value
+        for key, value in arguments.items()
+    }
 
 def classify_intent(state: AgentState) -> dict:
     message = state.get('message', '')
@@ -36,39 +41,13 @@ def classify_intent(state: AgentState) -> dict:
 def load_memory(state: AgentState) -> dict:
     context = get_tool_context()
     history = memory.load_history(db=context.db, session_id=state['session_id'], limit=ai_settings.MEMORY_WINDOW_MESSAGES)
-    current_time = now_local()
-    today = f"{current_time.strftime('%A, %d %B %Y')} ({settings.APP_TIMEZONE}, {current_time.strftime('%Z %z')}); current time {current_time.strftime('%I:%M %p')}"
-    messages = [SystemMessage(content=build_system_prompt(role=state.get('role', 'USER'), today=today)), *history, HumanMessage(content=state['message'])]
+    messages = [SystemMessage(content=build_system_prompt(role=context.role, today=date.today().strftime('%A, %d %B %Y'))), *history, HumanMessage(content=state['message'])]
     return {'messages': messages}
 
 def reason(state: AgentState) -> dict:
-    if state.get('intent') == 'POLICY_QUESTION':
-        last_message = state['messages'][-1] if state.get('messages') else None
-        if isinstance(last_message, ToolMessage) and last_message.name == 'search_event_policy':
-            return {
-                'messages': [AIMessage(content=str(last_message.content))],
-                'loop_count': state.get('loop_count', 0) + 1,
-            }
-
-        words = set(re.findall(r'\b[a-z]+\b', state.get('message', '').lower()))
-        policy_area = 'cancellation_policy' if words.intersection({'cancel', 'cancellation', 'refund', 'refunds'}) else ''
-        call_args = {'question': state.get('message', '')}
-        if policy_area:
-            call_args['policy_area'] = policy_area
-        return {
-            'messages': [AIMessage(
-                content='',
-                tool_calls=[{
-                    'name': 'search_event_policy',
-                    'args': call_args,
-                    'id': str(uuid4()),
-                }],
-            )],
-            'loop_count': state.get('loop_count', 0) + 1,
-        }
-
-    tools = get_tools_for_role(state.get('role', 'USER'))
-    logger.info('reason(): routing agent request through primary provider chain for role=%s', state.get('role', 'USER'))
+    role = get_tool_context().role
+    tools = get_tools_for_role(role)
+    logger.info('reason(): routing agent request through primary provider chain for role=%s', role)
     try:
         router = LLMProviderRouter()
         response = router.invoke(state['messages'], temperature=ai_settings.CHAT_TEMPERATURE, tools=tools)
@@ -92,6 +71,7 @@ def act(state: AgentState) -> dict:
     for sequence, call in enumerate(requested):
         name = call.get('name', '')
         args = call.get('args', {}) or {}
+        logged_args = _redact_tool_arguments(args)
         call_id = call.get('id', '')
         started = time.perf_counter()
         status = 'success'
@@ -102,7 +82,7 @@ def act(state: AgentState) -> dict:
             status = 'error'
             error = 'unknown tool'
         elif name not in allowed_tool_names:
-            output = 'Sign in to use this tool.' if context.role.upper() == 'GUEST' else 'Only an administrator can use this tool.'
+            output = 'Sign in to use this tool.' if context.role == GUEST_ROLE else 'Only an administrator can use this tool.'
             status = 'denied'
             error = 'role not permitted'
         else:
@@ -112,11 +92,16 @@ def act(state: AgentState) -> dict:
                 output = str(exc)
                 status = 'denied'
                 error = str(exc)
+            except AuthorizationError as exc:
+                output = str(exc)
+                status = 'denied'
+                error = str(exc)
             except ValueError as exc:
                 output = f'Invalid input: {exc}'
                 status = 'error'
                 error = str(exc)
             except Exception as exc:
+                context.db.rollback()
                 logger.exception('Tool %s raised', name)
                 output = f'The {name} tool failed unexpectedly. Tell the user and do not retry.'
                 status = 'error'
@@ -124,11 +109,11 @@ def act(state: AgentState) -> dict:
         latency_ms = (time.perf_counter() - started) * 1000
         output = str(output)
         tool_messages.append(ToolMessage(content=output, tool_call_id=call_id, name=name))
-        call_records.append({'name': name, 'args': args})
+        call_records.append({'name': name, 'args': logged_args})
         result_records.append({'name': name, 'status': status, 'latency_ms': round(latency_ms, 2), 'output_preview': output[:300]})
         if name == 'search_event_policy' and 'Sources:' in output:
             citations.extend((part.strip() for part in output.split('Sources:', 1)[1].split('\n')[0].split(',') if part.strip()))
-        log_tool_call(db=context.db, run_id=state['run_id'], tool_name=name, tool_input=args, tool_output=output, latency_ms=latency_ms, status=status, error=error, sequence=sequence)
+        log_tool_call(db=context.db, run_id=state['run_id'], tool_name=name, tool_input=logged_args, tool_output=output, latency_ms=latency_ms, status=status, error=error, sequence=sequence)
         logger.info('tool=%s status=%s latency=%.0fms', name, status, latency_ms)
     return {'messages': tool_messages, 'tool_calls': state.get('tool_calls', []) + call_records, 'tool_results': state.get('tool_results', []) + result_records, 'retrieved_documents': state.get('retrieved_documents', []) + citations}
 
@@ -144,6 +129,7 @@ def finalize(state: AgentState) -> dict:
     try:
         memory.save_turn(db=context.db, session_id=state['session_id'], user_message=state['message'], assistant_message=answer)
     except Exception as exc:
+        context.db.rollback()
         logger.warning('Could not save conversation turn: %s', exc)
     return {'final_response': answer}
 

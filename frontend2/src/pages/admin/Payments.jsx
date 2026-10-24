@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { CreditCard, Search } from "lucide-react";
+import { CreditCard, Search, DollarSign } from "lucide-react";
 import { getAllPayments, updatePaymentStatus } from "../../services/paymentService";
-import { getAllEvents } from "../../services/eventService";
-import { getUsers } from "../../services/userService";
 import PageLoader from "../../components/common/PageLoader";
 import ErrorState from "../../components/common/ErrorState";
 import EmptyState from "../../components/common/EmptyState";
@@ -10,8 +8,6 @@ import Badge from "../../components/common/Badge";
 
 export default function AdminPayments() {
   const [payments, setPayments] = useState([]);
-  const [eventsMap, setEventsMap] = useState({});
-  const [usersMap, setUsersMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -19,12 +15,8 @@ export default function AdminPayments() {
   const loadPayments = () => {
     setLoading(true);
     setError("");
-    Promise.all([getAllPayments(), getAllEvents(), getUsers()])
-      .then(([paymentsData, eventsData, usersData]) => {
-        setPayments(Array.isArray(paymentsData) ? paymentsData : []);
-        setEventsMap(Object.fromEntries((eventsData || []).map((event) => [event.event_id, event])));
-        setUsersMap(Object.fromEntries((usersData || []).map((user) => [user.id, user])));
-      })
+    getAllPayments()
+      .then((data) => setPayments(Array.isArray(data) ? data : []))
       .catch((err) => setError(err.message || "Failed to load payment logs."))
       .finally(() => setLoading(false));
   };
@@ -35,10 +27,10 @@ export default function AdminPayments() {
 
   const handleStatusChange = async (paymentId, newStatus) => {
     try {
-      const updated = await updatePaymentStatus(paymentId, newStatus.toLowerCase());
+      const updated = await updatePaymentStatus(paymentId, newStatus);
       setPayments((prev) =>
         prev.map((p) =>
-          p.payment_id === paymentId ? { ...p, ...updated } : p
+          (p.id || p.payment_id) === paymentId ? { ...p, status: newStatus } : p
         )
       );
     } catch (err) {
@@ -49,10 +41,8 @@ export default function AdminPayments() {
   const filtered = payments.filter((p) => {
     const q = search.toLowerCase().trim();
     if (!q) return true;
-    const user = usersMap[p.user_id];
-    const event = eventsMap[p.event_id];
-    return [p.payment_id, p.transaction_id, p.payment_status, user?.name, user?.email, event?.title]
-      .some((value) => value?.toLowerCase().includes(q));
+    const pId = p.id || p.payment_id || "";
+    return pId.toLowerCase().includes(q) || (p.status && p.status.toLowerCase().includes(q));
   });
 
   if (loading) {
@@ -95,7 +85,7 @@ export default function AdminPayments() {
               <thead>
                 <tr style={{ backgroundColor: "var(--bg-tertiary)", borderBottom: "1px solid var(--border-color)", color: "var(--text-secondary)" }}>
                   <th style={{ padding: "0.875rem 1.25rem", fontWeight: 700 }}>Transaction ID</th>
-                  <th style={{ padding: "0.875rem 1.25rem", fontWeight: 700 }}>User / Event</th>
+                  <th style={{ padding: "0.875rem 1.25rem", fontWeight: 700 }}>Registration ID</th>
                   <th style={{ padding: "0.875rem 1.25rem", fontWeight: 700 }}>Amount</th>
                   <th style={{ padding: "0.875rem 1.25rem", fontWeight: 700 }}>Status</th>
                   <th style={{ padding: "0.875rem 1.25rem", fontWeight: 700 }}>Created Date</th>
@@ -104,41 +94,37 @@ export default function AdminPayments() {
               </thead>
               <tbody>
                 {filtered.map((p) => {
-                  const pId = p.payment_id;
-                  const paymentStatus = (p.payment_status || "pending").toLowerCase();
-                  const user = usersMap[p.user_id];
-                  const event = eventsMap[p.event_id];
+                  const pId = p.id || p.payment_id;
                   return (
                     <tr key={pId} style={{ borderBottom: "1px solid var(--border-color)" }}>
                       <td style={{ padding: "1rem 1.25rem", fontFamily: "monospace", fontSize: "0.75rem" }}>
                         {pId}
                       </td>
                       <td style={{ padding: "1rem 1.25rem", fontFamily: "monospace", fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                        <div>{user?.name || p.user_id}</div>
-                        <div>{event?.title || p.event_id}</div>
+                        {p.registration_id}
                       </td>
                       <td style={{ padding: "1rem 1.25rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                        {new Intl.NumberFormat(undefined, { style: "currency", currency: p.currency || "INR" }).format(Number(p.amount || 0))}
+                        ${p.amount || "0.00"}
                       </td>
                       <td style={{ padding: "1rem 1.25rem" }}>
-                        <Badge variant={paymentStatus === "completed" ? "success" : paymentStatus === "pending" ? "warning" : "danger"}>
-                          {paymentStatus.toUpperCase()}
+                        <Badge variant={p.status === "COMPLETED" ? "success" : p.status === "PENDING" ? "warning" : "danger"}>
+                          {p.status || "COMPLETED"}
                         </Badge>
                       </td>
                       <td style={{ padding: "1rem 1.25rem", color: "var(--text-secondary)" }}>
-                        {p.payment_date ? new Date(p.payment_date).toLocaleString() : "Recently"}
+                        {p.created_at ? new Date(p.created_at).toLocaleString() : "Recently"}
                       </td>
                       <td style={{ padding: "1rem 1.25rem", textAlign: "right" }}>
                         <select
                           className="form-select"
                           style={{ width: "auto", display: "inline-block", padding: "0.25rem 0.5rem", fontSize: "0.8rem" }}
-                          value={paymentStatus}
+                          value={p.status || "COMPLETED"}
                           onChange={(e) => handleStatusChange(pId, e.target.value)}
                         >
-                          <option value="completed">COMPLETED</option>
-                          <option value="pending">PENDING</option>
-                          <option value="failed">FAILED</option>
-                          <option value="refunded">REFUNDED</option>
+                          <option value="COMPLETED">COMPLETED</option>
+                          <option value="PENDING">PENDING</option>
+                          <option value="FAILED">FAILED</option>
+                          <option value="REFUNDED">REFUNDED</option>
                         </select>
                       </td>
                     </tr>

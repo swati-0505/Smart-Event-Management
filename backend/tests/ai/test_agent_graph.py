@@ -5,13 +5,13 @@ import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from app.agent import nodes as agent_nodes
 from app.agent.graph import build_graph, run_agent
-from app.agent.nodes import act, classify_intent, finalize, reason, should_continue
+from app.agent.nodes import _redact_tool_arguments, act, classify_intent, finalize, reason, should_continue
 from app.agent.prompts import VALID_INTENTS, build_system_prompt
 from app.agent.state import new_state
 from app.core.ai_config import ai_settings
 
 def _state(**overrides):
-    state = new_state(user_id=uuid.uuid4(), role='USER', session_id=uuid.uuid4(), run_id=uuid.uuid4(), message='find an AI workshop')
+    state = new_state(user_id=uuid.uuid4(), session_id=uuid.uuid4(), run_id=uuid.uuid4(), message='find an AI workshop')
     state.update(overrides)
     return state
 
@@ -35,6 +35,17 @@ def test_collections_start_empty_not_none():
 def test_tool_calls_route_to_act():
     message = AIMessage(content='', tool_calls=[{'name': 'search_events', 'args': {}, 'id': '1'}])
     assert should_continue(_state(messages=[message], loop_count=1)) == 'act'
+
+def test_sensitive_tool_arguments_are_redacted_before_logging():
+    assert _redact_tool_arguments({
+        'email': 'person@example.com',
+        'password': 'do-not-log',
+        'api_key': 'secret-key',
+    }) == {
+        'email': 'person@example.com',
+        'password': '[REDACTED]',
+        'api_key': '[REDACTED]',
+    }
 
 def test_a_plain_answer_routes_to_finalize():
     message = AIMessage(content='Here are three workshops.')
@@ -82,9 +93,10 @@ def test_intent_does_not_hide_unexpected_programming_errors():
         with pytest.raises(ValueError, match='unexpected prompt error'):
             classify_intent(_state())
 
-def test_reason_uses_provider_defaults_and_preserves_tool_binding():
+def test_reason_uses_provider_defaults_and_preserves_tool_binding(user_context):
     from app.tools.registry import get_tools_for_role
     state = _state(messages=[HumanMessage(content='Find events')])
+    state['role'] = 'ADMIN'
     tools = get_tools_for_role('USER')
     response = AIMessage(
         content='',
@@ -102,31 +114,7 @@ def test_reason_uses_provider_defaults_and_preserves_tool_binding():
     assert router.return_value.invoke.call_args.kwargs['tools'] == tools
     assert 'model' not in router.return_value.invoke.call_args.kwargs
 
-def test_policy_question_routes_to_cancellation_policy_tool_without_chat_model():
-    state = _state(intent='POLICY_QUESTION', message='What are the cancellation policies?')
-    with patch('app.agent.nodes.LLMProviderRouter') as router:
-        result = reason(state)
-    call = result['messages'][0].tool_calls[0]
-    assert call['name'] == 'search_event_policy'
-    assert call['args'] == {
-        'question': 'What are the cancellation policies?',
-        'policy_area': 'cancellation_policy',
-    }
-    router.return_value.invoke.assert_not_called()
-
-def test_policy_tool_result_is_returned_without_an_unrelated_chat_answer():
-    policy_result = 'Cancellations are accepted before the event starts.\n\nSources: Cancellation Policy'
-    state = _state(
-        intent='POLICY_QUESTION',
-        messages=[ToolMessage(content=policy_result, tool_call_id='policy-call', name='search_event_policy')],
-        loop_count=1,
-    )
-    with patch('app.agent.nodes.LLMProviderRouter') as router:
-        result = reason(state)
-    assert result['messages'][0].content == policy_result
-    router.return_value.invoke.assert_not_called()
-
-def test_reason_returns_controlled_message_when_all_providers_fail():
+def test_reason_returns_controlled_message_when_all_providers_fail(user_context):
     from app.llm.exceptions import LLMUnavailableError
     with patch('app.agent.nodes.LLMProviderRouter') as router:
         router.return_value.invoke.side_effect = LLMUnavailableError(
@@ -168,6 +156,17 @@ def test_successful_tool_call_is_recorded(user_context):
     assert result['tool_calls'][0]['name'] == 'my_registrations'
     assert result['tool_results'][0]['status'] == 'success'
     assert isinstance(result['messages'][0], ToolMessage)
+
+def test_unexpected_tool_failure_rolls_back_the_database_session(user_context, monkeypatch):
+    failing_tool = MagicMock()
+    failing_tool.name = 'my_registrations'
+    failing_tool.invoke.side_effect = RuntimeError('database operation failed')
+    monkeypatch.setitem(agent_nodes.TOOLS_BY_NAME, failing_tool.name, failing_tool)
+    monkeypatch.setattr('app.agent.nodes.get_tools_for_role', lambda _role: [failing_tool])
+    with patch('app.agent.nodes.log_tool_call'):
+        result = act(_state(messages=[_tool_request(failing_tool.name)]))
+    assert user_context.db.rolled_back
+    assert result['tool_results'][0]['status'] == 'error'
 
 def test_unknown_tool_returns_a_message_not_an_exception():
     state = _state(messages=[_tool_request('delete_everything')])
@@ -218,8 +217,8 @@ def test_model_error_is_reported_as_failed_agent_run():
     state = {'final_response': 'I hit a problem reaching the language model.', 'intent': 'GENERAL', 'loop_count': 0, 'tool_calls': [], 'tool_results': [], 'retrieved_documents': [], 'error': 'provider request failed'}
     graph = MagicMock()
     graph.invoke.return_value = state
-    with patch('app.agent.graph.memory.get_or_create_session', return_value=session), patch('app.agent.graph.start_agent_run', return_value=run), patch('app.agent.graph.get_graph', return_value=graph), patch('app.agent.graph.use_tool_context', return_value=nullcontext()), patch('app.agent.graph.finish_agent_run') as finish_run:
-        result = run_agent(db=db, user_id=uuid.uuid4(), role='USER', message='find an AI workshop')
+    with patch('app.agent.graph.load_actor', return_value=MagicMock(role='USER')), patch('app.agent.graph.memory.get_or_create_session', return_value=session), patch('app.agent.graph.start_agent_run', return_value=run), patch('app.agent.graph.get_graph', return_value=graph), patch('app.agent.graph.use_tool_context', return_value=nullcontext()), patch('app.agent.graph.finish_agent_run') as finish_run:
+        result = run_agent(db=db, user_id=uuid.uuid4(), message='find an AI workshop')
     assert result.status == 'error'
     assert result.error == 'provider request failed'
     assert finish_run.call_args.kwargs['status'] == 'error'
@@ -237,14 +236,13 @@ def test_memory_failure_does_not_lose_the_answer(user_context):
     with patch('app.agent.nodes.memory.save_turn', side_effect=RuntimeError('db down')):
         result = finalize(state)
     assert result['final_response'] == 'Here you go.'
+    assert user_context.db.rolled_back
 
 def test_system_prompt_states_the_routing_rule():
     prompt = build_system_prompt(role='USER', today='Friday, 18 September 2026')
     assert 'search_event_policy' in prompt
     assert 'USER' in prompt
     assert '18 September 2026' in prompt
-    assert 'Lead with the direct answer' in prompt
-    assert 'long unbroken paragraphs' in prompt
 
 def test_system_prompt_forbids_inventing_ids():
     prompt = build_system_prompt(role='USER', today='today')

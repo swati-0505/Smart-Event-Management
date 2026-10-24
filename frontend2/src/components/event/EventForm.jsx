@@ -6,12 +6,16 @@ export default function EventForm({ initialData = null, onSubmit, onCancel, subm
   const [venues, setVenues] = useState([]);
   const [loadingVenues, setLoadingVenues] = useState(true);
   const [error, setError] = useState("");
+  const [locationMode, setLocationMode] = useState(
+    initialData?.address && !initialData?.venue_id ? "custom" : "venue"
+  );
 
   const [formData, setFormData] = useState({
     title: initialData?.title || "",
     description: initialData?.description || "",
     category: initialData?.category || "General",
     venue_id: initialData?.venue_id || "",
+    address: initialData?.address || "",
     event_date: initialData?.event_date ? new Date(initialData.event_date).toISOString().slice(0, 16) : "",
     end_time: initialData?.end_time ? new Date(initialData.end_time).toISOString().slice(0, 16) : "",
     registration_deadline: initialData?.registration_deadline ? new Date(initialData.registration_deadline).toISOString().slice(0, 16) : "",
@@ -53,8 +57,12 @@ export default function EventForm({ initialData = null, onSubmit, onCancel, subm
       setError("Title is required.");
       return;
     }
-    if (!formData.venue_id) {
+    if (locationMode === "venue" && !formData.venue_id) {
       setError("Please select a venue.");
+      return;
+    }
+    if (locationMode === "custom" && !formData.address.trim()) {
+      setError("Please enter an event address.");
       return;
     }
     if (!formData.event_date) {
@@ -71,7 +79,8 @@ export default function EventForm({ initialData = null, onSubmit, onCancel, subm
       title: formData.title,
       description: formData.description || null,
       category: formData.category,
-      venue_id: formData.venue_id,
+      venue_id: locationMode === "venue" ? formData.venue_id : null,
+      address: locationMode === "custom" ? formData.address.trim() : null,
       event_date: new Date(formData.event_date).toISOString(),
       end_time: formData.end_time ? new Date(formData.end_time).toISOString() : null,
       registration_deadline: formData.registration_deadline ? new Date(formData.registration_deadline).toISOString() : null,
@@ -123,29 +132,58 @@ export default function EventForm({ initialData = null, onSubmit, onCancel, subm
       </div>
 
       <div className="form-group">
-        <label className="form-label" htmlFor="venue_id">Venue *</label>
-        {loadingVenues ? (
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <LoadingSpinner size="sm" /> Loading venues...
-          </div>
-        ) : (
-          <select
-            id="venue_id"
-            name="venue_id"
-            required
-            className="form-select"
-            value={formData.venue_id}
-            onChange={handleChange}
-          >
-            <option value="">-- Select a Venue --</option>
-            {venues.map((v) => (
-              <option key={v.venue_id} value={v.venue_id}>
-                {v.name} ({v.city} - Cap: {v.capacity})
-              </option>
-            ))}
-          </select>
-        )}
+        <label className="form-label" htmlFor="location_mode">Event Location *</label>
+        <select
+          id="location_mode"
+          className="form-select"
+          value={locationMode}
+          onChange={(e) => setLocationMode(e.target.value)}
+        >
+          <option value="venue">Choose a saved venue</option>
+          <option value="custom">Enter a custom address</option>
+        </select>
       </div>
+
+      {locationMode === "venue" ? (
+        <div className="form-group">
+          <label className="form-label" htmlFor="venue_id">Venue *</label>
+          {loadingVenues ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <LoadingSpinner size="sm" /> Loading venues...
+            </div>
+          ) : (
+            <select
+              id="venue_id"
+              name="venue_id"
+              required
+              className="form-select"
+              value={formData.venue_id}
+              onChange={handleChange}
+            >
+              <option value="">-- Select a Venue --</option>
+              {venues.map((v) => (
+                <option key={v.venue_id} value={v.venue_id}>
+                  {v.name} ({v.city} - Cap: {v.capacity})
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      ) : (
+        <div className="form-group">
+          <label className="form-label" htmlFor="event_address">Custom Event Address *</label>
+          <input
+            id="event_address"
+            name="address"
+            type="text"
+            required
+            className="form-input"
+            value={formData.address}
+            onChange={handleChange}
+            placeholder="Enter the full address for this event"
+          />
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
         <div className="form-group">

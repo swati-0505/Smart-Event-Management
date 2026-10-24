@@ -5,7 +5,6 @@ from types import SimpleNamespace
 from uuid import uuid4
 import pytest
 from app.agent.graph import AgentResult
-from app.core.redis_cache import redis_cache
 from app.core.security import hash_password
 from app.models.event import Event
 from app.models.user import User
@@ -27,7 +26,7 @@ pytestmark = pytest.mark.skipif(not _postgres_available(), reason='PostgreSQL on
 def _seed_published_event():
     db = TestingSessionLocal()
     try:
-        admin = User(name='Journey Admin', email=f'journey-admin-{uuid4()}@example.com', password_hash=hash_password('test-password'), role='ADMIN')
+        admin = User(name='Journey Admin', email=f'journey-admin-{uuid4()}@example.test', password_hash=hash_password('test-password'), role='ADMIN')
         venue = Venue(name='Journey Venue', address='1 Test Road', city='Test City', capacity=100)
         db.add_all([admin, venue])
         db.flush()
@@ -40,10 +39,8 @@ def _seed_published_event():
         db.close()
 
 def test_login_event_search_registration_confirmation_and_policy(client, monkeypatch):
-    monkeypatch.setattr(redis_cache, 'get', lambda _key: None)
-    monkeypatch.setattr(redis_cache, 'set', lambda _key, _value, ttl=None: False)
     _, event_id = _seed_published_event()
-    email = f'journey-user-{uuid4()}@example.com'
+    email = f'journey-user-{uuid4()}@example.test'
     registered = client.post('/api/auth/register', json={'name': 'Journey User', 'email': email, 'password': 'test-password'})
     assert registered.status_code == 200
     login = client.post('/api/auth/login', json={'email': email, 'password': 'test-password'})
@@ -94,15 +91,14 @@ def test_venue_availability_uses_event_end_times(client):
 
 def test_event_create_rejects_end_time_before_start(client):
     venue_id, _ = _seed_published_event()
-    admin_email = f'timing-admin-{uuid4()}@example.com'
-    admin = User(name='Timing Admin', email=admin_email, password_hash=hash_password('test-password'), role='ADMIN')
+    admin = User(name='Timing Admin', email=f'timing-admin-{uuid4()}@example.test', password_hash=hash_password('test-password'), role='ADMIN')
     db = TestingSessionLocal()
     try:
         db.add(admin)
         db.commit()
     finally:
         db.close()
-    login = client.post('/api/auth/login', json={'email': admin_email, 'password': 'test-password'})
+    login = client.post('/api/auth/login', json={'email': admin.email, 'password': 'test-password'})
     token = login.json()['access_token']
     start = datetime.now(timezone.utc) + timedelta(days=30)
     response = client.post('/api/events/', headers={'Authorization': f'Bearer {token}'}, json={'title': 'Invalid event', 'category': 'Workshop', 'venue_id': str(venue_id), 'event_date': start.isoformat(), 'end_time': (start - timedelta(hours=1)).isoformat(), 'capacity': 10})

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { authStorage } from "../services/auth/authStorage";
 import { getCurrentUserProfile, loginUser, logoutUser, registerUser } from "../services/auth/authService";
+import { isAdminRole, MAIN_ADMIN_ROLE, USER_ROLE } from "./roles";
 
 const AuthContext = createContext(null);
 
@@ -66,8 +67,9 @@ export function AuthProvider({ children }) {
     () => ({
       user,
       isAuthenticated: Boolean(user),
-      isAdmin: ["ADMIN", "MAIN_ADMIN"].includes(user?.role),
-      isMainAdmin: user?.role === "MAIN_ADMIN",
+      isAdmin: isAdminRole(user?.role),
+      isParticipant: user?.role === USER_ROLE,
+      isMainAdmin: user?.role === MAIN_ADMIN_ROLE,
       loading,
       login,
       logout,

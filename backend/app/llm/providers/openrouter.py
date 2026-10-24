@@ -12,7 +12,6 @@ def _validate_openrouter_key() -> str:
         raise LLMConfigurationError('openrouter', 'OPENROUTER_API_KEY is still a placeholder.')
     return token
 
-
 def get_openrouter_chat_model(model: str | None = None, temperature: float = 0.0, **kwargs: Any) -> ChatOpenAI:
     token = _validate_openrouter_key()
     return ChatOpenAI(

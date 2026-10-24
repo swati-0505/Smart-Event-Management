@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
-import { Calendar, MapPin, Users, ArrowLeft, CheckCircle2, AlertCircle, Shield, XCircle } from "lucide-react";
+import { Calendar, MapPin, Users, ArrowLeft, CheckCircle2, AlertCircle, Shield, XCircle, Star } from "lucide-react";
 import { getEventById } from "../../services/eventService";
 import { getVenueById } from "../../services/venueService";
 import { createRegistration, getUserRegistrations, cancelRegistration } from "../../services/registrationService";
+import { createFeedback, getUserFeedback } from "../../services/feedbackService";
 import { useAuth } from "../../auth/AuthProvider";
 import { getEventImageUrl } from "../../utils/eventImage";
 import PageLoader from "../../components/common/PageLoader";
@@ -16,7 +17,7 @@ export default function EventDetails() {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, isAdmin, isParticipant, user } = useAuth();
   const autoRegisteredRef = useRef(false);
 
   const [event, setEvent] = useState(null);
@@ -30,11 +31,19 @@ export default function EventDetails() {
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
   const [registerError, setRegisterError] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [userFeedback, setUserFeedback] = useState(null);
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [feedbackComment, setFeedbackComment] = useState("");
+  const [feedbackError, setFeedbackError] = useState("");
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
 
   const loadEventAndRegistrationData = async () => {
     try {
       const data = await getEventById(eventId);
       setEvent(data);
+      setVenue(null);
+      setUserFeedback(null);
+      setFeedbackError("");
 
       if (data.venue_id) {
         try {
@@ -45,7 +54,7 @@ export default function EventDetails() {
         }
       }
 
-      if (isAuthenticated && user?.id) {
+      if (isAuthenticated && user?.id && !isAdmin) {
         try {
           const userRegs = await getUserRegistrations(user.id);
           const activeReg = Array.isArray(userRegs)
@@ -62,7 +71,7 @@ export default function EventDetails() {
             setUserRegistration(null);
 
             
-            if (location.state?.autoRegister && !autoRegisteredRef.current) {
+            if (location.state?.autoRegister && !isAdmin && !autoRegisteredRef.current) {
               autoRegisteredRef.current = true;
               setTimeout(() => {
                 if (Number(data?.ticket_price || 0) > 0) {
@@ -75,6 +84,18 @@ export default function EventDetails() {
           }
         } catch (rErr) {
           console.warn("Could not check user registration status", rErr);
+        }
+        if (data.is_completed && isParticipant) {
+          try {
+            const feedbackEntries = await getUserFeedback(user.id);
+            setUserFeedback(
+              Array.isArray(feedbackEntries)
+                ? feedbackEntries.find((item) => item.event_id === eventId) || null
+                : null
+            );
+          } catch (feedbackLoadError) {
+            setFeedbackError(feedbackLoadError.message || "Failed to load your feedback.");
+          }
         }
       } else {
         setAlreadyRegistered(false);
@@ -155,6 +176,26 @@ export default function EventDetails() {
     }
   }
 
+  async function handleFeedbackSubmit(e) {
+    e.preventDefault();
+    if (!user?.id || !event?.event_id) return;
+    setFeedbackSubmitting(true);
+    setFeedbackError("");
+    try {
+      const savedFeedback = await createFeedback({
+        user_id: user.id,
+        event_id: event.event_id,
+        rating: feedbackRating,
+        comment: feedbackComment.trim() || null,
+      });
+      setUserFeedback(savedFeedback);
+    } catch (err) {
+      setFeedbackError(err.message || "Failed to submit feedback.");
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  }
+
   if (loading) {
     return <PageLoader message="Loading event information..." />;
   }
@@ -169,6 +210,7 @@ export default function EventDetails() {
 
   const imageUrl = getEventImageUrl(event);
   const dateObj = event.event_date ? new Date(event.event_date) : null;
+  const isCompleted = Boolean(event.is_completed);
   const isExpired = dateObj && dateObj < new Date();
   const isSoldOut = event.available_seats !== undefined && event.available_seats <= 0;
 
@@ -186,6 +228,13 @@ export default function EventDetails() {
               <img src={imageUrl} alt={event.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               <div style={{ position: "absolute", top: "20px", left: "20px" }}>
                 <Badge variant="primary">{event.category || "General"}</Badge>
+                {isCompleted && (
+                  <Badge variant="neutral" className="event-completed-badge">
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                      <CheckCircle2 size={13} /> Completed
+                    </span>
+                  </Badge>
+                )}
               </div>
             </div>
 
@@ -204,7 +253,7 @@ export default function EventDetails() {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 <MapPin size={18} style={{ color: "var(--color-primary)" }} />
-                <span>{venue ? `${venue.name}, ${venue.city}` : "Venue TBA"}</span>
+                <span>{venue ? `${venue.name}, ${venue.city}` : event.address || "Venue TBA"}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 <Users size={18} style={{ color: "var(--color-primary)" }} />
@@ -219,14 +268,22 @@ export default function EventDetails() {
               </p>
             </div>
 
-            {venue && (
+            {(venue || event.address) && (
               <div className="card">
-                <h3 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "0.75rem" }}>Venue Information</h3>
-                <p style={{ fontWeight: 600, color: "var(--text-primary)" }}>{venue.name}</p>
-                <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>{venue.address}, {venue.city}</p>
-                <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginTop: "0.5rem" }}>
-                  Venue Capacity: {venue.capacity} attendees
-                </p>
+                <h3 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "0.75rem" }}>
+                  {venue ? "Venue Information" : "Event Address"}
+                </h3>
+                {venue ? (
+                  <>
+                    <p style={{ fontWeight: 600, color: "var(--text-primary)" }}>{venue.name}</p>
+                    <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>{venue.address}, {venue.city}</p>
+                    <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginTop: "0.5rem" }}>
+                      Venue Capacity: {venue.capacity} attendees
+                    </p>
+                  </>
+                ) : (
+                  <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>{event.address}</p>
+                )}
               </div>
             )}
           </div>
@@ -245,7 +302,11 @@ export default function EventDetails() {
             >
               <h3 style={{ fontSize: "1.25rem", fontWeight: 700 }}>Registration</h3>
 
-              {registerSuccess ? (
+              {isAdmin ? (
+                <div style={{ padding: "1rem", background: "var(--bg-tertiary)", color: "var(--text-secondary)", borderRadius: "var(--radius-lg)" }}>
+                  Administrators manage this event and cannot register as participants.
+                </div>
+              ) : registerSuccess ? (
                 <div style={{ padding: "1.25rem", background: "#dcfce7", color: "#166534", borderRadius: "var(--radius-lg)", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700 }}>
                     <CheckCircle2 size={20} /> Registration Confirmed!
@@ -328,6 +389,69 @@ export default function EventDetails() {
                 <Shield size={14} /> Instant verification via SmartEvent Security
               </div>
             </div>
+
+            {isCompleted && isAuthenticated && isParticipant && (
+              <div className="card" style={{ marginTop: "1.25rem" }}>
+                <h3 style={{ fontSize: "1.15rem", fontWeight: 700, marginBottom: "0.75rem" }}>
+                  Share your feedback
+                </h3>
+                {userFeedback ? (
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", color: "#f59e0b", marginBottom: "0.5rem" }}>
+                      {[...Array(5)].map((_, index) => (
+                        <Star key={index} size={17} fill={index < userFeedback.rating ? "#f59e0b" : "none"} />
+                      ))}
+                      <span style={{ marginLeft: "0.35rem", color: "var(--text-primary)", fontWeight: 700 }}>
+                        {userFeedback.rating}/5
+                      </span>
+                    </div>
+                    <p style={{ color: "var(--text-secondary)", whiteSpace: "pre-line" }}>
+                      {userFeedback.comment || "No written comment."}
+                    </p>
+                    <p style={{ color: "var(--text-muted)", fontSize: "0.8rem", marginTop: "0.5rem" }}>
+                      Thanks for sharing your feedback.
+                    </p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleFeedbackSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+                    <label className="form-label" htmlFor="feedback-rating">Your rating</label>
+                    <div id="feedback-rating" role="group" aria-label="Rating from 1 to 5 stars" style={{ display: "flex", gap: "0.35rem" }}>
+                      {[1, 2, 3, 4, 5].map((rating) => (
+                        <button
+                          key={rating}
+                          type="button"
+                          aria-label={`${rating} star${rating === 1 ? "" : "s"}`}
+                          aria-pressed={feedbackRating === rating}
+                          onClick={() => setFeedbackRating(rating)}
+                          className="btn btn-ghost btn-icon"
+                          style={{ color: "#f59e0b" }}
+                        >
+                          <Star size={22} fill={rating <= feedbackRating ? "#f59e0b" : "none"} />
+                        </button>
+                      ))}
+                    </div>
+                    <label className="form-label" htmlFor="feedback-comment">Comment (optional)</label>
+                    <textarea
+                      id="feedback-comment"
+                      className="form-textarea"
+                      rows={4}
+                      maxLength={2000}
+                      value={feedbackComment}
+                      onChange={(e) => setFeedbackComment(e.target.value)}
+                      placeholder="What did you think about this event?"
+                    />
+                    {feedbackError && (
+                      <div role="alert" style={{ padding: "0.75rem", background: "#fee2e2", color: "var(--color-danger)", borderRadius: "var(--radius-md)", fontSize: "0.85rem" }}>
+                        {feedbackError}
+                      </div>
+                    )}
+                    <button type="submit" className="btn btn-primary" disabled={feedbackSubmitting}>
+                      {feedbackSubmitting ? "Submitting..." : "Submit Feedback"}
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

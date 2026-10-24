@@ -175,7 +175,25 @@ CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 
 ---
 
-## Part 5 — Database migrations
+## Part 5 — Run backend tests
+
+The database-backed tests use a dedicated PostgreSQL database. In PowerShell,
+set `TEST_DATABASE_URL` to your local PostgreSQL credentials and a database
+whose name ends in `_test` before running pytest:
+
+```powershell
+cd backend
+$env:TEST_DATABASE_URL = "postgresql://postgres:<your-password>@localhost:5432/event_management_test"
+uv run pytest -q
+```
+
+The test fixture creates and drops tables, so do not point `TEST_DATABASE_URL`
+at a development or production database. AI unit tests that do not use the
+database can be run with `uv run pytest tests/ai -q`.
+
+---
+
+## Part 6 — Database migrations
 
 After pointing `DATABASE_URL` at a new empty database:
 
@@ -206,11 +224,11 @@ docker compose run --rm backend python -m alembic upgrade head
 | `SECRET_KEY` | JWT auth secret |
 | `CORS_ORIGINS` | Allowed frontend origins (comma-separated) |
 | `REDIS_URL` / `ENABLE_REDIS_CACHE` | Cache |
-| `OPENROUTER_API_KEY` | LLM provider |
+| `OPENROUTER_API_KEY` | LLM + embedding provider |
 | `OPENROUTER_MODEL` | Primary chat model |
 | `OPENROUTER_FALLBACK_MODELS` | Fallback chat models |
-| `HUGGINGFACE_API_KEY` | Legacy embeddings (if used) |
-| `EMBEDDING_MODEL` / `EMBEDDING_DIM` | RAG embedding settings |
+| `OPENROUTER_EMBEDDING_MODEL` / `OPENROUTER_EMBEDDING_DIM` | RAG embeddings (2048-dim) |
+| `RAG_ACTIVE_EMBEDDING_INDEX` | Must be `nvidia` (OpenRouter) |
 | `ENABLE_API_DOCS` | Show `/docs` and `/redoc` |
 
 Full list with comments: `backend/.env.example`.

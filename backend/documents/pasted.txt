@@ -1,0 +1,220 @@
+Based on the image provided, here is the text content and the respective architecture diagrams for **Assignment-2**.
+
+### **BookingJini Assignment Reference Document**
+
+#### **Assignment-2**
+
+**1. Objective**
+
+*   **The Business Problem**
+    In many organizations, crucial knowledge is often trapped inside unstructured PDF formats (e.g., standard operating procedures, contracts, technical guides, financial statements). Finding specific information manually by searching page by page is highly inefficient and does not scale. Traditional keyword searches (like `Ctrl+F`) fail when users phrase questions using different terminology or synonyms. Conversely, sending an entire 100-page document to a Large Language Model (LLM) is very expensive to process, slow, and often hits the model's strict context window limits.
+
+*   **The Solution: Retrieval Augmented Generation (RAG)**
+    To solve these challenges, we build an AI-Powered Document Q&A Service using RAG. Instead of feeding the whole document to the LLM, the system processes the document beforehand.
+    1.  Parses the text into smaller, readable segments (chunks).
+    2.  Embeds those chunks as numerical vectors representing meaning.
+    3.  Retrieves only the top 3-5 most relevant chunks when a user asks a question.
+    4.  Augments the LLM's prompt with these specific chunks, acting as a "trustworthy reference book".
+    5.  Generates an answer grounded strictly in the retrieved context, citing exact source pages.
+
+**[Architecture Diagram 1: RAG System Flow]**
+```text
+[User PDF Upload] ──> [Parse Text (Page by Page)] ──> [Split into Overlapping Chunks]
+                                                              │
+                                                              ▼
+                                                     [Embed Chunks] ──> [Vector Database]
+                                                              ▲
+                                                              │ (Lookup)
+[User Query] ──> [Similarity Search (Top K)] ────────────────┘
+                          │
+                          ▼
+             [Assemble Grounded Prompt] ─> [LLM Generation] ──> [Structured Response + Citations]
+```
+
+*   **Real World Usefulness**
+    RAG architectures are highly valued in modern enterprise applications because:
+    *   **Hallucination Mitigation:** LLMs are notorious for "hallucinating" (making up plausible-sounding false answers). By restricting the LLM to generate answers only from the provided context chunks, we drastically reduce factual errors.
+    *   **Traceability and Auditing:** By providing explicit source citations (e.g., "Page 12, Paragraph 3"), users can independently verify the AI's claims, which is critical for legal, financial, and compliance domains.
+    *   **Resource and Cost Efficiency:** Instead of sending hundreds of thousands of tokens, you only send a few hundred of highly relevant context to the model, reducing API latency and operational costs.
+
+---
+
+**2. Technical Requirements**
+
+Your development stack should rely on robust, well-tested modern tools. Below is an overview of the required components, standards, and their role in your architecture.
+
+| Component / Library | Suggested Standard | Purpose & Application |
+| :--- | :--- | :--- |
+| **Backend Framework** | FastAPI/Python 3.10+ / Pydantic v2 | Handles HTTP requests, manages file uploads, and provides type-safe data models and automatic API docs. |
+| **PDF Extraction** | `pdfplumber` / `pymupdf` | Reads raw text from PDF, extracts metadata like page numbers, and handles complex layouts better than simple text parsers. |
+| **Text Chunking** | `RecursiveCharacterTextSplitter` or custom regex splitter | Helps calculate structural chunk boundaries based on token counts rather than just character counts, preventing mid-word or mid-sentence cuts. |
+| **Vector Embeddings** | OpenAI `text-embedding-3-small` or local `all-MiniLM-L6-v2` | Converts raw text strings into arrays of floating-point numbers (vectors) that represent semantic meaning, allowing mathematical comparison. |
+| **Vector Database** | ChromaDB / pgvector / Pinecone | A specialized database designed to index and store high-dimensional vectors. It performs fast "Approximate Nearest Neighbor" (ANN) searches to find semantically similar text. |
+| **LLM Engine** | OpenAI GPT-4o-mini or local Llama 3 | The generative brain that interprets the user's question and the retrieved context to synthesize a natural language response. |
+| **Structured Output** | Pydantic v2 JSON schema validation | Enforces that the LLM response adheres to a strict JSON schema, guaranteeing that the parsing logic doesn't break. |
+
+---
+
+**3. Step-by-Step Implementation Guide**
+
+To ensure high reliability, break your implementation into five isolated sequential phases.
+
+**Phase 1: PDF Ingestion & Validation**
+*   **What to build:** An API endpoint (typically `POST /ingest`) that accepts multi-part form data file uploads, validates the file type, and extracts text content in a specific order.
+*   **Why it's required:** To prevent service crashes or high memory overhead from malicious or oversized files, and to establish the foundational text data for the index.
+*   **Core Concepts:**
+    *   **MIME types & File Signatures:** Verifying that the uploaded file is indeed a PDF, not just a renamed executable file.
+    *   **Memory-Efficient Streaming:** Avoid loading massive files entirely into RAM. Write temporary streams directly to temporary disk storage or memory-mapped files.
+    *   **Page-Aware Extraction:** Extracting text such that the association with its original page is preserved (e.g., keeping track that "Snippet A" was extracted from Page 4).
+*   **Step-by-Step Approach:**
+    1.  Define a route handler that receives a file stream.
+    2.  Check the content type. If the stream exceeds 10MB, abort early and return an HTTP 413 Payload Too Large error.
+    3.  Validate the file extension and header signature (`%PDF`).
+    4.  Read the file stream using your chosen PDF library page by page. Save the result as a list of dictionaries: `[{page: 1, text: "..."}, {page: 2, text: "..."}]`.
+*   **Common Beginner Mistakes & Tips:**
+    *   **The Scanned PDF Trap:** Many PDFs contain images of text rather than electronic text. If your text extractor returns an empty string for a page, you have a scanned PDF. *Tip:* In production, OCR (Optical Character Recognition) like Tesseract or AWS Textract is used, but for this project, you should assume the PDFs are text-searchable.
+    *   **Resource Leakage:** Always close the temporary file or file stream in a `finally` block or use a context manager to prevent blocking up memory.
+
+**Phase 2: Structural text chunking**
+*   **What to build:** A chunking utility that breaks down the page-extracted text into small, overlapping segments of approximately 200 tokens with a 50-token overlap.
+*   **Why it's required:** Embedding models have strict limits on text length. Moreover, small chunks prevent semantic dilution (where a paragraph's meaning is "watered down" by surrounding unrelated text). Overlapping ensures that the semantic split across boundaries remains cohesive in at least one chunk.
+*   **Core Concepts:**
+    *   **Sliding Window:** A token is a word fragment. In English, 100 tokens is roughly equal to 75 words. Splitting a document into 200-token chunks means the window is 200 tokens wide.
+    *   **Overlap Strategy:** If we just cut at 200, we might cut a sentence in half. By overlapping (e.g., `chunk_size=200`, `overlap=50`), we ensure that context is maintained near the edges of splits.
+
+**[Architecture Diagram 2: Chunking Overlap Strategy]**
+```text
+Chunk 1: [ Text block part 1 .................... 50 chars overlap ]
+Chunk 2:                       [ 50 chars overlap ... Text block part 2 ... 50 chars overlap ]
+Chunk 3:                                                              [ 50 chars overlap ... Text block part 3 ]
+```
+
+*   **Step-by-Step Approach:**
+    1.  Initialize a token counter or utilize an existing tokenizer utility.
+    2.  For each page's text, iterate through sequentially.
+    3.  Keep track of structural markers like paragraph breaks (`\n\n`) and sentence endings (`.`) to ensure you do not cut a word or sentence abruptly in half.
+    4.  When a chunk approaches 200 tokens, look ahead to the nearest logical page number, document section, and begin the next chunk starting 50 tokens before the previous chunk ended.
+    5.  Store the output list of chunks. Note that a chunk can cross page boundaries if page boundaries fall mid-sentence, but all originating page numbers (e.g., `pages: [4, 5]`) must be tracked.
+*   **Common Beginner Mistakes & Tips:**
+    *   **Metadata Loss:** Beginner often forget to pass references during chunking. Since every chunk is stored with an explicit metadata schema containing `doc_id` and `page_num`, losing this link renders the citation feature useless.
+    *   **Aggressive Splitting:** Avoid using a naive `text.split('\n')` without tracking separators, as this results in broken words (e.g., "inter-nal").
+
+**Phase 3: Semantic Embeddings & Vector Indexing**
+*   **What to build:** An ingestion pipeline that converts the text chunks into embedding vectors, and registers them in a vector database index.
+*   **Why it's required:** Computers cannot compare the meaning of text directly. Embeddings convert semantic concepts into high-dimensional coordinates. The vector database allows us to find coordinates points closest to the user's question vector.
+*   **Core Concepts:**
+    *   **Vector Dimensionality:** The number of dimensions must match the embedding model used (e.g., 1536 dimensions for OpenAI `text-embedding-3-small`).
+    *   **Distance Metrics:** Cosine Similarity, Dot Product, or Euclidean Distance. For normalized vectors, Cosine Similarity is computationally the fastest.
+*   **Step-by-Step Approach:**
+    1.  Initialize your vector database client and ensure a collection/index is created with the appropriate dimension parameters.
+    2.  Iterate over your chunks. To keep response times low, generate embeddings in batches (e.g., 20-50 chunks per call) instead of sequentially.
+    3.  For each chunk, generate its embedding vector.
+    4.  Write the payload to the vector database.
+*   **Common Beginner Mistakes & Tips:**
+    *   **Duplicate Document Pollution:** If a developer uploads the same file twice, you might end up with duplicate chunks in your vector database. Always check if the document hash already exists in your database or clear old entries under that document ID.
+    *   **API Rate Limits:** Sending 500 separate embedding API calls will get you flagged or rate-limited by OpenAI. Always use batch embedding methods.
+
+**Phase 4: Retrieval & Prompt Construction**
+*   **What to build:** A search routine that embeds the user's query, fetches the 3-5 most similar chunks (by ID) from the database, and formats them into a structured block.
+*   **Why it's required:** This is the heart of RAG. It dynamically extracts relevant context and translates a general query into a highly contextualized, closed-book instruction set for the generator.
+*   **Core Concepts:**
+    *   **Query-Context Alignment:** Using the exact same embedding model for the user query as the chunks.
+    *   **Prompt Isolation:** Enclosing context inside clear structural tags (e.g., `<context>`) to avoid "prompt injection" where a document confuses the LLM to ignore prior system prompts.
+*   **Step-by-Step Approach:**
+    1.  Receive user query via `POST /query`.
+    2.  Generate the embedding vector of the query: `query_vec = Embed(query)`.
+    3.  Query the vector database for the top K=3 items with the highest similarity score relative to `query_vec`.
+    4.  Filter out matches that fall below a reasonable similarity threshold (e.g., similarity < 0.65) to avoid bringing in irrelevant noise that could confuse the LLM.
+    5.  Stitch the text of these chunks into a system prompt template that commands strict factual alignment.
+*   **Common Beginner Mistakes & Tips:**
+    *   **Retrieving Too Much Context (Context Clogging):** Setting K=10 or K=20 can overflow the LLM's context window or dilute the "needle in a haystack" effect. Start with K=3.
+    *   **Mismatched Embedding Spaces:** Ensure you are not embedding the query with Model A and the documents with Model B. They must exist in the same vector space.
+
+**Phase 5: Structured Response & Citation Enforcement**
+*   **What to build:** An LLM orchestration engine that takes the structured prompt and returns a strictly formatted JSON object containing the answer and citations.
+*   **Why it's required:** Traditional conversational outputs are hard to parse programmatically. Enforcing structured output ensures your API is deterministic, reliable, and directly integrable with a frontend.
+*   **Core Concepts:**
+    *   **Structured Output / Tool Calling:** Forcing the model to return a specific JSON schema (e.g., `{"answer": "...", "citations": [{"page": 4, "quote": "..."}]}`).
+    *   **Strict Negative Anchoring:** Explicitly instructing the model that if the answer cannot be confidently derived from the provided chunks, it must set the field `"is_found": false` and not invent facts.
+*   **Step-by-Step Approach:**
+    1.  Define a schema using Pydantic.
+    2.  Formulate a system message asserting: "You are a strict, non-contradictory document verification assistant. Answer the user question based only on the context enclosed in `<context>` tags. If you do not know the answer or if the context does not contain sufficient details, set 'is_found' to false and 'answer' to a neutral 'not found' message. Never hallucinate."
+    3.  Make the API call, extract the validated JSON, and return it directly.
+*   **Common Beginner Mistakes & Tips:**
+    *   **Verbose Rejection Failure:** If you do not use strict JSON schemas, the LLM might output text like "I'm not sure..." instead of the boolean `false`. Use Pydantic to enforce the type.
+    *   **Hallucinated Citations:** Sometimes models make up page numbers. To combat this, include the page number in the context text itself (e.g., "Page 4: [text]") so the model can copy it verbatim.
+
+---
+
+**4. Project Structure**
+
+A clean, modular layout is essential for maintainability, testing, and scaling your RAG application. Below is the recommended directory structure for a Python/FastAPI environment.
+
+**[Architecture Diagram 3: Project File Tree]**
+```text
+rag_service/
+── docs/                  # Detailed architecture and decision logs
+├── src/
+│   ├── __init__.py
+│   ├── main.py            # FastAPI entry point, route definitions, and CORS
+│   ├── ingestion.py       # PDF extraction, validation, and text parsing
+│   ├── chunker.py         # Text chunking, tokenization, and overlap logic
+│   ├── vector_db.py       # Database client, indexing, and similarity search
+│   └── llm_service.py     # LLM orchestration, prompt templating, and response parsing
+── tests/
+│   ├── __init__.py
+│   ├── test_ingestion.py  # Unit tests for PDF parsing
+│   ├── test_chunker.py    # Unit tests for chunk boundaries
+│   └── test_rag_flow.py   # Integration test for full pipeline
+├── requirements.txt       # Dependencies (FastAPI, Uvicorn, OpenAI, ChromaDB, Pydantic)
+└── README.md              # Setup instructions and API usage guide
+```
+
+*   **Purpose of Key Files & Directories:**
+    *   `main.py`: Keeps HTTP routing decoupled from processing logic. It parses inputs and delegates to specialized services.
+    *   `vector_db_client.py` (implied in `vector_db.py`): Isolates all database operations. If you decide to swap ChromaDB for pgvector or Pinecone in the future, you should only have to modify this single file.
+    *   `docs/` Directory: This is not just filler documentation; it is a primary deliverable. It maps your internal architectural decisions to the grading rubric.
+
+---
+
+**5. Example Code Snippets (Reference Only)**
+
+*   **Snippet A: PDF Route Signature & Validation** (Shows FastAPI route definition with file upload handling).
+*   **Snippet B: Chunking Logic & Metadata Mapping (Pseudocode)** (Shows logic for splitting text and attaching metadata like page numbers).
+*   **Snippet C: Vector Database Client Interface** (Shows a class structure for `add_chunks` and `search_similar`).
+*   **Snippet D: Structured Prompt Template & Response Schema** (Shows the system prompt string and Pydantic model for the response).
+*   **Snippet E: Integration Testing Strategy Structure** (Shows a test function `test_rag_flow` that uploads a PDF, queries it, and asserts the response structure).
+
+---
+
+**6. How to Approach Writing Your Documentation**
+
+The assignment requires writing four comprehensive markdown files inside your `docs/` folder. Use the following structural guidelines to draft them:
+
+1.  **`strategy.md` (Strategy & Tracking)**
+    *   **Goal:** Show how you systematically attacked this project.
+    *   **Key Components:** High-level roadmap, risk mitigation (e.g., "Assumed PDFs are mostly digital, not OCR"), and a breakdown of tasks using the MoSCoW method (Must have, Should have, Could have, Won't have).
+
+2.  **`architecture.md` (System Topology)**
+    *   **Goal:** Create a technical blueprint of how components pass data to each other.
+    *   **Key Components:** Data flow diagram (REST API flow), explanation of why you chose specific libraries (e.g., why recursive splitting over simple paragraph splitting), and a diagram of the prompt template structure.
+
+3.  **`tradeoffs.md` (Engineering Decision Logs)**
+    *   **Goal:** Defend your technical decisions by highlighting the trade-offs of chosen vs. rejected solutions.
+    *   **Key Components:** Database Choice (ChromaDB vs. Pinecone), Cost Estimation (API costs), and Latency vs. Accuracy (using smaller models vs. larger models).
+
+4.  **`prompts.md` (Prompt Logs & Evaluation)**
+    *   **Goal:** Explain the "personality" of how you interacted with the LLM during development.
+    *   **Key Components:** Which LLM did you consult for writing parsing code or setting up database configuration? Show actual examples of incorrect or sub-optimal code outputted by the LLM, and describe how you corrected it. Provide a trace of your prompt iterations.
+
+**Summary Checklist for Students**
+Before submitting your repository, make sure you can answer yes to all of the following questions:
+*   [ ] Is there an ingestion validation layer blocking files larger than 10MB?
+*   [ ] Does your PDF text parser accurately track page numbers for every single text block?
+*   [ ] Are your chunks size-constrained (around 200 tokens) with semantic sentence boundaries rather than random character cutoffs?
+*   [ ] Does your query engine filter out low-confidence matches before submitting the context to the LLM?
+*   [ ] Is the final output schema strictly structured as a JSON block with verified page citation references?
+*   [ ] Are there at least 3 automated, reproducible E2E tests validating edge cases like missing questions or text-heavy PDFs?
+*   [ ] Are all four documentation files (`strategy.md`, `architecture.md`, `tradeoffs.md`, and `prompts.md`) written and organized in the `docs/` folder?
+
+With this architectural guide, you are fully equipped with the roadmap, logic, and design constraints to build a robust, industry-strength AI-Powered Document Q&A Service. Happy coding!

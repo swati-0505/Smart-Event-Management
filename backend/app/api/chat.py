@@ -1,6 +1,8 @@
 from __future__ import annotations
 import logging
+import os
 import shutil
+import tempfile
 from pathlib import Path
 from typing import Literal
 from uuid import UUID
@@ -17,8 +19,9 @@ from app.models.user import User
 from app.observability.logger import get_recent_runs, get_run_tool_calls
 from app.rag import ingest
 from app.rag.converter import SUPPORTED
-from app.schemas.chat import AgentRunOut, ChatRequest, ChatResponse, DeleteSessionsRequest, DeleteSessionsResponse, IngestResponse, MessageOut, SessionSummary, ToolCallOut
+from app.schemas.chat import AgentRunOut, ChatRequest, ChatResponse, DeleteDocumentResponse, DeleteSessionsRequest, DeleteSessionsResponse, IngestResponse, MessageOut, SessionSummary, ToolCallOut
 from app.models.knowledge import KnowledgeChunk, KnowledgeChunkNvidia, KnowledgeDocument
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix='/api')
 optional_chat_bearer = HTTPBearer(auto_error=False)
@@ -30,7 +33,7 @@ def get_optional_chat_user(credentials: HTTPAuthorizationCredentials | None=Depe
 
 @router.post('/chat', response_model=ChatResponse, tags=['ai'])
 def chat(payload: ChatRequest, db: Session=Depends(get_db), current_user: User | None=Depends(get_optional_chat_user)) -> ChatResponse:
-    result = run_agent(db=db, user_id=current_user.id if current_user else None, role=current_user.role if current_user else 'guest', message=payload.message, session_id=payload.session_id)
+    result = run_agent(db=db, user_id=current_user.id if current_user else None, message=payload.message, session_id=payload.session_id)
     return ChatResponse(reply=result.reply, session_id=result.session_id, run_id=result.run_id, intent=result.intent, tools_used=result.tools_used, sources=result.sources, latency_ms=round(result.latency_ms, 2), status=result.status)
 
 @router.get('/chat/sessions', response_model=list[SessionSummary], tags=['ai'])
@@ -57,8 +60,8 @@ def get_session_messages(session_id: UUID, db: Session=Depends(get_db), current_
     return db.query(ChatMessage).filter(ChatMessage.session_id == session_id).order_by(ChatMessage.created_at.asc()).all()
 
 @router.get('/admin/agent-activity', response_model=list[AgentRunOut], tags=['Admin'])
-def agent_activity(limit: int=50, db: Session=Depends(get_db), _: User=Depends(require_admin)):
-    runs = get_recent_runs(db, limit=min(limit, 200))
+def agent_activity(limit: int=50, db: Session=Depends(get_db), current_admin: User=Depends(require_admin)):
+    runs = get_recent_runs(db, limit=min(limit, 200), actor_id=current_admin.id)
     user_ids = {r.user_id for r in runs if r.user_id}
     users = db.query(User).filter(User.id.in_(user_ids)).all() if user_ids else []
     user_map = {u.id: u.email for u in users}
@@ -70,7 +73,7 @@ def agent_activity(limit: int=50, db: Session=Depends(get_db), _: User=Depends(r
     return result
 
 @router.get('/admin/agent-activity/{run_id}', response_model=AgentRunOut, tags=['Admin'])
-def agent_run_detail(run_id: UUID, db: Session=Depends(get_db), _: User=Depends(require_admin)):
+def agent_run_detail(run_id: UUID, db: Session=Depends(get_db), current_admin: User=Depends(require_admin)):
     from app.models.agent import AgentRun
     run = db.query(AgentRun).filter(AgentRun.run_id == run_id).first()
     if not run:
@@ -81,44 +84,84 @@ def agent_run_detail(run_id: UUID, db: Session=Depends(get_db), _: User=Depends(
         output.user_email = u.email if u else 'Unknown User'
     else:
         output.user_email = 'Guest User'
-    output.tool_calls = [ToolCallOut.model_validate(call) for call in get_run_tool_calls(db, run_id)]
+    output.tool_calls = [ToolCallOut.model_validate(call) for call in get_run_tool_calls(db, run_id, actor_id=current_admin.id)]
     return output
 
 @router.post('/admin/knowledge/upload', response_model=IngestResponse, tags=['Admin'])
-def upload_knowledge_document(file: UploadFile=File(...), force: bool=False, target_index: Literal['legacy', 'nvidia'] | None=None, db: Session=Depends(get_db), _: User=Depends(require_admin)):
+async def upload_knowledge_document(file: UploadFile=File(...), force: bool=False, target_index: Literal['legacy', 'nvidia'] | None=None, db: Session=Depends(get_db), _: User=Depends(require_admin)):
     filename = Path(file.filename or '').name
     suffix = Path(filename).suffix.lower()
     if not filename or filename in {'.', '..'}:
         raise HTTPException(status_code=400, detail='A filename is required')
+    try:
+        filename = ingest.safe_knowledge_filename(filename)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     if suffix not in SUPPORTED:
         raise HTTPException(status_code=415, detail=f"Unsupported file type '{suffix}'. Supported: {sorted(SUPPORTED)}")
     directory = Path(ai_settings.KNOWLEDGE_DOCS_DIR)
     directory.mkdir(parents=True, exist_ok=True)
     destination = directory / filename
     try:
-        with destination.open('wb') as output:
-            shutil.copyfileobj(file.file, output)
-        result = ingest.ingest_path(
-            db,
-            str(destination),
-            force=force,
-            target_index=target_index or ai_settings.RAG_ACTIVE_EMBEDDING_INDEX,
-        )
+        with tempfile.TemporaryDirectory(prefix='.knowledge-upload-', dir=directory) as temporary_directory:
+            temporary_directory_path = Path(temporary_directory)
+            staged_path = temporary_directory_path / filename
+            backup_path = temporary_directory_path / 'previous-upload'
+            with staged_path.open('wb') as output:
+                shutil.copyfileobj(file.file, output)
+            if destination.exists():
+                os.replace(destination, backup_path)
+            try:
+                os.replace(staged_path, destination)
+                result = await ingest.ingest_path(
+                    db,
+                    str(destination),
+                    force=force,
+                    target_index=target_index or ai_settings.RAG_ACTIVE_EMBEDDING_INDEX,
+                )
+                if result.status == 'failed':
+                    raise HTTPException(status_code=422, detail=result.detail)
+            except ValueError as exc:
+                if backup_path.exists():
+                    os.replace(backup_path, destination)
+                elif destination.exists():
+                    destination.unlink()
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+            except Exception:
+                if backup_path.exists():
+                    os.replace(backup_path, destination)
+                elif destination.exists():
+                    destination.unlink()
+                raise
     finally:
         file.file.close()
-    if result.status == 'failed':
-        raise HTTPException(status_code=422, detail=result.detail)
     return IngestResponse(filename=result.filename, status=result.status, chunk_count=result.chunk_count, detail=result.detail)
 
 @router.post('/admin/knowledge/ingest', response_model=list[IngestResponse], tags=['Admin'])
-def ingest_knowledge(force: bool=False, target_index: Literal['legacy', 'nvidia'] | None=None, db: Session=Depends(get_db), _: User=Depends(require_admin)):
-    results = ingest.ingest_directory(
+async def ingest_knowledge(force: bool=False, target_index: Literal['legacy', 'nvidia'] | None=None, db: Session=Depends(get_db), _: User=Depends(require_admin)):
+    results = await ingest.ingest_directory(
         db=db,
         directory=ai_settings.KNOWLEDGE_DOCS_DIR,
         force=force,
         target_index=target_index or ai_settings.RAG_ACTIVE_EMBEDDING_INDEX,
     )
     return [IngestResponse(filename=r.filename, status=r.status, chunk_count=r.chunk_count, detail=r.detail) for r in results]
+
+@router.delete('/admin/knowledge/documents/{filename}', response_model=DeleteDocumentResponse, tags=['Admin'])
+def delete_knowledge_document(filename: str, db: Session=Depends(get_db), _: User=Depends(require_admin)):
+    try:
+        result = ingest.delete_knowledge_document(db, filename)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return DeleteDocumentResponse(
+        filename=result.filename,
+        status=result.status,
+        chunks_removed=result.chunks_removed,
+        file_removed=result.file_removed,
+        detail=result.detail,
+    )
 
 @router.get('/admin/knowledge/status', tags=['Admin'])
 def knowledge_status(db: Session=Depends(get_db), _: User=Depends(require_admin)):
@@ -127,19 +170,12 @@ def knowledge_status(db: Session=Depends(get_db), _: User=Depends(require_admin)
     staged_count = staged_query.count()
     primary_missing = staged_query.filter(KnowledgeChunkNvidia.embedding_primary.is_(None)).count()
     fallback_missing = staged_query.filter(KnowledgeChunkNvidia.embedding_fallback.is_(None)).count()
-    stale_count = (
-        staged_query.join(KnowledgeDocument)
-        .filter(KnowledgeChunkNvidia.content_hash != KnowledgeDocument.content_hash)
-        .count()
-    )
-    primary_model_mismatch = staged_query.filter(
-        KnowledgeChunkNvidia.primary_model != ai_settings.OPENROUTER_EMBEDDING_MODEL
-    ).count()
-    fallback_model_mismatch = staged_query.filter(
-        KnowledgeChunkNvidia.fallback_model.is_not(None)
-    ).count()
+    stale_count = (staged_query.join(KnowledgeDocument).filter(KnowledgeChunkNvidia.content_hash != KnowledgeDocument.content_hash).count())
+    primary_model_mismatch = staged_query.filter(KnowledgeChunkNvidia.primary_model != ai_settings.OPENROUTER_EMBEDDING_MODEL).count()
+    fallback_model_mismatch = staged_query.filter(KnowledgeChunkNvidia.fallback_model.is_not(None)).count()
     expected_chunks = sum(document.chunk_count for document in documents)
     nvidia_active = ai_settings.RAG_ACTIVE_EMBEDDING_INDEX == 'nvidia'
+
     return {
         'active_embedding_index': ai_settings.RAG_ACTIVE_EMBEDDING_INDEX,
         'embedding_model': ai_settings.OPENROUTER_EMBEDDING_MODEL if nvidia_active else ai_settings.EMBEDDING_MODEL,

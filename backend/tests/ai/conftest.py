@@ -2,6 +2,7 @@ from __future__ import annotations
 import uuid
 import pytest
 from app.rag.search import RetrievedChunk
+from app.models.user import User
 from app.tools.context import ToolContext, use_tool_context
 
 class FakeQuery:
@@ -49,6 +50,9 @@ class FakeSession:
     def flush(self):
         pass
 
+    def refresh(self, obj):
+        pass
+
     def commit(self):
         self.committed = True
 
@@ -80,12 +84,14 @@ def user_id():
 
 @pytest.fixture
 def user_context(fake_db, user_id):
+    fake_db.rows_for[User] = [User(id=user_id, role='USER')]
     context = ToolContext(db=fake_db, user_id=user_id, role='USER')
     with use_tool_context(context):
         yield context
 
 @pytest.fixture
 def admin_context(fake_db, user_id):
+    fake_db.rows_for[User] = [User(id=user_id, role='ADMIN')]
     context = ToolContext(db=fake_db, user_id=user_id, role='ADMIN')
     with use_tool_context(context):
         yield context
