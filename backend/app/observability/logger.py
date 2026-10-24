@@ -2,6 +2,7 @@ from __future__ import annotations
 import logging
 from uuid import UUID
 from sqlalchemy.orm import Session
+from app.core.permissions import require_admin_actor
 from app.models.agent import AgentRun, ToolCall
 logger = logging.getLogger(__name__)
 MAX_OUTPUT_CHARS = 4000
@@ -28,6 +29,7 @@ def log_tool_call(db: Session, run_id: UUID, tool_name: str, tool_input: dict, t
         db.add(ToolCall(run_id=run_id, tool_name=tool_name, tool_input=_serialisable(tool_input), tool_output=(tool_output or '')[:MAX_OUTPUT_CHARS], latency_ms=round(latency_ms, 2), status=status, error=error, sequence=sequence))
         db.flush()
     except Exception as exc:
+        db.rollback()
         logger.warning('Could not log tool call %s: %s', tool_name, exc)
 
 def _serialisable(value: dict) -> dict:
@@ -35,8 +37,10 @@ def _serialisable(value: dict) -> dict:
         return {'value': str(value)}
     return {key: item if isinstance(item, (str, int, float, bool, type(None))) else str(item) for key, item in value.items()}
 
-def get_recent_runs(db: Session, limit: int=50) -> list[AgentRun]:
+def get_recent_runs(db: Session, limit: int=50, *, actor_id: UUID) -> list[AgentRun]:
+    require_admin_actor(db, actor_id)
     return db.query(AgentRun).order_by(AgentRun.created_at.desc()).limit(limit).all()
 
-def get_run_tool_calls(db: Session, run_id: UUID) -> list[ToolCall]:
+def get_run_tool_calls(db: Session, run_id: UUID, *, actor_id: UUID) -> list[ToolCall]:
+    require_admin_actor(db, actor_id)
     return db.query(ToolCall).filter(ToolCall.run_id == run_id).order_by(ToolCall.sequence.asc()).all()

@@ -3,28 +3,12 @@ import logging
 import re
 from dataclasses import dataclass, field
 from app.core.ai_config import ai_settings
-from app.llm.exceptions import LLMUnavailableError
+from app.llm.exceptions import LLMProviderError
 from app.llm.router import LLMProviderRouter
 from app.rag.search import RetrievedChunk
 logger = logging.getLogger(__name__)
 NO_ANSWER = 'I could not find that in the event policy documents. Please check with an event administrator.'
-_ANSWER_PROMPT = (
-    'You answer questions about event-management policies using ONLY the '
-    'context below.\n\n'
-    'Rules:\n'
-    '- Use only what the context states. Do not add general knowledge.\n'
-    '- If the context does not contain the answer, reply exactly: {no_answer}\n'
-    '- Lead with a concise, direct answer and use polished Markdown.\n'
-    '- Split multiple conditions into short bullets under clear headings.\n'
-    '- Use a Markdown table for refund schedules or other comparable tiers.\n'
-    '- Avoid long paragraphs, repeated information, and inline document '
-    'headings. The source list will be provided separately.\n'
-    '- Keep simple answers to a few sentences; include only relevant details.\n'
-    '{extra_rules}\n\n'
-    'Context:\n{context}\n\n'
-    'Question: {question}\n\n'
-    'Answer:'
-)
+_ANSWER_PROMPT = 'You answer questions about event-management policies using ONLY the context below.\n\nRules:\n- Use only what the context states. Do not add general knowledge.\n- If the context does not contain the answer, reply exactly: {no_answer}\n- Cite the source in brackets after each claim, e.g. [Cancellation Policy].\n- Be concise. Two or three sentences unless the question needs a list.\n{extra_rules}\n\nContext:\n{context}\n\nQuestion: {question}\n\nAnswer:'
 _GROUNDING_PROMPT = 'Check whether the ANSWER is fully supported by the CONTEXT.\n\nCONTEXT:\n{context}\n\nANSWER:\n{answer}\n\nAn answer is supported only if every factual claim in it appears in the\ncontext. Added details, softened conditions, or invented numbers make it\nunsupported.\n\nReply with exactly one line:\nGROUNDED: yes\nor\nGROUNDED: no | <what is unsupported, in under 15 words>\n'
 
 @dataclass
@@ -84,13 +68,13 @@ def check_grounding(answer: str, context: str) -> tuple[bool, str]:
             temperature=0.0,
         )
         raw = str(response.content).strip()
-    except LLMUnavailableError:
-        logger.warning('Grounding check failed, accepting answer.')
-        return (True, 'checker unavailable')
+    except LLMProviderError:
+        logger.warning('Grounding check unavailable; rejecting the unverified answer.')
+        return (False, 'grounding checker unavailable')
     match = re.search('GROUNDED\\s*:\\s*(yes|no)', raw, re.IGNORECASE)
     if not match:
-        logger.warning('Unparseable grounding verdict.')
-        return (True, 'unparseable verdict')
+        logger.warning('Grounding checker returned an unparseable verdict; rejecting the answer.')
+        return (False, 'unparseable grounding verdict')
     if match.group(1).lower() == 'yes':
         return (True, '')
     note = ''

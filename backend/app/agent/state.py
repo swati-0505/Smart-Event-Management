@@ -6,7 +6,6 @@ from langgraph.graph.message import add_messages
 
 class AgentState(TypedDict, total=False):
     user_id: UUID | None
-    role: str
     session_id: UUID
     run_id: UUID
     message: str
@@ -19,5 +18,5 @@ class AgentState(TypedDict, total=False):
     loop_count: int
     error: str
 
-def new_state(*, user_id: UUID | None, role: str, session_id: UUID, run_id: UUID, message: str) -> AgentState:
-    return AgentState(user_id=user_id, role=role, session_id=session_id, run_id=run_id, message=message, messages=[], intent='', tool_calls=[], tool_results=[], retrieved_documents=[], final_response='', loop_count=0, error='')
+def new_state(*, user_id: UUID | None, session_id: UUID, run_id: UUID, message: str) -> AgentState:
+    return AgentState(user_id=user_id, session_id=session_id, run_id=run_id, message=message, messages=[], intent='', tool_calls=[], tool_results=[], retrieved_documents=[], final_response='', loop_count=0, error='')

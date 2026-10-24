@@ -3,6 +3,7 @@ import logging
 from uuid import UUID
 from sqlalchemy.orm import Session
 from app.core.redis_cache import redis_cache
+from app.core.permissions import require_admin_actor
 from app.models.venue import Venue
 logger = logging.getLogger('app.services.venue_service')
 _TTL_VENUE = 600
@@ -32,7 +33,8 @@ def get_venue_by_id(db: Session, venue_id):
         redis_cache.set(cache_key, _venue_to_dict(venue), ttl=_TTL_VENUE)
     return venue
 
-def create_venue(db: Session, name: str, address: str, city: str, capacity: int):
+def create_venue(db: Session, name: str, address: str, city: str, capacity: int, *, actor_id):
+    require_admin_actor(db, actor_id)
     venue = Venue(name=name, address=address, city=city, capacity=capacity)
     db.add(venue)
     db.commit()
@@ -40,7 +42,8 @@ def create_venue(db: Session, name: str, address: str, city: str, capacity: int)
     _invalidate_venues()
     return venue
 
-def update_venue(db: Session, venue_id, **updates):
+def update_venue(db: Session, venue_id, *, actor_id, **updates):
+    require_admin_actor(db, actor_id)
     venue = get_venue_by_id(db, venue_id)
     if not venue:
         return None
@@ -52,7 +55,8 @@ def update_venue(db: Session, venue_id, **updates):
     _invalidate_venues()
     return venue
 
-def delete_venue(db: Session, venue_id):
+def delete_venue(db: Session, venue_id, *, actor_id):
+    require_admin_actor(db, actor_id)
     venue = get_venue_by_id(db, venue_id)
     if not venue:
         return None

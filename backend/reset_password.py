@@ -3,6 +3,7 @@ import argparse
 from app.db.database import SessionLocal
 from app.models.user import User
 from app.core.security import hash_password
+from app.core.permissions import MAIN_ADMIN_ROLE
 
 def list_users(db):
     users = db.query(User).all()
@@ -35,15 +36,40 @@ def reset_password(email: str, new_password: str, make_admin: bool=False):
         return False
     finally:
         db.close()
+
+def set_main_admin(email: str):
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            print(f"Error: No user found with email: '{email}'")
+            return False
+        user.role = MAIN_ADMIN_ROLE
+        db.commit()
+        print(f"Success! User '{email}' role set to {MAIN_ADMIN_ROLE}.")
+        return True
+    except Exception as e:
+        db.rollback()
+        print(f'Database error while setting MAIN_ADMIN role: {e}')
+        return False
+    finally:
+        db.close()
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Reset user password in Smart Event Management database')
     parser.add_argument('--email', type=str, help='Email of the user')
     parser.add_argument('--password', type=str, help='New password to set')
     parser.add_argument('--admin', action='store_true', help='Set user role to ADMIN')
+    parser.add_argument('--main-admin', action='store_true', help='Set the specified user role to MAIN_ADMIN without changing their password')
     parser.add_argument('--list', action='store_true', help='List all registered users')
     args = parser.parse_args()
-    db = SessionLocal()
-    if args.list or len(sys.argv) == 1:
+
+    if args.main_admin:
+        if not args.email or args.password:
+            parser.error('--main-admin requires --email and must not be combined with --password')
+        set_main_admin(args.email)
+    elif args.list or len(sys.argv) == 1:
+        db = SessionLocal()
         list_users(db)
         db.close()
         if len(sys.argv) == 1:

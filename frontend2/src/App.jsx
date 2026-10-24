@@ -9,6 +9,7 @@ import AIAssistantDrawer from "./components/chat/AIAssistantDrawer";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicOnlyRoute from "./routes/PublicOnlyRoute";
 import AdminRoute from "./routes/AdminRoute";
+import ParticipantRoute from "./routes/ParticipantRoute";
 
 
 import PublicLayout from "./layouts/PublicLayout";
@@ -18,6 +19,7 @@ import AdminLayout from "./layouts/AdminLayout";
 
 import Home from "./pages/public/Home";
 import Events from "./pages/public/Events";
+import CompletedEvents from "./pages/public/CompletedEvents";
 import EventDetails from "./pages/public/EventDetails";
 import About from "./pages/public/About";
 
@@ -40,6 +42,7 @@ import AdminFeedback from "./pages/admin/Feedback";
 import AdminPayments from "./pages/admin/Payments";
 import AIAssistant from "./pages/admin/AIAssistant";
 import AgentActivity from "./pages/admin/AgentActivity";
+import KnowledgeBase from "./pages/admin/KnowledgeBase";
 
 
 import NotFound from "./pages/NotFound";
@@ -56,6 +59,7 @@ export default function App() {
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/events" element={<Events />} />
+            <Route path="/completed-events" element={<CompletedEvents />} />
             <Route path="/events/:eventId" element={<EventDetails />} />
             <Route path="/about" element={<About />} />
 
@@ -88,7 +92,14 @@ export default function App() {
           >
             <Route path="/dashboard" element={<UserDashboard />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/my-events" element={<MyEvents />} />
+            <Route
+              path="/my-events"
+              element={
+                <ParticipantRoute>
+                  <MyEvents />
+                </ParticipantRoute>
+              }
+            />
           </Route>
 
           
@@ -107,6 +118,7 @@ export default function App() {
             <Route path="/admin/feedback" element={<AdminFeedback />} />
             <Route path="/admin/payments" element={<AdminPayments />} />
             <Route path="/admin/ai-chat" element={<AIAssistant />} />
+            <Route path="/admin/knowledge" element={<KnowledgeBase />} />
             <Route path="/admin/agent-activity" element={<AgentActivity />} />
           </Route>
 

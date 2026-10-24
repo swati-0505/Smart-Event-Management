@@ -1,0 +1,582 @@
+# PERFORMANCE & ENGINEERING THINGS YOU MUST MAINTAIN
+
+# 1. Low Latency
+
+* Maintain total response latency below **450ms**
+* Measure STT, LLM, TTS, and network latency separately
+* Use streaming everywhere
+
+---
+
+# 2. Real-Time Streaming
+
+* Stream audio chunks continuously
+* Avoid waiting for full audio recording
+* Use WebSockets for bidirectional communication
+
+---
+
+# 3. Async Architecture
+
+* Use async FastAPI routes
+* Avoid blocking operations
+* Handle multiple users concurrently
+
+---
+
+# 4. Partial Transcript Processing
+
+* Process speech incrementally
+* Start reasoning before user fully stops speaking
+* Reduce response delay
+
+---
+
+# 5. Streaming TTS Playback
+
+* Stream generated audio progressively
+* Avoid generating complete audio before playback
+* Improve conversational feel
+
+---
+
+# 6. Stable Tool Orchestration
+
+* Ensure agent calls correct tools consistently
+* Prevent hallucinated tool calls
+* Maintain structured JSON outputs
+
+---
+
+# 7. Accurate Scheduling Logic
+
+* Prevent double bookings
+* Prevent past-time bookings
+* Validate doctor availability properly
+
+---
+
+# 8. Database Consistency
+
+* Use PostgreSQL transactions
+* Prevent race conditions during booking
+* Maintain reliable appointment state
+
+---
+
+# 9. Session Memory Stability
+
+* Maintain active conversation context correctly
+* Store current intent and pending confirmations
+* Handle multi-turn conversations reliably
+
+---
+
+# 10. Persistent Memory Quality
+
+* Remember language preference across sessions
+* Store appointment history correctly
+* Retrieve relevant patient preferences efficiently
+
+---
+
+# 11. Multilingual Consistency
+
+* Detect English, Hindi, and Tamil accurately
+* Maintain same language throughout session
+* Handle mixed-language speech gracefully
+
+---
+
+# 12. Error Recovery
+
+* Handle STT failures gracefully
+* Recover from LLM parsing errors
+* Provide safe fallback responses
+
+---
+
+# 13. Interruption Handling
+
+* Detect user interruptions during AI speech
+* Stop TTS immediately on barge-in
+* Resume conversation naturally
+
+---
+
+# 14. WebSocket Stability
+
+* Maintain persistent socket connection
+* Handle reconnects properly
+* Prevent dropped audio streams
+
+---
+
+# 15. Memory Efficiency
+
+* Avoid storing unnecessary chat history
+* Use summarized long-term memory
+* Use Redis TTL for temporary sessions
+
+---
+
+# 16. Prompt Efficiency
+
+* Keep prompts small and optimized
+* Reduce token usage
+* Improve LLM response speed
+
+---
+
+# 17. Logging & Observability
+
+* Log latency metrics
+* Log tool execution traces
+* Log state transitions
+* Log scheduling conflicts
+
+---
+
+# 18. Scalability
+
+* Separate services cleanly
+* Design modular architecture
+* Support concurrent users
+
+---
+
+# 19. Audio Quality
+
+* Maintain clear STT transcription
+* Ensure natural TTS playback
+* Reduce audio buffering delays
+
+---
+
+# 20. API Reliability
+
+* Handle API rate limits
+* Implement retry mechanisms
+* Prevent API timeout failures
+
+---
+
+# 21. Frontend Responsiveness
+
+* Show live transcript updates
+* Display AI speaking indicators
+* Keep UI lightweight
+
+---
+
+# 22. Security & Secrets
+
+* Store API keys in `.env`
+* Never expose secrets in frontend
+* Validate backend requests properly
+
+---
+
+# 23. Deployment Stability
+
+* Use Docker containers
+* Maintain reproducible environments
+* Ensure service startup reliability
+
+---
+
+# 24. Modular Code Structure
+
+* Separate STT, agent, memory, and scheduling logic
+* Avoid monolithic architecture
+* Keep services independently maintainable
+
+---
+
+# 25. Reasoning Visibility
+
+* Show reasoning traces clearly
+* Display tool-call flow
+* Demonstrate state transitions during demo
+
+---
+
+# 26. Outbound Campaign Reliability
+
+* Ensure scheduled jobs run properly
+* Handle reminder retries
+* Log patient responses correctly
+
+---
+
+# 27. Resource Optimization
+
+* Use lightweight LLM models for speed
+* Optimize Redis usage
+* Avoid unnecessary API calls
+
+---
+
+# 28. Fault Tolerance
+
+* Handle temporary API failures
+* Prevent full pipeline crashes
+* Maintain graceful degradation
+
+---
+
+# 29. Production-Like Architecture
+
+* Maintain service separation
+* Use environment-based configs
+* Structure backend professionally
+
+---
+
+
+Great question. Let me break down the best **free/affordable models** for each part of the pipeline based on latency performance.
+
+---
+
+# 🎯 Model Selection for Voice AI Agent
+
+---
+
+## 🎙️ STT — Speech to Text
+
+**Best Free Option: Groq + Whisper**
+
+Groq runs OpenAI's Whisper model on their hardware and it is **insanely fast**.Now I have everything. Here is your complete, honest model selection guide:
+
+---
+
+# 🎯 Complete Model Stack for Your Voice AI Agent
+
+---
+
+## 🔑 The Big Decision First
+
+**Use GROQ for everything possible.**
+
+Here is why — Groq runs on custom LPU chips, not GPUs. This gives you:
+
+- Sub-100ms time-to-first-token for most models
+- 3-10x faster inference than GPU-based providers
+- A free tier that actually works
+- **One API key, one platform — STT + LLM + TTS all from Groq**
+
+This is perfect for your assignment because everything stays under 450ms.
+
+---
+
+## 🎙️ STT — Speech To Text
+
+**Use: Groq + Whisper Large v3 Turbo**
+
+| Detail | Value |
+|---|---|
+| Model | `whisper-large-v3-turbo` |
+| Speed | 228x real-time speed |
+| Free tier | 2,000 requests per day, 7,200 audio seconds per hour |
+| Expected STT latency | ~80-120ms |
+| File format tip | Use WAV format for lower latency |
+| Free tier file size | Up to 25MB for free tier |
+
+**Why not Deepgram?** Deepgram is excellent but requires paid plan for streaming. Groq Whisper is free and faster for this assignment.
+
+**Hindi/Tamil note:** Whisper Large v3 natively supports Hindi and Tamil. You do not need a separate model.
+
+---
+
+## 🤖 LLM — AI Agent Brain
+
+**Primary: Groq + Llama 3.3 70B (for reasoning)**
+**Fast fallback: Groq + Llama 3.1 8B (for simple turns)**
+
+| Model | Speed | Best For | Free? |
+|---|---|---|---|
+| `llama-3.3-70b-versatile` | ~200ms TTFT | Complex booking logic, conflict handling | ✅ Yes |
+| `llama-3.1-8b-instant` | ~80ms TTFT | Simple confirmation turns | ✅ Yes |
+
+**Why Llama 3.3 70B on Groq?**
+
+- Groq Llama 3.3 70B at 394 TPS responds 5x faster than GPT-4o Mini
+- Native function calling support, JSON mode for structured output, 128K token context window
+- Free tier available
+
+**Smart strategy for your project:**
+
+Use **Llama 3.1 8B** for simple yes/no turns like "Confirm appointment?" and **Llama 3.3 70B** only for complex reasoning like conflict detection. This keeps average LLM latency under 150ms.
+
+---
+
+## 🔊 TTS — Text To Speech
+
+**Use: Groq + Orpheus TTS (for English)**
+**Use: Google Cloud TTS free tier (for Hindi + Tamil)**
+
+### For English:
+
+Orpheus TTS by Canopy Labs is now live on GroqCloud, delivering up to ~100 characters/second with ultra-low latency, supporting six professionally-trained English voices with bracketed vocal directions like [cheerful] or [whisper].
+
+Model ID: `orpheus-tts-v1` on GroqCloud
+
+### For Hindi and Tamil:
+
+Groq TTS currently supports English and Arabic only. For Hindi and Tamil you use **Google Cloud TTS free tier**:
+
+- Google Cloud TTS gives 1 million characters free per month
+- Supports Hindi (`hi-IN`) and Tamil (`ta-IN`) natively
+- Latency: ~100-150ms
+
+**Combined TTS latency target:** under 130ms average.
+
+---
+
+## 🌐 Language Detection
+
+**Use: `langdetect` Python library (free, no API needed)**
+
+It runs locally, zero latency cost, detects Hindi, Tamil, English accurately.
+
+```python
+pip install langdetect
+```
+
+---
+
+## 📊 Full Latency Breakdown With This Stack
+
+| Stage | Tool | Expected Time |
+|---|---|---|
+| STT | Groq Whisper v3 Turbo | ~80-120ms |
+| Language Detection | langdetect (local) | ~5ms |
+| LLM Agent | Groq Llama 3.3 70B | ~150-200ms |
+| TTS (English) | Groq Orpheus | ~80-100ms |
+| TTS (Hindi/Tamil) | Google Cloud TTS | ~100-130ms |
+| Network WebSocket | FastAPI async | ~20-30ms |
+| **TOTAL** | | **~335-455ms** |
+
+Target is under 450ms. With streaming and async, you will hit it consistently for English. Hindi/Tamil will be slightly higher — that is acceptable and you document it honestly in README.
+
+---
+
+## 🔑 API Keys You Need (All Free Tier)
+
+| Service | Get Key From | Free Limit |
+|---|---|---|
+| Groq | console.groq.com | Generous free tier for all models |
+| Google Cloud | console.cloud.google.com | 1M TTS chars/month free |
+| MongoDB Atlas | mongodb.com/cloud | 512MB free cluster |
+| Redis Cloud | redis.com/try-free | 30MB free instance |
+
+---
+
+## ✅ Final Confirmed Stack
+
+```
+STT:  Groq Whisper Large v3 Turbo     → ~100ms
+LLM:  Groq Llama 3.3 70B              → ~175ms
+TTS:  Groq Orpheus (EN) / Google (HI, TA) → ~110ms
+DB:   MongoDB Atlas (free)
+Cache: Redis Cloud (free)
+Backend: FastAPI + WebSockets
+```
+
+All from free tiers. One Groq API key covers STT + LLM + TTS for English. This is the cleanest possible setup for your assignment.
+
+Want me to now start **Phase 0 actual code** — creating the project structure, .env setup, and the FastAPI server with WebSocket?
+
+
+voice-ai-agent/
+
+│
+
+├── 📁 backend/
+
+│   ├── 📁 api/
+
+│   │   ├── __init__.py
+
+│   │   └── routes/
+
+│   │       ├── __init__.py
+
+│   │       ├── voice_routes.py        # WebSocket voice endpoint
+
+│   │       ├── appointment_routes.py  # REST appointment APIs
+
+│   │       └── health_routes.py       # Health check
+
+│   │
+
+│   ├── 📁 controllers/
+
+│   │   ├── __init__.py
+
+│   │   ├── voice_controller.py        # Voice pipeline logic
+
+│   │   └── appointment_controller.py  # Appointment business logic
+
+│   │
+
+│   └── 📁 middleware/
+
+│       ├── __init__.py
+
+│       └── error_handler.py           # Global error handling
+
+│
+
+├── 📁 agent/
+
+│   ├── 📁 prompt/
+
+│   │   ├── __init__.py
+
+│   │   └── system_prompt.py           # Agent system prompts
+
+│   │
+
+│   ├── 📁 reasoning/
+
+│   │   ├── __init__.py
+
+│   │   └── agent_executor.py          # LangChain agent logic
+
+│   │
+
+│   └── 📁 tools/
+
+│       ├── __init__.py
+
+│       └── appointment_tools.py       # Tool definitions
+
+│
+
+├── 📁 services/
+
+│   ├── 📁 speech_to_text/
+
+│   │   ├── __init__.py
+
+│   │   └── stt_service.py             # Groq Whisper STT
+
+│   │
+
+│   ├── 📁 text_to_speech/
+
+│   │   ├── __init__.py
+
+│   │   └── tts_service.py             # Groq Orpheus + Google TTS
+
+│   │
+
+│   └── 📁 language_detection/
+
+│       ├── __init__.py
+
+│       └── detector.py                # langdetect wrapper
+
+│
+
+├── 📁 memory/
+
+│   ├── 📁 session_memory/
+
+│   │   ├── __init__.py
+
+│   │   └── redis_memory.py            # Redis session storage
+
+│   │
+
+│   └── 📁 persistent_memory/
+
+│       ├── __init__.py
+
+│       └── mongo_memory.py            # MongoDB patient profiles
+
+│
+
+├── 📁 scheduler/
+
+│   └── 📁 appointment_engine/
+
+│       ├── __init__.py
+
+│       ├── scheduler.py               # Conflict + validation logic
+
+│       └── campaign_scheduler.py      # Outbound reminder jobs
+
+│
+
+├── 📁 database/
+
+│   ├── __init__.py
+
+│   ├── mongodb.py                     # MongoDB connection
+
+│   └── redis_client.py               # Redis connection
+
+│
+
+├── 📁 config/
+
+│   ├── __init__.py
+
+│   └── settings.py                    # All env vars loaded here
+
+│
+
+├── 📁 utils/
+
+│   ├── __init__.py
+
+│   ├── logger.py                      # Latency + trace logging
+
+│   └── helpers.py                     # Shared utility functions
+
+│
+
+├── 📁 docs/
+
+│   ├── architecture.png               # Architecture diagram
+
+│   └── architecture.pdf
+
+│
+
+├── 📁 tests/
+
+│   ├── test_stt.py
+
+│   ├── test_agent.py
+
+│   ├── test_scheduler.py
+
+│   └── test_memory.py
+
+│
+
+├── main.py                            # App entry point
+
+├── requirements.txt                   # All dependencies
+
+├── .env                               # API keys (never commit)
+
+├── .env.example                       # Safe template to commit
+
+├── .gitignore
+
+├── Dockerfile
+
+├── docker-compose.yml
+
+└── README.md Now give phase 0 cstart codes
+
+
+# 30. Demo Stability
+
+* Ensure multilingual demos work reliably
+* Pre-test conflict scenarios
+* Avoid unstable features during final demo

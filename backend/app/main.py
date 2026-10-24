@@ -2,9 +2,12 @@ from __future__ import annotations
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from app.core.config import settings
+from app.core.permissions import AuthorizationError
 from app.db.database import Base
 from app.models import User, Event, Registration, Venue
+
 from app.routers.event import router as event_router
 from app.routers.registration import router as registration_router
 from app.routers.venue import router as venue_router
@@ -25,6 +28,10 @@ app = FastAPI(
     redoc_url=_redoc_url,
 )
 
+@app.exception_handler(AuthorizationError)
+async def authorization_error_handler(_, exc: AuthorizationError):
+    return JSONResponse(status_code=403, content={'detail': str(exc)})
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.get_cors_origins(),
@@ -33,6 +40,7 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
+app.include_router(auth.router)
 app.include_router(event_router)
 app.include_router(registration_router)
 app.include_router(venue_router)
@@ -40,7 +48,6 @@ app.include_router(feedback_router)
 app.include_router(admin_router)
 app.include_router(payment_router)
 app.include_router(user_router)
-app.include_router(auth.router)
 app.include_router(ai_router)
 
 @app.get('/health', tags=['Health'])

@@ -1,13 +1,16 @@
 from __future__ import annotations
 from langchain_core.tools import tool
+from app.models.event import Event
 from app.services import availability_service, event_service, registration_service
-from app.tools.context import get_tool_context
+from app.tools.context import PermissionDenied, get_tool_context
 from app.tools.formatting import format_datetime, parse_uuid
 
 @tool
 def register_participant(event_id: str) -> str:
     """Register the current authenticated user for an event."""
     context = get_tool_context()
+    if context.is_admin or context.user_id is None:
+        raise PermissionDenied('Administrators and guests cannot register as participants.')
     db = context.db
     event_uuid = parse_uuid(event_id, 'event_id')
     event = event_service.get_event_by_id(db, event_uuid)
@@ -18,14 +21,18 @@ def register_participant(event_id: str) -> str:
     if event.status != 'published':
         return f"'{event.title}' is not open for registration yet."
     from datetime import datetime, timezone
-    from app.core.time import as_utc
     now = datetime.now(timezone.utc)
     event_dt = event.event_date
-    if event_dt and as_utc(event_dt) < now:
-        formatted_date = format_datetime(event.event_date)
-        return f'This event has already started on {formatted_date}, so I cannot register you for it.'
+    if event_dt:
+        if event_dt.tzinfo is None:
+            event_dt = event_dt.replace(tzinfo=timezone.utc)
+        else:
+            event_dt = event_dt.astimezone(timezone.utc)
+        if event_dt < now:
+            formatted_date = format_datetime(event.event_date)
+            return f'This event has already been completed on {formatted_date}, so I cannot register you for it.'
     try:
-        registration = registration_service.create_registration(db=db, user_id=context.user_id, event_id=event_uuid)
+        registration = registration_service.create_registration(db=db, user_id=context.user_id, event_id=event_uuid, actor_id=context.user_id)
     except ValueError as exc:
         return f'Could not register: {exc}'
     return f"Registered for '{event.title}' on {format_datetime(event.event_date)}. Registration id: {registration.registration_id}. {event.available_seats} seat(s) remain."
@@ -34,29 +41,33 @@ def register_participant(event_id: str) -> str:
 def cancel_registration(event_id: str) -> str:
     """Cancel the current user's registration for an event."""
     context = get_tool_context()
+    if context.is_admin or context.user_id is None:
+        raise PermissionDenied('Only participants can cancel their own registrations.')
     db = context.db
     event_uuid = parse_uuid(event_id, 'event_id')
-    event = event_service.get_event_by_id(db, event_uuid)
-    if not event:
-        return f'No event exists with id {event_id}.'
     registration = availability_service.get_registration_by_user_and_event(db=db, user_id=context.user_id, event_id=event_uuid)
     if not registration:
-        return f"You do not have an active registration for '{event.title}'."
-    registration_service.cancel_registration(db, registration.registration_id)
+        return 'You do not have an active registration for that event.'
+    event = db.query(Event).filter(Event.event_id == event_uuid).first()
+    if not event:
+        return f'No event exists with id {event_id}.'
+    registration_service.cancel_registration(db, registration.registration_id, actor_id=context.user_id)
     return f"Cancelled your registration for '{event.title}'. The seat has been released. Refund terms depend on the cancellation policy."
 
 @tool
 def my_registrations() -> str:
     """List all events the current user is registered for."""
     context = get_tool_context()
+    if context.is_admin or context.user_id is None:
+        raise PermissionDenied('Only participants can view their own registrations.')
     db = context.db
-    registrations = registration_service.get_user_registrations(db, context.user_id)
+    registrations = registration_service.get_user_registrations(db, context.user_id, actor_id=context.user_id)
     active = [r for r in registrations if r.status == 'confirmed']
     if not active:
         return 'You are not registered for any events.'
     lines = []
     for registration in active:
-        event = event_service.get_event_by_id(db, registration.event_id)
+        event = db.query(Event).filter(Event.event_id == registration.event_id).first()
         if not event:
             continue
         lines.append(f'- {event.title} (event_id: {event.event_id}) on {format_datetime(event.event_date)} | status: {event.status}')
@@ -72,7 +83,7 @@ def get_event_registrations(event_id: str) -> str:
     event = event_service.get_event_by_id(db, event_uuid)
     if not event:
         return f'No event exists with id {event_id}.'
-    registrations = registration_service.get_event_registrations(db, event_uuid)
+    registrations = registration_service.get_event_registrations(db, event_uuid, actor_id=context.user_id)
     confirmed = [r for r in registrations if r.status == 'confirmed']
     cancelled = len(registrations) - len(confirmed)
     return f"'{event.title}': {len(confirmed)} confirmed registration(s), {cancelled} cancelled. {event.available_seats} of {event.capacity} seats still open."

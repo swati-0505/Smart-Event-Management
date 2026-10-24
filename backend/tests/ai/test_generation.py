@@ -17,10 +17,6 @@ def test_generate_answer_uses_central_router_for_answer_and_grounding():
         result = generator.generate_answer('What is the refund policy?', [make_chunk('a', content='Refunds apply to paid events.')])
     assert result.answer == 'Refunds apply to paid events. [Cancellation Policy]'
     assert router_class.call_count == 2
-    answer_prompt = router.invoke.call_args_list[0].args[0]
-    assert 'polished Markdown' in answer_prompt
-    assert 'Markdown table for refund schedules' in answer_prompt
-    assert 'Avoid long paragraphs' in answer_prompt
     assert [call.kwargs for call in router.invoke.call_args_list] == [
         {'temperature': 0.0},
         {'temperature': 0.0},
@@ -102,22 +98,41 @@ def test_grounded_no_returns_the_reason():
     assert grounded is False
     assert '90 percent' in note
 
-def test_unparseable_verdict_accepts_the_answer():
+def test_unparseable_verdict_rejects_the_answer():
     with patch('app.rag.generator.LLMProviderRouter') as router:
         router.return_value.invoke.return_value = MagicMock(content='hmm, maybe?')
         grounded, note = check_grounding('answer', 'context')
-    assert grounded is True
+    assert grounded is False
     assert 'unparseable' in note
 
-def test_checker_exception_accepts_the_answer():
+def test_checker_exception_rejects_the_answer():
     from app.llm.exceptions import LLMUnavailableError
     with patch('app.rag.generator.LLMProviderRouter') as router:
         router.return_value.invoke.side_effect = LLMUnavailableError(
             'multi-provider', 'All configured LLM providers failed.'
         )
         grounded, note = check_grounding('answer', 'context')
-    assert grounded is True
+    assert grounded is False
     assert 'unavailable' in note
+
+def test_grounding_checker_unavailable_does_not_return_unverified_answer():
+    from app.llm.exceptions import LLMUnavailableError
+    router = MagicMock()
+    router.invoke.side_effect = [
+        MagicMock(content='Refunds apply to paid events.'),
+        LLMUnavailableError('multi-provider', 'Grounding provider unavailable.'),
+        MagicMock(content='Refunds apply to paid events.'),
+        LLMUnavailableError('multi-provider', 'Grounding provider unavailable.'),
+    ]
+    with patch('app.rag.generator.LLMProviderRouter', return_value=router):
+        result = generator.generate_answer(
+            'What is the refund policy?',
+            [make_chunk('a', content='Refunds apply to paid events.')],
+        )
+
+    assert result.answer == NO_ANSWER
+    assert result.grounded is False
+    assert result.retry_count == 2
 
 def test_context_labels_every_chunk_with_its_source():
     chunks = [make_chunk('a', content='Refunds apply to paid events.')]

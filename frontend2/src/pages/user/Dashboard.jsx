@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   Ticket,
   Calendar,
+  User,
   ArrowRight,
   CheckCircle2,
   Star,
@@ -76,22 +77,17 @@ export default function UserDashboard() {
   if (error) return <ErrorState message={error} onRetry={loadUserDashboard} />;
 
   const validRegs = registrations.filter((r) => r.status?.toLowerCase() !== "cancelled");
-  const confirmedCount = validRegs.filter((r) => r.status?.toLowerCase() === "confirmed" || r.status?.toUpperCase() === "CONFIRMED").length;
-  const eventList = Object.values(eventsMap);
-  const upcomingEvents = eventList.filter(
+  const activeRegs = validRegs.filter((r) => !eventsMap[r.event_id]?.is_completed);
+  const completedCount = validRegs.filter((r) => eventsMap[r.event_id]?.is_completed).length;
+  const confirmedCount = activeRegs.filter((r) => r.status?.toLowerCase() === "confirmed" || r.status?.toUpperCase() === "CONFIRMED").length;
+  const upcomingEvents = Object.values(eventsMap).filter(
     (e) => e?.event_date && new Date(e.event_date) > new Date()
   );
-  const attendedEvents = validRegs.filter((registration) => {
-    const event = eventsMap[registration.event_id];
-    return registration.status?.toLowerCase() === "confirmed"
-      && event?.event_date
-      && new Date(event.event_date) <= new Date();
-  }).length;
 
   const stats = [
     {
       icon: <Ticket size={22} />,
-      value: validRegs.length,
+      value: activeRegs.length,
       label: "Active Registrations",
       bg: "rgba(99, 102, 241, 0.15)",
       color: "var(--color-primary)",
@@ -112,8 +108,8 @@ export default function UserDashboard() {
     },
     {
       icon: <Star size={22} />,
-      value: attendedEvents,
-      label: "Past Events",
+      value: completedCount,
+      label: "Total Attended",
       bg: "rgba(168, 85, 247, 0.12)",
       color: "#9333ea",
     },
@@ -313,7 +309,7 @@ export default function UserDashboard() {
           </Link>
         </div>
 
-        {validRegs.length === 0 ? (
+        {activeRegs.length === 0 ? (
           <EmptyState
             icon={Calendar}
             title="No active registrations"
@@ -326,10 +322,9 @@ export default function UserDashboard() {
           />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
-            {validRegs.slice(0, 5).map((reg) => {
+            {activeRegs.slice(0, 5).map((reg) => {
               const event = eventsMap[reg.event_id];
               const dateObj = event?.event_date ? new Date(event.event_date) : null;
-              const isPast = dateObj && dateObj < new Date();
               return (
                 <div
                   key={reg.id || reg.registration_id}
@@ -354,10 +349,8 @@ export default function UserDashboard() {
                         width: "42px",
                         height: "42px",
                         borderRadius: "12px",
-                        background: isPast
-                          ? "rgba(107,114,128,0.12)"
-                          : "rgba(99, 102, 241, 0.12)",
-                        color: isPast ? "var(--text-muted)" : "var(--color-primary)",
+                        background: "rgba(99, 102, 241, 0.12)",
+                        color: "var(--color-primary)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",

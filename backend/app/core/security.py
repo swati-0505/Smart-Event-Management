@@ -6,9 +6,11 @@ from jose import jwt, JWTError
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from app.core.config import settings
+from app.core.permissions import ADMIN_ROLES, MAIN_ADMIN_ROLE
 from app.db.database import get_db
 from app.models.user import User
 security_scheme = HTTPBearer()
+optional_security_scheme = HTTPBearer(auto_error=False)
 
 def get_current_user(credentials: HTTPAuthorizationCredentials=Depends(security_scheme), db: Session=Depends(get_db)) -> User:
     credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate credentials', headers={'WWW-Authenticate': 'Bearer'})
@@ -25,17 +27,23 @@ def get_current_user(credentials: HTTPAuthorizationCredentials=Depends(security_
         raise credentials_exception
     return user
 
+def get_optional_user(credentials: HTTPAuthorizationCredentials | None=Depends(optional_security_scheme), db: Session=Depends(get_db)) -> User | None:
+    if credentials is None:
+        return None
+    return get_current_user(credentials=credentials, db=db)
+
 def require_admin(current_user: User=Depends(get_current_user)) -> User:
-    if current_user.role not in ['ADMIN', 'MAIN_ADMIN']:
+    if current_user.role not in ADMIN_ROLES:
         raise HTTPException(status_code=403, detail='Admin access required')
     return current_user
 
 def require_main_admin(current_user: User=Depends(get_current_user)) -> User:
-    if current_user.role != 'MAIN_ADMIN':
+    if current_user.role != MAIN_ADMIN_ROLE:
         raise HTTPException(status_code=403, detail='Main Admin access required')
     return current_user
-pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
+
+pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 

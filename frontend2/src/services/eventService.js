@@ -4,6 +4,10 @@ export async function getPublishedEvents() {
   return apiGet("/events/published", { skipAuth: true });
 }
 
+export async function getCompletedEvents() {
+  return apiGet("/events/completed", { skipAuth: true });
+}
+
 export async function getAllEvents() {
   return apiGet("/events/");
 }
