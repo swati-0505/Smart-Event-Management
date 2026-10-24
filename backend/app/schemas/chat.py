@@ -71,3 +71,10 @@ class IngestResponse(BaseModel):
     status: str
     chunk_count: int = 0
     detail: str = ''
+
+class DeleteDocumentResponse(BaseModel):
+    filename: str
+    status: str = 'deleted'
+    chunks_removed: int = 0
+    file_removed: bool = False
+    detail: str = ''

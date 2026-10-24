@@ -9,8 +9,8 @@ from app.schemas.venue import VenueCreate, VenueUpdate, VenueResponse
 router = APIRouter(prefix='/api/venues', tags=['Venues'])
 
 @router.post('/', response_model=VenueResponse, status_code=201)
-def create_venue(venue_data: VenueCreate, db: Session=Depends(get_db), _: User=Depends(require_admin)):
-    return venue_service.create_venue(db=db, name=venue_data.name, address=venue_data.address, city=venue_data.city, capacity=venue_data.capacity)
+def create_venue(venue_data: VenueCreate, db: Session=Depends(get_db), current_user: User=Depends(require_admin)):
+    return venue_service.create_venue(db=db, name=venue_data.name, address=venue_data.address, city=venue_data.city, capacity=venue_data.capacity, actor_id=current_user.id)
 
 @router.get('/', response_model=list[VenueResponse])
 def get_venues(db: Session=Depends(get_db)):
@@ -24,15 +24,15 @@ def get_venue(venue_id: UUID, db: Session=Depends(get_db)):
     return venue
 
 @router.put('/{venue_id}', response_model=VenueResponse)
-def update_venue(venue_id: UUID, venue_data: VenueUpdate, db: Session=Depends(get_db), _: User=Depends(require_admin)):
-    venue = venue_service.update_venue(db, venue_id, name=venue_data.name, address=venue_data.address, city=venue_data.city, capacity=venue_data.capacity)
+def update_venue(venue_id: UUID, venue_data: VenueUpdate, db: Session=Depends(get_db), current_user: User=Depends(require_admin)):
+    venue = venue_service.update_venue(db, venue_id, actor_id=current_user.id, name=venue_data.name, address=venue_data.address, city=venue_data.city, capacity=venue_data.capacity)
     if not venue:
         raise HTTPException(status_code=404, detail='Venue not found')
     return venue
 
 @router.delete('/{venue_id}')
-def delete_venue(venue_id: UUID, db: Session=Depends(get_db), _: User=Depends(require_admin)):
-    venue = venue_service.delete_venue(db, venue_id)
+def delete_venue(venue_id: UUID, db: Session=Depends(get_db), current_user: User=Depends(require_admin)):
+    venue = venue_service.delete_venue(db, venue_id, actor_id=current_user.id)
     if not venue:
         raise HTTPException(status_code=404, detail='Venue not found')
     return {'message': 'Venue deleted successfully'}

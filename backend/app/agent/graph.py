@@ -7,8 +7,11 @@ from sqlalchemy.orm import Session
 from app.agent import memory
 from app.agent.nodes import act, classify_intent, finalize, load_memory, reason, should_continue
 from app.agent.state import AgentState, new_state
+from app.core.permissions import GUEST_ROLE, load_actor
 from app.observability.logger import finish_agent_run, start_agent_run
+from app.observability.langsmith import langsmith_trace
 from app.tools.context import ToolContext, use_tool_context
+
 logger = logging.getLogger(__name__)
 _compiled_graph = None
 
@@ -48,14 +51,17 @@ class AgentResult:
         self.status = status
         self.error = error
 
-def run_agent(db: Session, user_id: UUID | None, role: str, message: str, session_id: UUID | None=None) -> AgentResult:
+def run_agent(db: Session, user_id: UUID | None, message: str, session_id: UUID | None=None) -> AgentResult:
     started = time.perf_counter()
+    actor = load_actor(db, user_id) if user_id is not None else None
+    role = actor.role if actor is not None else GUEST_ROLE
     session = memory.get_or_create_session(db=db, user_id=user_id, session_id=session_id, first_message=message)
     run = start_agent_run(db=db, session_id=session.session_id, user_id=user_id, user_request=message)
-    state = new_state(user_id=user_id, role=role, session_id=session.session_id, run_id=run.run_id, message=message)
+    db.commit()
+    state = new_state(user_id=user_id, session_id=session.session_id, run_id=run.run_id, message=message)
     context = ToolContext(db=db, user_id=user_id, role=role)
     try:
-        with use_tool_context(context):
+        with langsmith_trace('agent'), use_tool_context(context):
             final_state = get_graph().invoke(state)
         latency_ms = (time.perf_counter() - started) * 1000
         reply = final_state.get('final_response', '')

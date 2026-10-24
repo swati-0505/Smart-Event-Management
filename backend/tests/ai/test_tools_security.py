@@ -1,12 +1,22 @@
 from __future__ import annotations
 import uuid
+from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
+from langchain_core.messages import AIMessage
 import pytest
 from pydantic import ValidationError
-from app.agent.prompts import build_system_prompt
+from fastapi.security import HTTPAuthorizationCredentials
+from app.agent import nodes as agent_nodes
 from app.schemas.user import UserCreate
+from app.core.security import create_access_token, get_current_user
 from app.tools.context import PermissionDenied, ToolContext, get_tool_context, require_admin, use_tool_context
 from app.tools.formatting import parse_datetime, parse_uuid
-from app.tools.registry import ADMIN_ONLY_TOOLS, ALL_TOOLS, USER_TOOLS, get_tools_for_role
+from app.core.permissions import AuthorizationError
+from app.models.event import Event
+from app.models.user import User
+from app.services import event_service, registration_service, venue_service
+from app.tools.registry import ADMIN_ONLY_TOOLS, ALL_TOOLS, GUEST_TOOLS, USER_TOOLS, get_tools_for_role
 from tests.ai.conftest import FakeSession
 
 def test_tool_without_a_context_raises_clearly():
@@ -36,12 +46,12 @@ def test_nested_contexts_restore_the_outer_one():
             assert get_tool_context().role == 'USER'
         assert get_tool_context().role == 'ADMIN'
 
-def test_is_admin_is_case_insensitive():
-    for role in ('ADMIN', 'admin', 'Admin'):
+def test_only_canonical_database_admin_roles_are_privileged():
+    for role in ('ADMIN', 'MAIN_ADMIN'):
         assert ToolContext(db=FakeSession(), user_id=uuid.uuid4(), role=role).is_admin
 
-def test_user_role_is_not_admin():
-    for role in ('USER', 'user', '', None):
+def test_unknown_and_noncanonical_roles_are_not_admin():
+    for role in ('USER', 'admin', 'Admin', ' MAIN_ADMIN ', '', None):
         context = ToolContext(db=FakeSession(), user_id=uuid.uuid4(), role=role)
         assert not context.is_admin
 
@@ -64,47 +74,18 @@ def test_users_do_not_receive_admin_tools():
     admin_names = {tool.name for tool in ADMIN_ONLY_TOOLS}
     assert names.isdisjoint(admin_names)
 
-def test_admins_receive_every_tool():
-    assert len(get_tools_for_role('ADMIN')) == len(ALL_TOOLS)
-
-@pytest.mark.parametrize('role', ['ADMIN', 'MAIN_ADMIN'])
-def test_admins_can_manage_events_and_use_attendee_tools(role):
-    names = {tool.name for tool in get_tools_for_role(role)}
-    assert {'register_participant', 'my_registrations', 'search_event_policy'}.issubset(names)
-    assert {'create_event', 'get_event_registrations'}.issubset(names)
-
-def test_assistant_prompt_explains_automatic_admin_participation_and_policy_answers():
-    prompt = build_system_prompt('ADMIN', 'Wednesday, 14 October 2026')
-    assert 'automatically considered participants in every event' in prompt
-    assert 'do not call register_participant' in prompt
-    assert 'search_event_policy' in prompt
-    assert 'cite its source' in prompt
-    assert 'Never apply this rule to a request to register another person' in prompt
-
-def test_assistant_prompt_grounds_event_timing_and_feedback():
-    prompt = build_system_prompt('USER', 'Saturday, 17 October 2026 (Asia/Kolkata)')
-    assert 'completed_today' in prompt
-    assert 'after its end time' in prompt
-    assert 'Do not invent feedback instructions' in prompt
-    assert 'submit_event_feedback' in prompt
-
-def test_assistant_prompt_requires_missing_event_details_before_creation():
-    prompt = build_system_prompt('ADMIN', 'Wednesday, 14 October 2026')
-    assert 'ask a concise clarifying question' in prompt
-    assert 'do not call create_event yet' in prompt
-    assert 'Never invent required details' in prompt
+def test_admins_receive_management_tools_but_not_participant_tools():
+    names = {tool.name for tool in get_tools_for_role('ADMIN')}
+    assert names == {tool.name for tool in GUEST_TOOLS + ADMIN_ONLY_TOOLS}
+    assert names.isdisjoint({'register_participant', 'cancel_registration', 'my_registrations'})
 
 def test_guests_receive_only_public_read_only_tools():
     names = {tool.name for tool in get_tools_for_role('GUEST')}
     assert names == {'search_events', 'get_event_details', 'search_venues', 'check_venue_availability', 'search_event_policy'}
-    assert 'submit_event_feedback' not in names
-
-def test_signed_in_users_can_submit_feedback():
-    assert 'submit_event_feedback' in {tool.name for tool in get_tools_for_role('USER')}
 
 def test_unknown_role_is_treated_as_a_plain_user():
-    assert len(get_tools_for_role('superuser')) == len(USER_TOOLS)
-    assert len(get_tools_for_role('')) == len(USER_TOOLS)
+    assert get_tools_for_role('superuser') == GUEST_TOOLS
+    assert get_tools_for_role('') == GUEST_TOOLS
 
 @pytest.mark.parametrize('role', ['admin', 'Admin', 'MAIN_ADMIN ', 'superuser'])
 def test_user_creation_rejects_noncanonical_or_unsupported_roles(role):
@@ -116,9 +97,17 @@ def test_user_creation_accepts_only_canonical_privileged_roles():
     assert user.role == 'ADMIN'
 
 def test_every_roadmap_tool_is_registered():
-    required = {'search_events', 'create_event', 'update_event', 'cancel_event', 'check_venue_availability', 'register_participant', 'cancel_registration', 'get_event_details', 'submit_event_feedback', 'search_event_policy'}
+    required = {'search_events', 'create_event', 'update_event', 'cancel_event', 'check_venue_availability', 'register_participant', 'cancel_registration', 'get_event_details', 'search_event_policy'}
     registered = {tool.name for tool in ALL_TOOLS}
     assert required.issubset(registered), required - registered
+
+def test_admin_tools_cover_requested_management_surfaces():
+    registered = {tool.name for tool in ALL_TOOLS}
+    assert {
+        'create_venue', 'update_venue', 'delete_venue',
+        'list_all_registrations', 'list_users', 'create_user', 'update_user_role', 'delete_user',
+        'view_agent_activity', 'view_agent_run',
+    }.issubset(registered)
 
 def test_no_tool_exposes_identity_as_an_argument():
     forbidden = {'user_id', 'current_user', 'role', 'db', 'session', 'created_by'}
@@ -126,6 +115,161 @@ def test_no_tool_exposes_identity_as_an_argument():
         exposed = set(tool.args.keys())
         leaked = exposed & forbidden
         assert not leaked, f'{tool.name} exposes {leaked} to the model'
+
+def test_users_cannot_trigger_admin_tools_through_agent_call(user_context, monkeypatch):
+    from app.agent.nodes import act
+
+    invoked = MagicMock()
+    invoked.name = 'create_event'
+    monkeypatch.setitem(agent_nodes.TOOLS_BY_NAME, 'create_event', invoked)
+    state = {
+        'messages': [AIMessage(content='', tool_calls=[{
+            'name': 'create_event',
+            'args': {},
+            'id': 'admin-tool-attempt',
+        }])],
+        'run_id': uuid.uuid4(),
+        'tool_calls': [],
+        'tool_results': [],
+        'retrieved_documents': [],
+    }
+    with patch('app.agent.nodes.log_tool_call'):
+        result = act(state)
+    invoked.invoke.assert_not_called()
+    assert result['tool_results'][0]['status'] == 'denied'
+
+def test_admin_cannot_trigger_participant_registration_through_agent_call(admin_context, monkeypatch):
+    from app.agent.nodes import act
+
+    invoked = MagicMock()
+    invoked.name = 'register_participant'
+    monkeypatch.setitem(agent_nodes.TOOLS_BY_NAME, 'register_participant', invoked)
+    state = {
+        'messages': [AIMessage(content='', tool_calls=[{
+            'name': 'register_participant',
+            'args': {'event_id': str(uuid.uuid4())},
+            'id': 'participant-tool-attempt',
+        }])],
+        'run_id': uuid.uuid4(),
+        'tool_calls': [],
+        'tool_results': [],
+        'retrieved_documents': [],
+    }
+    with patch('app.agent.nodes.log_tool_call'):
+        result = act(state)
+    invoked.invoke.assert_not_called()
+    assert result['tool_results'][0]['status'] == 'denied'
+
+
+def test_agent_delete_event_reports_registration_conflict(admin_context, monkeypatch):
+    from app.tools.event_tools import delete_event
+
+    def reject_deletion(*args, **kwargs):
+        raise event_service.EventDeletionConflict(
+            'Cannot permanently delete this event: it has registrations. '
+            'Cancel the event instead to preserve its history.'
+        )
+
+    monkeypatch.setattr(
+        event_service,
+        'delete_event',
+        reject_deletion,
+    )
+
+    result = delete_event.invoke({'event_id': str(uuid.uuid4())})
+
+    assert 'Cancel the event instead' in result
+
+def test_business_services_reject_user_event_and_venue_mutations(fake_db, user_id):
+    actor = User(id=user_id, role='USER')
+    fake_db.rows_for[User] = [actor]
+    with pytest.raises(AuthorizationError):
+        event_service.create_event(
+            fake_db, title='Event', description='', category='Other',
+            venue_id=uuid.uuid4(), event_date=None, registration_deadline=None,
+            capacity=1, actor_id=user_id,
+        )
+    with pytest.raises(AuthorizationError):
+        venue_service.create_venue(
+            fake_db, name='Venue', address='Address', city='City',
+            capacity=10, actor_id=user_id,
+        )
+
+def test_admin_can_create_events_and_venues(fake_db, user_id, monkeypatch):
+    actor = User(id=user_id, role='ADMIN')
+    fake_db.rows_for[User] = [actor]
+    monkeypatch.setattr(event_service.redis_cache, 'delete_pattern', lambda _pattern: None)
+    monkeypatch.setattr(venue_service.redis_cache, 'delete_pattern', lambda _pattern: None)
+    event_date = datetime.now(timezone.utc) + timedelta(days=1)
+
+    event = event_service.create_event(
+        fake_db,
+        title='Authorized event',
+        description='',
+        category='Technology',
+        venue_id=uuid.uuid4(),
+        event_date=event_date,
+        registration_deadline=None,
+        capacity=10,
+        actor_id=user_id,
+    )
+    venue = venue_service.create_venue(
+        fake_db,
+        name='Authorized venue',
+        address='Street',
+        city='City',
+        capacity=10,
+        actor_id=user_id,
+    )
+
+    assert event.created_by == user_id
+    assert event.status == 'draft'
+    assert venue.name == 'Authorized venue'
+
+def test_business_service_rejects_admin_participant_registration(fake_db, user_id):
+    actor = User(id=user_id, role='ADMIN')
+    fake_db.rows_for[User] = [actor]
+    with pytest.raises(AuthorizationError, match='Administrators cannot'):
+        registration_service.create_registration(
+            fake_db, user_id=user_id, event_id=uuid.uuid4(), actor_id=user_id,
+        )
+
+def test_user_can_register_themselves_for_a_published_event(fake_db, user_id):
+    fake_db.rows_for[User] = [User(id=user_id, role='USER')]
+    event_id = uuid.uuid4()
+    fake_db.rows_for[Event] = [SimpleNamespace(
+        event_id=event_id,
+        status='published',
+        event_date=datetime.now(timezone.utc) + timedelta(days=1),
+        available_seats=1,
+    )]
+
+    registration = registration_service.create_registration(
+        fake_db, user_id=user_id, event_id=event_id, actor_id=user_id,
+    )
+
+    assert registration.user_id == user_id
+    assert registration.event_id == event_id
+    assert fake_db.rows_for[Event][0].available_seats == 0
+
+def test_business_service_rejects_user_reading_another_users_registrations(fake_db, user_id):
+    actor = User(id=user_id, role='USER')
+    fake_db.rows_for[User] = [actor]
+    with pytest.raises(AuthorizationError, match='Registration access denied'):
+        registration_service.get_user_registrations(
+            fake_db, uuid.uuid4(), actor_id=user_id,
+        )
+
+def test_authorization_role_is_loaded_from_database_not_jwt_claim(user_id, fake_db):
+    database_user = User(id=user_id, role='USER')
+    fake_db.rows_for[User] = [database_user]
+    token = create_access_token({'sub': str(user_id), 'role': 'ADMIN'})
+    credentials = HTTPAuthorizationCredentials(scheme='Bearer', credentials=token)
+
+    current_user = get_current_user(credentials=credentials, db=fake_db)
+
+    assert current_user is database_user
+    assert current_user.role == 'USER'
 
 def test_every_tool_has_a_description():
     for tool in ALL_TOOLS:

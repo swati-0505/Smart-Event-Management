@@ -4,6 +4,7 @@ from contextvars import ContextVar
 from dataclasses import dataclass
 from uuid import UUID
 from sqlalchemy.orm import Session
+from app.core.permissions import is_admin_role
 
 @dataclass
 class ToolContext:
@@ -13,7 +14,7 @@ class ToolContext:
 
     @property
     def is_admin(self) -> bool:
-        return (self.role or '').upper() in ('ADMIN', 'MAIN_ADMIN')
+        return is_admin_role(self.role)
 _tool_context: ContextVar[ToolContext | None] = ContextVar('tool_context', default=None)
 
 @contextmanager
@@ -30,7 +31,7 @@ def get_tool_context() -> ToolContext:
         raise RuntimeError('No ToolContext is active. Tools must run inside use_tool_context(...). If you are writing a test, wrap the call in that context manager.')
     return context
 
-class PermissionDenied(Exception):
+class PermissionDenied(PermissionError):
     pass
 
 def require_admin(action: str) -> ToolContext:

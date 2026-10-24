@@ -9,6 +9,7 @@ import {
   MessageSquare,
   CreditCard,
   Bot,
+  BookOpen,
   Activity,
   ChevronLeft,
   ChevronRight,
@@ -24,6 +25,7 @@ const ADMIN_LINKS = [
   { path: "/admin/feedback", label: "Feedback", icon: MessageSquare },
   { path: "/admin/payments", label: "Payments", icon: CreditCard },
   { path: "/admin/ai-chat", label: "AI Assistant", icon: Bot },
+  { path: "/admin/knowledge", label: "Knowledge Base", icon: BookOpen },
   { path: "/admin/agent-activity", label: "Agent Logs", icon: Activity },
 ];
 

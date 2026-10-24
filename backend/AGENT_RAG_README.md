@@ -45,9 +45,8 @@ Everything is logged to `agent_runs` and `tool_calls` for the
 
 - PostgreSQL with the **pgvector** extension available
 - Python 3.11+
-- An OpenRouter API key for chat and staged embeddings —
+- An OpenRouter API key for chat and embeddings —
   <https://openrouter.ai/keys>
-- A Hugging Face API key while the active legacy embedding index is in use
 
 Check pgvector is installable before anything else. If this fails, nothing
 below will work:
@@ -68,11 +67,6 @@ uv sync
 cp .env.example .env    # then replace the DATABASE_URL with your shared cloud DB
 ```
 
-`APP_TIMEZONE` defaults to `Asia/Kolkata`. The assistant uses this timezone for
-"today" queries and for interpreting timestamps that have no UTC offset; event
-times returned in chat are labeled in that timezone. Set it to another IANA
-timezone name if the deployment has a different authoritative local timezone.
-
 For a group project, do not use localhost as the database host. Use one shared PostgreSQL database in Neon, Supabase, Render, or Railway. Everyone on the team should point their local `.env` file to the same `DATABASE_URL` so you all work on the same data set.
 
 ### Migrate
@@ -81,14 +75,17 @@ For a group project, do not use localhost as the database host. Use one shared P
 uv run alembic upgrade head
 ```
 
-Migration `a1b2c3d4e5f6` creates the vector extension, the two knowledge
-tables (with HNSW and GIN indexes) and the four agent tables. Migration
-`b3c4d5e6f7a8` changes the embedding column to 384 dimensions for the legacy
-BGE small model. Migration `e6f7a8b9c0d1` adds an independent staged
-NVIDIA-model index with 2048-dimensional vectors. It does not alter or delete
-the legacy index.
+Migration `a1b2c3d4e5f6` creates the vector extension, the knowledge
+tables (with HNSW and GIN indexes) and the agent tables. Migration
+`e6f7a8b9c0d1` adds `knowledge_chunks_nvidia` with 2048-dimensional
+OpenRouter embeddings. Hugging Face / legacy embeddings are no longer used;
+`RAG_ACTIVE_EMBEDDING_INDEX` must be `nvidia`.
 
-### Index the policy documents
+### Index the policy documents (OpenRouter)
+
+Embeddings use OpenRouter model `nvidia/llama-nemotron-embed-vl-1b-v2:free`
+(2048 dims). Vectors are L2-normalized before storage. HNSW indexes use
+pgvector `halfvec(2048)` (pgvector 0.7.0+).
 
 ```bash
 uv run python scripts/ingest_knowledge.py
@@ -96,54 +93,14 @@ uv run python scripts/ingest_knowledge.py
 
 Expect roughly 38 chunks across the six documents in `documents/`. Re-running
 is safe — unchanged files are skipped by content hash.
-Database migrations create the knowledge tables but do not populate them. If
-the assistant cannot find a policy, verify that the documents were ingested
-into the same active index and database used by the backend.
 
 ```bash
 uv run python scripts/ingest_knowledge.py --force   # after changing model or chunk size
-uv run python scripts/ingest_knowledge.py --clear   # wipe the index first
+uv run python scripts/ingest_knowledge.py --clear   # wipe the OpenRouter index first
 ```
 
-### Stage and validate OpenRouter embeddings
-
-OpenRouter serves `nvidia/llama-nemotron-embed-vl-1b-v2:free` through its
-embeddings API. NVIDIA documents 2048-dimensional text embeddings for this
-model. The application validates the returned vector length and L2-normalizes
-vectors before storage and search. The staged table stores full-precision
-2048-dimensional vectors; its HNSW indexes use pgvector `halfvec(2048)`
-expression indexes, which require pgvector 0.7.0 or newer.
-
-1. Back up the database, then apply migrations with `uv run alembic upgrade head`.
-   This adds a new `knowledge_chunks_nvidia` table and leaves the current
-   `knowledge_chunks` index untouched.
-2. Populate the staged index without clearing the legacy index:
-
-   ```bash
-   uv run python scripts/ingest_knowledge.py --target-index nvidia --force
-   ```
-
-   This uses `OPENROUTER_API_KEY` and `OPENROUTER_EMBEDDING_MODEL`. Failed
-   documents keep any previously committed staged rows; the legacy index is
-   not changed.
-3. Check `/api/admin/knowledge/status`: confirm staged chunks are populated,
-   primary missing-vector count is zero, and model mismatch/stale counts are
-   zero. Test representative searches and
-   compare returned citations/retrieval quality against the legacy index.
-4. Only after validation, set `RAG_ACTIVE_EMBEDDING_INDEX=nvidia` and restart
-   the backend. Admin ingestion then targets the active index by default.
-   Query embeddings use the same configured OpenRouter model and dimension as
-   staged ingestion. The legacy index is not altered by this cutover.
-5. Keep the legacy index and its Hugging Face embedding configuration until
-   production validation is complete. Roll back traffic by setting the active
-   index to `legacy`. Do not use `--clear` on the legacy target as part of this
-   staged migration. Hugging Face embedding code and dependency remain required
-   while the legacy index is active and for rollback.
-
-The index migration downgrade removes only the staged table. It does not
-remove the legacy index, but it will discard any staged vectors already
-indexed. The subsequent fallback-column migration only makes the optional
-staging model marker nullable.
+Check `/api/admin/knowledge/status` (or Admin → Knowledge Base) to confirm
+chunks are populated and the index is ready.
 
 ### Run
 
@@ -177,18 +134,6 @@ curl -H "Authorization: Bearer <admin-jwt>" \
 | GET | `/api/admin/agent-activity/{run_id}` | admin | One run with its tool calls |
 | POST | `/api/admin/knowledge/ingest` | admin | Reindex the documents |
 | GET | `/api/admin/knowledge/status` | admin | What is currently indexed |
-
-### Event timing and feedback
-
-The chat assistant uses event start/end timestamps to distinguish completed,
-in-progress, and upcoming events. Queries such as "what completed today" use
-the configured `APP_TIMEZONE` and the event end time, not the event's status
-label alone. Signed-in attendees can submit feedback only after the event ends
-and only if they have an active registration; this rule is shared by the chat
-tool and `POST /api/feedback/`. The attendee feedback form is available under
-My Events for eligible events, and submitted entries appear in the admin
-Feedback page. Ratings support one decimal place from 1.0 to 5.0; apply the
-`c7d8e9f0a1b2` Alembic migration before deploying the schema change.
 
 ### Request / response
 
@@ -233,40 +178,53 @@ Nine from section 10 of the roadmap, plus three helpers.
 
 | Tool | Access | Wraps |
 |---|---|---|
-| `search_events` | user | `event_service` |
-| `get_event_details` | user | `event_service` |
-| `search_venues` * | user | `venue_service` |
-| `check_venue_availability` | user | `availability_service` |
-| `register_participant` | user | `registration_service` |
-| `cancel_registration` | user | `registration_service` |
-| `my_registrations` * | user | `registration_service` |
-| `search_event_policy` | user | RAG pipeline |
+| `search_events` | guest, user, admin | `event_service` |
+| `get_event_details` | guest, user, admin | `event_service` |
+| `search_venues` * | guest, user, admin | `venue_service` |
+| `check_venue_availability` | guest, user, admin | `availability_service` |
+| `search_event_policy` | guest, user, admin | RAG pipeline |
+| `register_participant` | user only | `registration_service` |
+| `cancel_registration` | user only (own registrations) | `registration_service` |
+| `my_registrations` * | user only | `registration_service` |
 | `create_event` | **admin** | `event_service` |
 | `update_event` | **admin** | `event_service` |
 | `cancel_event` | **admin** | `event_service` |
+| `delete_event` | **admin** | `event_service` |
 | `get_event_registrations` * | **admin** | `registration_service` |
+| `list_all_registrations` | **admin** | `registration_service` |
+| `create_venue`, `update_venue`, `delete_venue` | **admin** | `venue_service` |
+| `list_users`, `create_user`, `delete_user` | **admin** | `user_service` |
+| `update_user_role` | **MAIN_ADMIN** | `user_service` |
+| `view_agent_activity`, `view_agent_run` | **admin** | agent observability |
 
 \* Not in the roadmap's list. `search_venues` exists because
 `check_venue_availability` needs a `venue_id` and users say "the Main
 Auditorium" — without a lookup the model's only way to produce that id is to
-invent one.
+invent one. `my_registrations` and `get_event_registrations` provide
+participant-specific and admin-wide registration views, respectively.
 
 **No tool touches SQL.** Every one calls a service, per section 10.
 
 ### Identity and permissions
 
-Tools take business arguments only. `user_id`, `role` and the database session
-travel through a `contextvars`-based `ToolContext`, set by the chat endpoint
-from the JWT.
+Tools take business arguments only. The authenticated user ID comes from the
+JWT subject, and the backend reloads the user's current role from the database.
+`user_id`, that database-derived role, and the database session travel through
+a `contextvars`-based `ToolContext`; role claims or role values in prompts are
+not trusted.
 
 This is deliberate. LangChain turns a tool signature into the JSON schema the
 model sees, so a visible `user_id` parameter would let a user say *"register
 bob@example.com for me"* and have the model comply. A test asserts no tool
 exposes it.
 
-Admin tools are filtered out before binding **and** call `require_admin()`
-internally. The prompt also says so, but prompt instructions are a suggestion
-and the Python check is the guarantee.
+Tools are filtered by role before binding. Administrative tools also call
+`require_admin()` internally, and their service operations recheck authorization
+and ownership. The prompt also describes these restrictions, but prompt
+instructions are a suggestion and the Python checks are the guarantee.
+Admins never receive participant-registration tools; they cannot register for
+or cancel registrations as participants. Only `MAIN_ADMIN` may change user
+roles or create/delete privileged accounts.
 
 ---
 
@@ -343,8 +301,7 @@ All in `app/core/ai_config.py`, overridable from `.env`.
 
 ### The three settings that matter most
 
-**`EMBEDDING_DIM=384`** must match the legacy `vector(384)` column. The staged
-OpenRouter index uses **`OPENROUTER_EMBEDDING_DIM=2048`**, matching its
+The OpenRouter index uses **`OPENROUTER_EMBEDDING_DIM=2048`**, matching its
 `vector(2048)` columns. A dimension change requires a new staging index/migration
 and re-ingestion; both paths reject vectors with unexpected dimensions.
 
@@ -353,15 +310,13 @@ limit, not by taste. Longer chunks are silently truncated by the model — you
 get a vector that does not represent its own text and **no error anywhere**. A
 test asserts `CHUNK_SIZE + OVERLAP` stays under that ceiling.
 
-All chat requests use the central LLM router, configured for OpenRouter only.
+All chat and embedding requests use OpenRouter.
 Set `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL`, `OPENROUTER_MODEL`,
-`OPENROUTER_FALLBACK_MODELS`, `OPENROUTER_EMBEDDING_MODEL`, and
-`EMBEDDING_MODEL` in the backend environment. The primary chat model is tried
-first, followed by the comma-separated fallback model IDs in order. Model
-identifiers have no application-code defaults and must be configured
-explicitly. The OpenRouter endpoint defaults to `https://openrouter.ai/api/v1`.
-While the legacy index remains active, its Hugging Face embedding key/model
-settings remain required.
+`OPENROUTER_FALLBACK_MODELS`, and `OPENROUTER_EMBEDDING_MODEL` in the backend
+environment. The primary chat model is tried first, followed by the
+comma-separated fallback model IDs in order. Model identifiers have no
+application-code defaults and must be configured explicitly. The OpenRouter
+endpoint defaults to `https://openrouter.ai/api/v1`.
 
 ### Retrieval tuning
 
@@ -423,9 +378,9 @@ silently became 200, so chunks exceeded their stated size. Now `is None`.
 **`type "vector" does not exist`** — pgvector is not installed in the
 database. See prerequisites.
 
-**Embedding vector dimension mismatch** — verify `EMBEDDING_DIM=384` for the
-legacy index or `OPENROUTER_EMBEDDING_DIM=2048` for the staged index matches its
-database column and configured model before re-ingesting.
+**Embedding vector dimension mismatch** — verify `OPENROUTER_EMBEDDING_DIM=2048`
+matches the `knowledge_chunks_nvidia` columns and configured model before
+re-ingesting.
 
 **Agent invents event IDs** — usually the model, not the prompt. Pin
 `OPENROUTER_MODEL` to a supported tool-calling model. The

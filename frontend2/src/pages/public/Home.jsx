@@ -2,6 +2,8 @@ import React, { useEffect, useState, Suspense, lazy } from "react";
 import { Link } from "react-router-dom";
 import {
   Sparkles,
+  Calendar,
+  Users,
   MapPin,
   ArrowRight,
   ShieldCheck,
@@ -10,34 +12,21 @@ import {
   Star,
 } from "lucide-react";
 import { getPublishedEvents } from "../../services/eventService";
-import { getVenues } from "../../services/venueService";
 import EventGrid from "../../components/event/EventGrid";
 import PageLoader from "../../components/common/PageLoader";
-import ErrorState from "../../components/common/ErrorState";
 
 
 const HeroCanvas = lazy(() => import("../../components/three/HeroCanvas"));
 
 export default function Home() {
   const [events, setEvents] = useState([]);
-  const [venues, setVenues] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const loadHomeData = () => {
-    setLoading(true);
-    setError("");
-    Promise.all([getPublishedEvents(), getVenues()])
-      .then(([eventData, venueData]) => {
-        setEvents(Array.isArray(eventData) ? eventData : []);
-        setVenues(Array.isArray(venueData) ? venueData : []);
-      })
-      .catch((err) => setError(err.message || "Failed to load events and venues."))
-      .finally(() => setLoading(false));
-  };
 
   useEffect(() => {
-    loadHomeData();
+    getPublishedEvents()
+      .then((data) => setEvents(Array.isArray(data) ? data.slice(0, 6) : []))
+      .catch((err) => console.error("Failed to load featured events", err))
+      .finally(() => setLoading(false));
   }, []);
 
   const features = [
@@ -72,12 +61,10 @@ export default function Home() {
   ];
 
   const stats = [
-    { value: loading ? "..." : events.length, label: "Published Events" },
-    { value: loading ? "..." : venues.length, label: "Venues" },
-    {
-      value: loading ? "..." : events.reduce((total, event) => total + (event.available_seats || 0), 0),
-      label: "Seats Available",
-    },
+    { value: "10K+", label: "Attendees" },
+    { value: "300+", label: "Events Hosted" },
+    { value: "50+", label: "Top Venues" },
+    { value: "99.9%", label: "Uptime" },
   ];
 
   return (
@@ -407,13 +394,11 @@ export default function Home() {
             </Link>
           </div>
 
-          {error ? (
-            <ErrorState message={error} onRetry={loadHomeData} />
-          ) : loading ? (
+          {loading ? (
             <PageLoader message="Loading upcoming events..." />
           ) : (
             <EventGrid
-              events={events.slice(0, 6)}
+              events={events}
               emptyTitle="No events available"
               emptyDescription="Check back soon for new scheduled events."
             />

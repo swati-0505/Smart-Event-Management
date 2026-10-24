@@ -1,17 +1,16 @@
 import uuid
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func, text
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR, UUID
 from app.core.ai_config import ai_settings
 from app.db.database import Base
 
 class KnowledgeDocument(Base):
     __tablename__ = 'knowledge_documents'
-    __table_args__ = (Index('idx_knowledge_documents_doc_type', 'doc_type'),)
     document_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     filename = Column(String, nullable=False, unique=True)
     title = Column(String, nullable=True)
-    doc_type = Column(String, nullable=False, default='general')
+    doc_type = Column(String, nullable=False, default='general', index=True)
     content_hash = Column(String, nullable=False)
     chunk_count = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -19,24 +18,15 @@ class KnowledgeDocument(Base):
 
 class KnowledgeChunk(Base):
     __tablename__ = 'knowledge_chunks'
-    __table_args__ = (
-        Index('idx_knowledge_chunks_document_id', 'document_id'),
-        Index('idx_knowledge_chunks_doc_type', 'doc_type'),
-        Index('idx_knowledge_chunks_search_vec', 'search_vec', postgresql_using='gin'),
-        Index(
-            'idx_knowledge_chunks_embedding',
-            'embedding',
-            postgresql_using='hnsw',
-            postgresql_ops={'embedding': 'vector_cosine_ops'},
-        ),
-    )
+    __table_args__ = (Index('idx_knowledge_chunks_document_id', 'document_id'), Index('idx_knowledge_chunks_doc_type', 'doc_type'), Index('idx_knowledge_chunks_search_vec', 'search_vec', postgresql_using='gin'))
     chunk_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     document_id = Column(UUID(as_uuid=True), ForeignKey('knowledge_documents.document_id', ondelete='CASCADE'), nullable=False)
     doc_type = Column(String, nullable=False, default='general')
     source_filename = Column(String, nullable=False)
     chunk_index = Column(Integer, nullable=False)
     content = Column(Text, nullable=False)
-    embedding = Column(Vector(ai_settings.EMBEDDING_DIM), nullable=True)
+    # Legacy HF table retained for existing DBs; ingest/search use knowledge_chunks_nvidia only.
+    embedding = Column(Vector(384), nullable=True)
     search_vec = Column(TSVECTOR, nullable=True)
     doc_metadata = Column(JSONB, nullable=True, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -48,16 +38,6 @@ class KnowledgeChunkNvidia(Base):
         Index('idx_knowledge_chunks_nvidia_document_id', 'document_id'),
         Index('idx_knowledge_chunks_nvidia_doc_type', 'doc_type'),
         Index('idx_knowledge_chunks_nvidia_search_vec', 'search_vec', postgresql_using='gin'),
-        Index(
-            'idx_knowledge_chunks_nvidia_embedding_primary',
-            text('((embedding_primary)::halfvec(2048)) halfvec_cosine_ops'),
-            postgresql_using='hnsw',
-        ),
-        Index(
-            'idx_knowledge_chunks_nvidia_embedding_fallback',
-            text('((embedding_fallback)::halfvec(2048)) halfvec_cosine_ops'),
-            postgresql_using='hnsw',
-        ),
     )
     chunk_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     document_id = Column(UUID(as_uuid=True), ForeignKey('knowledge_documents.document_id', ondelete='CASCADE'), nullable=False)

@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { CheckCircle2 } from "lucide-react";
 import { getPublishedEvents } from "../../services/eventService";
 import { getUserRegistrations } from "../../services/registrationService";
 import { useAuth } from "../../auth/AuthProvider";
@@ -57,7 +59,7 @@ export default function Events() {
   const categories = useMemo(() => {
     const set = new Set();
     events.forEach((ev) => {
-      if (ev.category) set.add(ev.category);
+      if (!ev.is_completed && ev.category) set.add(ev.category);
     });
     return Array.from(set);
   }, [events]);
@@ -65,13 +67,15 @@ export default function Events() {
   
   const filteredEvents = useMemo(() => {
     return events.filter((ev) => {
+      if (ev.is_completed) return false;
       const matchesCat = selectedCategory === "ALL" || ev.category === selectedCategory;
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
         (ev.title && ev.title.toLowerCase().includes(q)) ||
         (ev.description && ev.description.toLowerCase().includes(q)) ||
-        (ev.category && ev.category.toLowerCase().includes(q));
+        (ev.category && ev.category.toLowerCase().includes(q)) ||
+        (ev.address && ev.address.toLowerCase().includes(q));
       return matchesCat && matchesSearch;
     });
   }, [events, selectedCategory, searchQuery]);
@@ -79,13 +83,18 @@ export default function Events() {
   return (
     <div style={{ padding: "3rem 0 5rem" }}>
       <div className="container">
-        <div style={{ marginBottom: "2rem" }}>
-          <h1 style={{ fontSize: "var(--font-4xl)", fontWeight: 900, marginBottom: "0.5rem" }}>
-            Explore Events
-          </h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: "var(--font-lg)" }}>
-            Find technology conferences, interactive workshops, and networking sessions.
-          </p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem", marginBottom: "2rem" }}>
+          <div>
+            <h1 style={{ fontSize: "var(--font-4xl)", fontWeight: 900, marginBottom: "0.5rem" }}>
+              Explore Events
+            </h1>
+            <p style={{ color: "var(--text-secondary)", fontSize: "var(--font-lg)" }}>
+              Find technology conferences, interactive workshops, and networking sessions.
+            </p>
+          </div>
+          <Link to="/completed-events" className="btn btn-secondary">
+            <CheckCircle2 size={17} /> Completed Events
+          </Link>
         </div>
 
         {error ? (

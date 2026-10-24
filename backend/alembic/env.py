@@ -9,7 +9,7 @@ from app.models.venue import Venue
 from app.models.registration import Registration
 from app.models.feedback import Feedback
 from app.models.payment import Payment
-from app.models.knowledge import KnowledgeDocument, KnowledgeChunk, KnowledgeChunkNvidia
+from app.models.knowledge import KnowledgeDocument, KnowledgeChunk
 from app.models.agent import AgentSession, ChatMessage, AgentRun, ToolCall
 config = context.config
 from app.core.config import settings
