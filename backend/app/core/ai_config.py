@@ -38,9 +38,9 @@ class AISettings(BaseSettings):
     @field_validator('OPENROUTER_EMBEDDING_DIM')
     @classmethod
     def validate_openrouter_embedding_dim(cls, value: int) -> int:
+      admin-agent-policy-improvements
         if value not in [1024, 2048]:
             raise ValueError('embedding dimension must match the selected model.')
         return value
-
 
 ai_settings = AISettings()
