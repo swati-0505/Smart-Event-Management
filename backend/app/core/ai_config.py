@@ -38,8 +38,8 @@ class AISettings(BaseSettings):
     @field_validator('OPENROUTER_EMBEDDING_DIM')
     @classmethod
     def validate_openrouter_embedding_dim(cls, value: int) -> int:
-        if value != 2048:
-            raise ValueError('The OpenRouter embedding index requires 2048-dimensional vectors.')
+        if value not in [1024, 2048]:
+            raise ValueError('embedding dimension must match the selected model.')
         return value
 
 
