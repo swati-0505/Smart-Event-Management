@@ -24,7 +24,7 @@ _redoc_url = '/redoc' if settings.ENABLE_API_DOCS else None
 app = FastAPI(
     title='Smart Event Management System',
     version='1.0.0',
-    docs_url=_docs_url,
+    docs_url="/docs",
     redoc_url=_redoc_url,
 )
 
