@@ -200,8 +200,8 @@ function Scene() {
       />
 
       
-      {shapes.map((s) => (
-        <DriftingShape key={s.key} {...s} />
+      {shapes.map(({ key, ...rest }) => (
+        <DriftingShape key={key} {...rest} />
       ))}
 
       

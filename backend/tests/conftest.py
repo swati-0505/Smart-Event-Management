@@ -20,7 +20,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.main import app
 from app.db.database import Base, get_db
-engine = create_engine(os.environ['DATABASE_URL'])
+engine = create_engine(os.environ['postgresql://neondb_owner:npg_LKi0CZuD1vOx@ep-flat-silence-b4o2k2xn-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require'])
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 @pytest.fixture(scope='function', autouse=True)
