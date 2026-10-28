@@ -1,16 +1,40 @@
-# 🎟️ Smart Event Management System
+<h1 align="center">🎟️ SMART EVENT MANAGEMENT SYSTEM</h1>
 
-**An AI-Powered Full-Stack Event Management Platform**
+<h3 align="center">Plan smarter. Register faster. Ask your AI.</h3>
 
-A modern event management platform built with React, FastAPI, Python, PostgreSQL, RAG, LLMs, and AI agents. The system simplifies event discovery, registration, administration, and information retrieval through a centralized application with an integrated AI assistant.
+<p align="center">
+  <a href="https://github.com/swati-0505/Smart-Event-Management/actions/workflows/ci.yml"><img src="https://github.com/swati-0505/Smart-Event-Management/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
+  <img src="https://img.shields.io/badge/React-Vite-61dafb?style=for-the-badge&logo=react&logoColor=white" alt="React"/>
+  <img src="https://img.shields.io/badge/FastAPI-Python-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI"/>
+  <img src="https://img.shields.io/badge/PostgreSQL-pgvector-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL"/>
+  <img src="https://img.shields.io/badge/AI-RAG%20%2B%20Agents-6366f1?style=for-the-badge" alt="AI"/>
+</p>
+
+<p align="center">
+  <b>A full-stack, AI-powered platform that brings event management and an intelligent assistant into one place.</b><br/>
+  Built with <b>React</b> · <b>FastAPI</b> · <b>PostgreSQL</b> · <b>RAG</b> · <b>LLM Agents</b>
+</p>
+
+<p align="center">
+  <a href="#getting-started"><b>Get Started</b></a> ·
+  <a href="#system-architecture"><b>Architecture</b></a> ·
+  <a href="#api-overview"><b>API</b></a> ·
+  <a href="#team"><b>Team</b></a>
+</p>
+
+| 👥 Team | 🔌 API Modules | 🤖 LLM Providers | 🧪 Automated Tests | 🔁 CI |
+|:---:|:---:|:---:|:---:|:---:|
+| **8** builders | **9** REST groups | **3** with auto-fallback | **230+** | **GitHub Actions** |
+
+> **Developed as part of the Infosys Springboard Virtual Internship Program.** The platform manages users, events, venues, registrations, payments, and feedback, and its AI assistant answers questions about live data and policies in plain English.
 
 ---
 
-## 📌 Project Overview
+## 📌 PROJECT OVERVIEW
 
 The **Smart Event Management System** is a full-stack web application developed as part of the Infosys Springboard Virtual Internship Program.
 
-The platform provides an integrated environment for managing users, events, venues, registrations, payments, and feedback. It also incorporates an AI assistant that combines natural-language interaction, knowledge retrieval, and backend-integrated AI workflows.
+The platform provides an integrated environment for managing users, events, venues, registrations, payments, and feedback. Its AI assistant combines natural-language interaction, knowledge retrieval (RAG), and backend-integrated tools so that administrators and users can query live application data conversationally.
 
 ### 🎯 Objectives
 
@@ -18,17 +42,19 @@ The platform provides an integrated environment for managing users, events, venu
 - Simplify event and user administration.
 - Provide dedicated user and admin/organizer interfaces.
 - Integrate RAG-based knowledge retrieval with LLM-powered responses.
-- Enable AI workflows to interact with supported backend services.
-- Build a modular architecture that can support future intelligent features.
+- Let AI workflows interact with application services through backend tools.
+- Maintain a modular architecture that supports future intelligent features.
 
-## ✨ Key Features
+---
+
+## ✨ KEY FEATURES
 
 ### 👤 User Management
 - User registration and authentication.
 - User profile management.
 - User lookup by ID or email.
-- Role-based access support.
-- Secure API-based communication.
+- Role-based access control.
+- Secure, token-based API communication.
 
 ### 🎫 Event Management
 - Create, view, update, and delete events.
@@ -44,8 +70,7 @@ The platform provides an integrated environment for managing users, events, venu
 
 ### 🏢 Venue Management
 - Create and manage venues.
-- Retrieve venue information.
-- Update venue details.
+- Retrieve and update venue information.
 - Delete venue records.
 
 ### 💳 Payment Management
@@ -59,40 +84,33 @@ The platform provides an integrated environment for managing users, events, venu
 
 ### 🛡️ Admin and Organizer Dashboard
 - Dashboard overview and metrics.
-- Event management.
-- Registration management.
-- User management.
+- Event, registration, user, venue, payment, and feedback management.
 - Upcoming event listings.
-- Search and navigation.
-- Authentication and logout.
+- Knowledge Base management and ingestion status.
+- Agent Logs for AI run activity.
+- Search, navigation, authentication, and logout.
 - Theme support.
-- Backend API integration.
 
 ### 🤖 AI Assistant
-- Natural-language interaction.
-- Event-related queries.
-- RAG-based knowledge retrieval.
-- Context-aware LLM responses.
-- AI chat sessions.
-- Backend tool integration.
-- Agent-based workflow support.
+- **Natural-language interaction** for events, venues, registrations, and policies.
+- **RAG-based retrieval** for policy and FAQ questions.
+- **Context-aware** LLM responses.
+- **Persistent chat sessions** with conversation history.
+- **Agent workflow** with backend tool integration.
+- **Multi-provider routing** with automatic fallback.
 
 ### 🧠 RAG and Semantic Retrieval
 - Knowledge document processing.
 - Text chunking and embedding generation.
-- Vector-based knowledge storage.
+- Vector-based knowledge storage in PostgreSQL (pgvector).
 - Semantic similarity search.
-- Retrieval of relevant context for LLM responses.
-
-### 🛠️ AI Agents and Backend Tools
-- AI workflow orchestration.
-- LLM-powered query processing.
-- Integration with supported backend services.
-- Retrieval of event-related information through application workflows.
+- Retrieval of relevant context for LLM responses, with answer-grounding checks.
 
 ---
 
-## 🏗️ System Architecture
+<a id="system-architecture"></a>
+
+## 🏗️ SYSTEM ARCHITECTURE
 
 The application follows a modular architecture connecting the React frontend, FastAPI backend, PostgreSQL database, and AI/RAG layer.
 
@@ -126,15 +144,15 @@ flowchart TD
 |---|---|
 | React Frontend | User interface, event discovery, registration, and dashboards |
 | FastAPI Backend | REST APIs, business logic, authentication, and application services |
-| PostgreSQL | Persistent application data storage |
-| AI Agent Workflow | Coordinates AI processing, retrieval, and tool usage |
+| PostgreSQL | Persistent application data and vector storage |
+| AI Agent Workflow | Coordinates reasoning, retrieval, and tool usage |
 | RAG Pipeline | Retrieves relevant knowledge for context-aware responses |
-| LLM | Interprets queries and generates natural-language responses |
+| LLM Router | Routes requests across configured LLM providers with fallback |
 | Backend AI Tools | Connect AI workflows with supported application operations |
 
 ---
 
-## 🧠 AI and RAG Architecture
+## 🧠 AI AND RAG ARCHITECTURE
 
 ### 1. RAG Pipeline
 
@@ -166,7 +184,8 @@ flowchart TD
 4. Store embeddings in the vector store.
 5. Retrieve relevant information through semantic similarity.
 6. Provide the retrieved context to the LLM.
-7. Generate a context-aware response.
+7. Verify the answer is grounded in the retrieved context.
+8. Return the context-aware response.
 
 ### 2. Integrated AI Agent Workflow
 
@@ -198,19 +217,31 @@ flowchart TD
 
 **Example workflow**
 
-User query: *"Show me all available events."*
+User query: *"Show me all upcoming events."*
 
 1. The user submits a natural-language query.
-2. The AI chat endpoint passes the query to the AI workflow.
-3. The workflow identifies the appropriate retrieval or backend tool.
-4. The tool retrieves relevant application data.
-5. The LLM generates a natural-language response using the available results.
+2. The chat endpoint passes the query to the agent workflow.
+3. The agent selects the appropriate retrieval or backend tool.
+4. The tool retrieves application data.
+5. The LLM generates a natural-language response from the results.
 
-RAG and backend tools serve different purposes: RAG retrieves relevant knowledge, while backend tools support interactions with application services.
+RAG retrieves knowledge (policies, FAQs), while backend tools read and act on live application data. The agent loop is bounded by `AGENT_MAX_TOOL_LOOPS` to keep responses fast and predictable.
+
+### 3. Multi-Provider LLM Router
+
+LLM calls go through a provider router that tries each configured provider in order and falls back automatically when one fails or is rate-limited. Providers without an API key are skipped.
+
+| Provider | Purpose |
+|---|---|
+| Groq | Fast inference (OpenAI-compatible API) |
+| Google Gemini | Reliable general-purpose model |
+| OpenRouter | Primary/fallback model routing, including free-tier models |
+
+OpenRouter also supplies the text embeddings used by the RAG pipeline. Optional LangSmith tracing can be enabled for run observability.
 
 ---
 
-## 🧩 Project Modules
+## 🧩 PROJECT MODULES
 
 | Module | Responsibility |
 |---|---|
@@ -221,15 +252,25 @@ RAG and backend tools serve different purposes: RAG retrieves relevant knowledge
 | Venues | Venue management |
 | Payments | Payment records and status management |
 | Feedback | Event and user feedback |
-| Admin | Administrative dashboard and management operations |
+| Admin | Administrative dashboard, knowledge base, and agent activity |
 | RAG | Document processing, embeddings, and semantic retrieval |
-| AI Assistant | Natural-language queries and intelligent responses |
+| AI Assistant | Natural-language queries, chat sessions, and responses |
 | AI Agents | Workflow orchestration and tool usage |
-| Backend AI Tools | Integration between AI workflows and application services |
+| LLM Router | Multi-provider model routing with fallback |
 
 ---
 
-## 🛠️ Technology Stack
+## 🗄️ DATABASE
+
+- **PostgreSQL** with the **pgvector** extension for vector storage.
+- **SQLAlchemy ORM** for data access.
+- **Alembic** for schema migrations.
+
+Core data entities follow the application modules: users, events, venues, registrations, payments, feedback, chat sessions and messages, agent run records, and knowledge document chunks with embeddings.
+
+---
+
+## 🛠️ TECHNOLOGY STACK
 
 ### Frontend
 - React
@@ -251,20 +292,20 @@ RAG and backend tools serve different purposes: RAG retrieves relevant knowledge
 - PostgreSQL
 - SQLAlchemy ORM
 - Alembic database migrations
-- Vector-based knowledge storage
+- pgvector for vector-based knowledge storage
 
 ### Artificial Intelligence
 - Large Language Models (LLMs)
 - Retrieval-Augmented Generation (RAG)
-- Text embeddings
-- Semantic search
-- Vector database
-- AI agents and workflow orchestration
+- Text embeddings and semantic search
+- AI agents and workflow orchestration (LangGraph)
 - Backend-integrated AI tools
-- Hugging Face Inference Providers
+- Multi-provider routing: Groq, Google Gemini, OpenRouter
+- LangSmith tracing (optional)
 
 ### Development and Testing
 - Git and GitHub
+- GitHub Actions (CI)
 - Node.js and npm
 - uv
 - Pytest
@@ -273,16 +314,22 @@ RAG and backend tools serve different purposes: RAG retrieves relevant knowledge
 
 ---
 
-## 📂 Project Structure
-
-The repository separates the frontend and backend applications.
+## 📂 PROJECT STRUCTURE
 
 ```text
 Smart-Event-Management/
 │
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│
 ├── backend/
 │   ├── app/
 │   │   ├── main.py
+│   │   ├── agent/        # agent graph and nodes
+│   │   ├── llm/          # provider router, config, providers
+│   │   ├── rag/          # chunking, embeddings, retrieval, generation
+│   │   ├── tools/        # backend tools used by the agent
 │   │   └── ...
 │   ├── alembic/
 │   ├── tests/
@@ -296,23 +343,24 @@ Smart-Event-Management/
 │   ├── package.json
 │   └── ...
 │
+├── docs/
+│   └── CONTRIBUTORS.md
+│
 ├── docker-compose.yml
 └── README.md
 ```
 
-*Note: This is a high-level overview. The exact directory structure may vary depending on the repository's final contents.*
-
 ---
 
-## ⚙️ Getting Started
+<a id="getting-started"></a>
+
+## ⚙️ GETTING STARTED
 
 ### Prerequisites
 
-Install the following tools:
-
-- Python 3.x
-- Node.js and npm
-- PostgreSQL
+- Python 3.11+
+- Node.js 20+ and npm
+- PostgreSQL with the pgvector extension
 - Git
 - uv
 - Docker and Docker Compose (optional)
@@ -326,38 +374,33 @@ cd Smart-Event-Management
 
 ### 2. Configure the Backend
 
-Open a terminal in the repository root:
-
 ```powershell
 cd backend
-```
-
-Create a local environment file from the example:
-
-```powershell
 Copy-Item .env.example .env
 ```
 
-Configure the required variables in `backend/.env`, including:
+Set the following in `backend/.env` (use the exact names from `.env.example`):
 
-- `DATABASE_URL` — PostgreSQL connection string.
-- `SECRET_KEY` — a strong, unique application secret.
-- Hugging Face access token with **Make calls to Inference Providers** permission.
-
-Use the actual variable names defined in `.env.example` if they differ.
-
-#### Configured AI Models
-
-| Purpose | Model |
+| Variable | Purpose |
 |---|---|
-| LLM inference | `openai/gpt-oss-120b` |
-| Text embeddings | `BAAI/bge-small-en-v1.5` |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `SECRET_KEY` | Strong, unique application secret |
+| `OPENROUTER_API_KEY` | OpenRouter key (chat fallback and embeddings) |
+| `OPENROUTER_MODEL` | Primary OpenRouter chat model |
+| `OPENROUTER_FALLBACK_MODELS` | Comma-separated fallback models |
+| `GROQ_API_KEY`, `GROQ_MODEL` | Optional Groq provider |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional Gemini provider |
+| `OPENROUTER_EMBEDDING_MODEL` | Embedding model for RAG |
+| `OPENROUTER_EMBEDDING_DIM` | Embedding vector dimension (must match the database vector column) |
+| `LLM_TIMEOUT_SECONDS`, `LLM_MAX_RETRIES` | LLM request timeout and retries |
+| `AGENT_MAX_TOOL_LOOPS` | Maximum agent tool-call iterations per request |
+| `LANGSMITH_TRACING` | `true` or `false` (optional tracing) |
+
+> 💡 **Tip:** Free-tier models have request limits, so use a provider with a separate quota (Groq or Gemini) as the primary or fallback.
 
 Ensure PostgreSQL is running and the target database exists before continuing.
 
 ### 3. Install Backend Dependencies
-
-Run from the `backend/` directory:
 
 ```powershell
 uv sync
@@ -369,15 +412,13 @@ uv sync
 uv run alembic upgrade head
 ```
 
-The current embedding configuration uses **384-dimensional embeddings**. Ensure the database schema and vector column dimensions match the configured embedding model.
-
-After applying the embedding migration, re-index existing knowledge documents using the admin knowledge-ingestion endpoint:
+The embedding dimension in `.env` must match the vector column in the database. After changing the embedding model or dimension, re-index the knowledge documents:
 
 ```http
 POST /api/admin/knowledge/ingest?force=true
 ```
 
-Use an authorized admin session or the authentication mechanism required by the endpoint.
+Use an authorized admin session for this endpoint.
 
 ### 5. Start the Backend Server
 
@@ -385,19 +426,9 @@ Use an authorized admin session or the authentication mechanism required by the 
 uv run uvicorn app.main:app --reload
 ```
 
-**Backend URL:** `http://127.0.0.1:8000`
-
-**Health check:** `http://127.0.0.1:8000/health`
-
-Expected response:
-
-```json
-{
-  "status": "ok"
-}
-```
-
-**Interactive API documentation:** `http://127.0.0.1:8000/docs`
+- **Backend URL:** `http://127.0.0.1:8000`
+- **Interactive API documentation:** `http://127.0.0.1:8000/docs`
+- **Health check:** `http://127.0.0.1:8000/health` returns `{"status": "ok"}`
 
 ### 6. Configure and Run the Frontend
 
@@ -409,27 +440,25 @@ npm install
 npm run dev
 ```
 
-**Frontend URL:** `http://localhost:5173`
+- **Frontend URL:** `http://localhost:5173` (Vite uses the next free port if 5173 is busy)
+- **Admin dashboard:** `/admin`
+- **AI assistant:** `/admin/ai-chat`
 
-**Admin dashboard:** `http://localhost:5173/admin`
-
-Ensure the frontend API configuration points to the running backend and the backend CORS settings allow the frontend origin.
+Make sure the frontend API configuration points to the running backend and that the backend CORS settings allow the frontend origin.
 
 ### 7. Optional: Run with Docker Compose
-
-From the repository root, after configuring the required environment variables and Docker services:
 
 ```powershell
 docker compose up --build
 ```
 
-Refer to the Compose configuration for the service ports and startup requirements.
+Refer to `docker-compose.yml` for service ports and startup requirements.
 
 ---
 
-## 🔌 API Overview
+<a id="api-overview"></a>
 
-The backend organizes application functionality into REST API groups.
+## 🔌 API OVERVIEW
 
 | API Prefix | Purpose |
 |---|---|
@@ -440,145 +469,125 @@ The backend organizes application functionality into REST API groups.
 | `/api/venues/` | Venue management |
 | `/api/payments/` | Payment records and statuses |
 | `/api/feedback/` | Feedback management |
-| `/api/admin/` | Administrative operations |
-| `/api/chat/` | AI assistant and chat workflows |
+| `/api/admin/` | Dashboard, knowledge base, and agent activity |
+| `/api/chat/` | AI assistant, chat sessions, and history |
 
-**API testing:** Open `http://127.0.0.1:8000/docs` after starting the backend to inspect and test available endpoints.
-
-Individual endpoints may require authentication and specific request parameters.
+Open `http://127.0.0.1:8000/docs` to inspect and test all endpoints. Most endpoints require authentication.
 
 ---
 
-## 🖥️ Admin Dashboard
+## 🖥️ ADMIN DASHBOARD
 
-The administration interface provides centralized tools for managing the platform.
-
-Key capabilities include:
+The administration interface provides centralized tools for managing the platform:
 
 - Dashboard metrics and overview.
-- Event management.
-- Registration management.
-- User management.
-- Upcoming event listings.
-- Search and navigation.
-- Admin authentication and logout.
-- Theme support.
-- Integration with backend services.
-- Access to AI assistant functionality.
-
-The frontend service layer communicates with the FastAPI backend through REST APIs.
+- Events, registrations, users, venues, payments, and feedback management.
+- AI Assistant with conversation history.
+- Knowledge Base status and document ingestion.
+- Agent Logs showing AI run activity.
+- Admin authentication, logout, and theme support.
 
 ---
 
-## 🤖 AI Assistant in Action
+## 🤖 AI ASSISTANT IN ACTION
 
-The AI assistant is integrated into the application rather than operating solely as a general-purpose chatbot.
+The assistant is integrated into the application rather than operating as a general-purpose chatbot.
 
-It is designed to combine natural-language query processing with relevant knowledge retrieval and supported backend operations.
+**Example prompts**
 
-### Example
+- "Show me upcoming events."
+- "Show all venues."
+- "How many registrations does an event have?"
+- "What is the refund policy?" (answered through RAG)
 
-**User:** "Show me the available events."
-
-**Workflow:**
-
-1. The query reaches the AI chat endpoint.
-2. The AI workflow processes the request.
-3. The appropriate event-related tool retrieves application data.
-4. The retrieved results are provided to the LLM.
-5. The assistant returns a natural-language response.
-
-This approach enables users to interact with supported event-management functionality through conversational queries.
+Questions about live data are answered through backend tools, and policy or FAQ questions are answered through retrieval over the knowledge base.
 
 ---
 
-## 🧪 Build and Verification
-
-### Frontend Production Build
-
-Run from the `frontend2/` directory:
-
-```powershell
-npm run build
-```
-
-A successful build confirms that the frontend compiles into a production bundle.
+## 🧪 BUILD AND VERIFICATION
 
 ### Backend Tests
 
-Run from the `backend/` directory:
-
 ```powershell
+cd backend
 uv run pytest -q
 ```
 
-### Database Migrations
-
-Run from the `backend/` directory:
+The suite contains 230+ automated tests. Database-backed tests need a disposable PostgreSQL test database (with pgvector) set through the `TEST_DATABASE_URL` environment variable; they are skipped when it is not set.
 
 ```powershell
+$env:TEST_DATABASE_URL = "postgresql://postgres:<password>@localhost:5432/event_management_test"
+uv run pytest -q
+```
+
+> ⚠️ **Warning:** Never point `TEST_DATABASE_URL` at a development or production database, because the tests create and drop tables.
+
+### Frontend Production Build
+
+```powershell
+cd frontend2
+npm run build
+```
+
+### Continuous Integration
+
+A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push and pull request:
+
+- **Backend:** installs dependencies with uv and runs the full test suite against a PostgreSQL + pgvector service container.
+- **Frontend:** installs dependencies with `npm ci` and runs the production build.
+
+### Database Migrations
+
+```powershell
+cd backend
 uv run alembic upgrade head
 ```
 
-### Application Health Check
+---
 
-Send a `GET` request to:
+## 🔒 SECURITY CONSIDERATIONS
 
-```http
-GET /health
-```
-
-Expected successful response:
-
-```json
-{
-  "status": "ok"
-}
-```
-
-Use the Swagger interface at `http://127.0.0.1:8000/docs` to test the available APIs.
+- Credentials and API tokens are stored in environment variables.
+- `.env` files are excluded from version control; only `.env.example` is committed.
+- Authentication and role-based authorization protect the API.
+- Incoming requests are validated with Pydantic schemas.
+- CORS is configured for the frontend origin.
+- Use HTTPS, strong secrets, and database access controls in production.
+- Rotate any API key that has been exposed.
 
 ---
 
-## 🔒 Security Considerations
-
-Recommended practices for secure configuration and deployment include:
-
-- Store credentials and API tokens in environment variables.
-- Never commit `.env` files or private credentials.
-- Use strong, unique application secrets.
-- Enforce authentication and role-based authorization.
-- Validate incoming requests using Pydantic schemas.
-- Configure appropriate CORS policies.
-- Use HTTPS in production.
-- Apply database access controls.
-- Configure suitable token expiration and refresh mechanisms.
-- Add rate limiting, logging, and monitoring where required.
-
-Security depends on the actual implementation and deployment configuration of each feature.
-
----
-
-## 🚀 Future Scope
-
-The system provides a foundation for additional intelligent event-management capabilities, including:
+## 🚀 FUTURE SCOPE
 
 - Personalized event recommendations.
-- AI-powered event discovery.
-- Automated event summaries and insights.
+- AI-powered event discovery and automated event summaries.
 - Attendance and registration analytics.
-- Intelligent FAQ and policy assistance.
 - Enhanced administrative reporting.
 - Calendar integration and event reminders.
-- Advanced agentic workflows for supported event-management operations.
-
-These are potential enhancements rather than claims about features already implemented.
+- Automated deployment (CD) to a cloud platform.
+- Streaming responses for the AI assistant.
 
 ---
 
-## 🤝 Contributing
+<a id="team"></a>
 
-Contributions can be organized through Git feature branches and pull requests.
+## 👥 TEAM
+
+This project was built by a team of 8 contributors:
+
+[Nithin](https://github.com/MamidiNithin11) · [Swati](https://github.com/swati-0505) · [Pushpa](https://github.com/uppupushpa) · [Yugant](https://github.com/Yugantt) · [Sravanthi](https://github.com/Sravanthi1410) · [Sushmitha](https://github.com/Susmitha967) · [Sonali](https://github.com/sonali110806) · [Sumit](https://github.com/sumitgundappa26-wq)
+
+See the full team page: **[docs/CONTRIBUTORS.md](docs/CONTRIBUTORS.md)**
+
+<a href="https://github.com/swati-0505/Smart-Event-Management/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=swati-0505/Smart-Event-Management" alt="Contributors"/>
+</a>
+
+---
+
+## 🤝 CONTRIBUTING
+
+Contributions are organized through Git feature branches and pull requests.
 
 ```bash
 git checkout -b feature/your-feature
@@ -590,11 +599,11 @@ git commit -m "Describe your changes"
 git push origin feature/your-feature
 ```
 
-Open a pull request for review and integration.
+Open a pull request for review. The CI workflow must pass before merging.
 
 ---
 
-## 📄 License and Acknowledgment
+## 📄 LICENSE AND ACKNOWLEDGMENT
 
 This project was developed as part of the **Infosys Springboard Virtual Internship Program** for educational and professional learning purposes.
 
