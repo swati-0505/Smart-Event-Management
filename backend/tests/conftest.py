@@ -1,33 +1,44 @@
 import os
-
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
+from sqlalchemy.orm import sessionmaker
 
-test_database_url = os.environ.get(
-    'TEST_DATABASE_URL',
-    'postgresql://postgres:password@localhost:5432/event_management_test',
-)
-test_database_name = make_url(test_database_url).database
-if not test_database_name or not test_database_name.endswith('_test'):
-    raise ValueError('TEST_DATABASE_URL must point to a dedicated database whose name ends in "_test".')
+_DEFAULT_TEST_DATABASE_URL = 'postgresql://localhost:5432/event_management_test'
+test_database_url = os.environ.get('TEST_DATABASE_URL', _DEFAULT_TEST_DATABASE_URL)
+test_database = make_url(test_database_url)
+if (
+    test_database.get_backend_name() != 'postgresql'
+    or test_database.host not in {'localhost', '127.0.0.1', '::1'}
+    or not test_database.database
+    or not test_database.database.endswith('_test')
+):
+    raise ValueError('TEST_DATABASE_URL must point to a local PostgreSQL database whose name ends in "_test".')
 
 os.environ['DATABASE_URL'] = test_database_url
-import pytest
 os.environ.setdefault('OPENROUTER_MODEL', 'test/openrouter-chat-model')
 os.environ.setdefault('OPENROUTER_EMBEDDING_MODEL', 'test/openrouter-embedding-model')
 os.environ.setdefault('RAG_ACTIVE_EMBEDDING_INDEX', 'nvidia')
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from app.main import app
+
 from app.db.database import Base, get_db
-engine = create_engine(os.environ['postgresql://neondb_owner:npg_LKi0CZuD1vOx@ep-flat-silence-b4o2k2xn-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require'])
+from app.main import app
+
+engine = create_engine(test_database_url)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-@pytest.fixture(scope='function', autouse=True)
+
+@pytest.fixture
 def setup_db():
+    if not os.environ.get('TEST_DATABASE_URL'):
+        pytest.skip('Set TEST_DATABASE_URL to a local *_test PostgreSQL database to run database-backed tests.')
+    with engine.begin() as connection:
+        connection.execute(text('CREATE EXTENSION IF NOT EXISTS vector'))
     Base.metadata.create_all(bind=engine)
-    yield
-    Base.metadata.drop_all(bind=engine)
+    try:
+        yield
+    finally:
+        Base.metadata.drop_all(bind=engine)
 
 def override_get_db():
     db = TestingSessionLocal()
@@ -35,8 +46,10 @@ def override_get_db():
         yield db
     finally:
         db.close()
+
+
 app.dependency_overrides[get_db] = override_get_db
 
 @pytest.fixture
-def client():
+def client(setup_db):
     return TestClient(app)

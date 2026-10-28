@@ -8,11 +8,19 @@ import httpx
 from openai import APIError
 
 from app.llm.config import llm_settings
-from app.llm.exceptions import LLMUnavailableError, LLMProviderError, normalize_provider_exception, safe_error_category
+from app.llm.exceptions import (
+    LLMProviderError,
+    LLMUnavailableError,
+    is_structured_provider_error,
+    normalize_provider_exception,
+    safe_error_category,
+)
+from app.llm.providers.gemini import get_gemini_chat_model
+from app.llm.providers.groq import get_groq_chat_model
 from app.llm.providers.openrouter import get_openrouter_chat_model
 
 logger = logging.getLogger(__name__)
-_PROVIDER_ORDER = ('openrouter',)
+_PROVIDER_ORDER = ('groq', 'gemini', 'openrouter')
 
 
 class LLMProviderRouter:
@@ -24,9 +32,16 @@ class LLMProviderRouter:
         return [provider for provider in self.provider_order if self.settings.is_configured(provider)]
 
     def get_model(self, provider: str, *, model: str | None = None, temperature: float = 0.0, tools: Any | None = None, **kwargs: Any):
-        if provider.lower() != 'openrouter':
+        name = provider.lower()
+        if name == 'groq':
+            factory = get_groq_chat_model
+        elif name == 'gemini':
+            factory = get_gemini_chat_model
+        elif name == 'openrouter':
+            factory = get_openrouter_chat_model
+        else:
             raise ValueError(f'Unsupported provider: {provider}')
-        built_model = get_openrouter_chat_model(
+        built_model = factory(
             model=model or self.settings.provider_config(provider)['model'],
             temperature=temperature,
             **kwargs,
@@ -44,12 +59,16 @@ class LLMProviderRouter:
         tools: Any | None = None,
         **kwargs: Any,
     ):
-        last_error:Exception | None = None
+        last_error: Exception | None = None
         for provider in self.provider_order:
             if not self.settings.is_configured(provider):
                 continue
             primary_model = (model_overrides or {}).get(provider) or self.settings.provider_config(provider)['model']
-            models = (primary_model, *self.settings.openrouter_fallback_models)
+            models = (
+                (primary_model, *self.settings.openrouter_fallback_models)
+                if provider == 'openrouter'
+                else (primary_model,)
+            )
             for index, model_name in enumerate(models):
                 try:
                     provider_model = self.get_model(
@@ -60,7 +79,9 @@ class LLMProviderRouter:
                         **kwargs,
                     )
                     return provider_model.invoke(messages)
-                except (LLMProviderError, APIError, httpx.HTTPError, TimeoutError, ConnectionError) as exc:
+                except (LLMProviderError, APIError, httpx.HTTPError, TimeoutError, ConnectionError, ValueError) as exc:
+                    if isinstance(exc, ValueError) and not is_structured_provider_error(exc):
+                        raise
                     normalized = normalize_provider_exception(exc, provider=provider)
                     last_error = normalized
                     category = safe_error_category(normalized)

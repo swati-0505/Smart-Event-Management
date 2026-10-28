@@ -121,7 +121,7 @@ def test_reason_returns_controlled_message_when_all_providers_fail(user_context)
             'multi-provider', 'All configured LLM providers failed.'
         )
         result = reason(_state(messages=[HumanMessage(content='Hello')]))
-    assert result['messages'][0].content.startswith("I'm having trouble reaching all available AI models")
+    assert result['messages'][0].content.startswith("I'm unable to reach the AI service")
     assert result['error'] == 'Configured chat providers unavailable.'
 
 def test_act_keeps_rag_source_citations(monkeypatch):
@@ -223,6 +223,63 @@ def test_model_error_is_reported_as_failed_agent_run():
     assert result.error == 'provider request failed'
     assert finish_run.call_args.kwargs['status'] == 'error'
     assert finish_run.call_args.kwargs['error'] == 'provider request failed'
+
+def test_deleted_session_does_not_expire_ids_needed_to_finish_agent_run():
+    from contextlib import nullcontext
+
+    class ExpiringRecord:
+
+        def __init__(self, value):
+            self.value = value
+            self.expired = False
+
+        @property
+        def session_id(self):
+            if self.expired:
+                raise RuntimeError('session was deleted')
+            return self.value
+
+        @property
+        def run_id(self):
+            if self.expired:
+                raise RuntimeError('run was deleted')
+            return self.value
+
+    session_id = uuid.uuid4()
+    run_id = uuid.uuid4()
+    session = ExpiringRecord(session_id)
+    run = ExpiringRecord(run_id)
+    db = MagicMock()
+
+    def delete_session_on_commit():
+        session.expired = True
+        run.expired = True
+
+    db.commit.side_effect = delete_session_on_commit
+    graph = MagicMock()
+    graph.invoke.return_value = {
+        'final_response': 'Here are three workshops.',
+        'intent': 'GENERAL',
+        'loop_count': 0,
+        'tool_calls': [],
+        'tool_results': [],
+        'retrieved_documents': [],
+        'error': '',
+    }
+
+    with patch('app.agent.graph.load_actor', return_value=MagicMock(role='USER')), \
+         patch('app.agent.graph.memory.get_or_create_session', return_value=session), \
+         patch('app.agent.graph.start_agent_run', return_value=run), \
+         patch('app.agent.graph.get_graph', return_value=graph), \
+         patch('app.agent.graph.use_tool_context', return_value=nullcontext()), \
+         patch('app.agent.graph.finish_agent_run') as finish_run:
+        result = run_agent(db=db, user_id=uuid.uuid4(), message='find workshops')
+
+    assert result.reply == 'Here are three workshops.'
+    assert result.session_id == session_id
+    assert result.run_id == run_id
+    assert result.status == 'success'
+    assert finish_run.call_args.kwargs['run_id'] == run_id
 
 def test_finalize_produces_a_fallback_when_there_is_no_answer(user_context):
     state = _state(messages=[HumanMessage(content='hi')])

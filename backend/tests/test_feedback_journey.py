@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta, timezone
-import socket
+from types import SimpleNamespace
 from uuid import uuid4
-
-import pytest
 
 from app.core.security import hash_password
 from app.models.event import Event
@@ -12,30 +10,16 @@ from app.models.user import User
 from tests.conftest import TestingSessionLocal
 
 
-def _postgres_available() -> bool:
-    try:
-        with socket.create_connection(('127.0.0.1', 5432), timeout=0.2):
-            return True
-    except OSError:
-        return False
-
-
-pytestmark = pytest.mark.skipif(
-    not _postgres_available(),
-    reason='PostgreSQL on localhost:5432 is required for database-backed API tests.',
-)
-
-
 def _seed_completed_event(*, register_attendee=True):
     attendee = User(
         name='Feedback Attendee',
-        email=f'feedback-attendee-{uuid4()}@example.test',
+        email=f'feedback-attendee-{uuid4()}@example.com',
         password_hash=hash_password('test-password'),
         role='USER',
     )
     admin = User(
         name='Feedback Admin',
-        email=f'feedback-admin-{uuid4()}@example.test',
+        email=f'feedback-admin-{uuid4()}@example.com',
         password_hash=hash_password('test-password'),
         role='ADMIN',
     )
@@ -69,7 +53,9 @@ def _seed_completed_event(*, register_attendee=True):
                 )
             )
         db.commit()
-        return attendee, admin, event.event_id
+        attendee_data = SimpleNamespace(id=attendee.id, email=attendee.email, name=attendee.name)
+        admin_data = SimpleNamespace(id=admin.id, email=admin.email, name=admin.name)
+        return attendee_data, admin_data, event.event_id
     finally:
         db.close()
 

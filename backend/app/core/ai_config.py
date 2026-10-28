@@ -1,10 +1,12 @@
 from typing import Literal
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class AISettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file='.env', extra='ignore')
+
     CHAT_TEMPERATURE: float = 0.0
     OPENROUTER_EMBEDDING_MODEL: str = Field(min_length=1)
     OPENROUTER_EMBEDDING_DIM: int = 2048
@@ -31,15 +33,11 @@ class AISettings(BaseSettings):
     MEMORY_WINDOW_MESSAGES: int = 10
     KNOWLEDGE_DOCS_DIR: str = 'documents'
 
-    class Config:
-        env_file = '.env'
-        extra = 'ignore'
-
     @field_validator('OPENROUTER_EMBEDDING_DIM')
     @classmethod
     def validate_openrouter_embedding_dim(cls, value: int) -> int:
         if value not in [1024, 2048]:
-            raise ValueError('embedding dimension must match the selected model.')
+            raise ValueError('embedding dimension must match the selected model (1024 or 2048).')
         return value
 
 

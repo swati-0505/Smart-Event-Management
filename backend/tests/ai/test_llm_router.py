@@ -45,14 +45,14 @@ def _status_error(status_code: int, body: object | None = None) -> APIStatusErro
     return APIStatusError('Provider request failed', response=response, body=body)
 
 
-def test_router_uses_only_openrouter_and_never_huggingface():
+def test_router_supports_configured_providers_and_never_huggingface():
     router = LLMProviderRouter(settings=FakeSettings())
 
-    assert router.provider_order == ('openrouter',)
+    assert router.provider_order == ('groq', 'gemini', 'openrouter')
     assert router.configured_providers() == ['openrouter']
     assert llm_settings.provider_config('huggingface')['configured'] is False
     assert 'huggingface' not in llm_settings.configured_providers()
-    assert 'groq' not in LLMSettings.model_fields
+    assert {'GROQ_API_KEY', 'GEMINI_API_KEY'} <= LLMSettings.model_fields.keys()
 
 
 def test_provider_timeout_and_retries_are_bounded():
@@ -181,6 +181,40 @@ def test_openrouter_provider_failure_returns_controlled_unavailable_error():
             LLMProviderRouter(settings=FakeSettings()).invoke('prompt')
 
 
+def test_router_uses_fallback_after_structured_openrouter_timeout():
+    primary = MagicMock()
+    primary.invoke.side_effect = ValueError(
+        "{'message': 'Provider timed out after 12920ms', 'code': 504, "
+        "'metadata': {'error_type': 'timeout'}}"
+    )
+    fallback = MagicMock()
+    fallback.invoke.return_value = 'Fallback response'
+
+    with patch(
+        'app.llm.router.get_openrouter_chat_model',
+        side_effect=[primary, fallback],
+    ) as factory:
+        result = LLMProviderRouter(settings=FakeSettings()).invoke('prompt')
+
+    assert result == 'Fallback response'
+    assert [call.kwargs['model'] for call in factory.call_args_list] == [
+        'configured/openrouter-model',
+        'fallback/model-one',
+    ]
+
+
+def test_structured_openrouter_timeout_returns_controlled_unavailable_error():
+    model = MagicMock()
+    model.invoke.side_effect = ValueError(
+        "{'message': 'Provider timed out after 12920ms', 'code': 504, "
+        "'metadata': {'error_type': 'timeout'}}"
+    )
+
+    with patch('app.llm.router.get_openrouter_chat_model', return_value=model):
+        with pytest.raises(LLMUnavailableError):
+            LLMProviderRouter(settings=FakeSettings()).invoke('prompt')
+
+
 @pytest.mark.parametrize('status_code', [401, 402, 403, 404, 408, 429, 500, 502, 503, 504])
 def test_openrouter_eligible_status_is_reported_as_controlled_unavailable(status_code: int, caplog):
     model = MagicMock()
@@ -229,5 +263,5 @@ def test_non_provider_validation_errors_are_not_swallowed():
 
 
 def test_unsupported_provider_is_rejected():
-    with pytest.raises(ValueError, match='Unsupported provider: groq'):
-        LLMProviderRouter(settings=FakeSettings()).get_model('groq')
+    with pytest.raises(ValueError, match='Unsupported provider: huggingface'):
+        LLMProviderRouter(settings=FakeSettings()).get_model('huggingface')

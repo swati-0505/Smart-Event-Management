@@ -32,6 +32,12 @@ dependencies = [
     "redis>=8.1.0",
 ]
 
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+    "ignore:The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.:DeprecationWarning:starlette.testclient",
+]
+
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",

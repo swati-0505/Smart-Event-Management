@@ -1,9 +1,7 @@
 from __future__ import annotations
-import socket
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from uuid import uuid4
-import pytest
 from app.agent.graph import AgentResult
 from app.core.security import hash_password
 from app.models.event import Event
@@ -14,14 +12,6 @@ from app.tools.context import ToolContext, use_tool_context
 from app.tools.rag_tools import search_event_policy
 from app.services import availability_service
 from tests.conftest import TestingSessionLocal
-
-def _postgres_available() -> bool:
-    try:
-        with socket.create_connection(('127.0.0.1', 5432), timeout=0.2):
-            return True
-    except OSError:
-        return False
-pytestmark = pytest.mark.skipif(not _postgres_available(), reason='PostgreSQL on localhost:5432 is required for database-backed API tests.')
 
 def _seed_published_event():
     db = TestingSessionLocal()
@@ -40,7 +30,7 @@ def _seed_published_event():
 
 def test_login_event_search_registration_confirmation_and_policy(client, monkeypatch):
     _, event_id = _seed_published_event()
-    email = f'journey-user-{uuid4()}@example.test'
+    email = f'journey-user-{uuid4()}@example.com'
     registered = client.post('/api/auth/register', json={'name': 'Journey User', 'email': email, 'password': 'test-password'})
     assert registered.status_code == 200
     login = client.post('/api/auth/login', json={'email': email, 'password': 'test-password'})
@@ -60,8 +50,8 @@ def test_login_event_search_registration_confirmation_and_policy(client, monkeyp
     policy_answer = SimpleNamespace(chunks=[SimpleNamespace()], answer='Cancellations are accepted up to 48 hours before the event.', sources=['cancellation_policy.pdf'], grounded=True)
     monkeypatch.setattr(pipeline, 'answer', lambda *args, **kwargs: policy_answer)
 
-    def run_policy_query(*, db, user_id, role, message, session_id=None):
-        with use_tool_context(ToolContext(db=db, user_id=user_id, role=role)):
+    def run_policy_query(*, db, user_id, message, session_id=None):
+        with use_tool_context(ToolContext(db=db, user_id=user_id, role='USER')):
             reply = search_event_policy.invoke({'question': message})
         return AgentResult(reply=reply, session_id=uuid4(), run_id=uuid4(), intent='POLICY', tools_used=['search_event_policy'], tool_results=[], sources=['cancellation_policy.pdf'], latency_ms=1, status='success')
     monkeypatch.setattr('app.api.chat.run_agent', run_policy_query)
@@ -91,14 +81,15 @@ def test_venue_availability_uses_event_end_times(client):
 
 def test_event_create_rejects_end_time_before_start(client):
     venue_id, _ = _seed_published_event()
-    admin = User(name='Timing Admin', email=f'timing-admin-{uuid4()}@example.test', password_hash=hash_password('test-password'), role='ADMIN')
+    admin = User(name='Timing Admin', email=f'timing-admin-{uuid4()}@example.com', password_hash=hash_password('test-password'), role='ADMIN')
+    admin_email = admin.email
     db = TestingSessionLocal()
     try:
         db.add(admin)
         db.commit()
     finally:
         db.close()
-    login = client.post('/api/auth/login', json={'email': admin.email, 'password': 'test-password'})
+    login = client.post('/api/auth/login', json={'email': admin_email, 'password': 'test-password'})
     token = login.json()['access_token']
     start = datetime.now(timezone.utc) + timedelta(days=30)
     response = client.post('/api/events/', headers={'Authorization': f'Bearer {token}'}, json={'title': 'Invalid event', 'category': 'Workshop', 'venue_id': str(venue_id), 'event_date': start.isoformat(), 'end_time': (start - timedelta(hours=1)).isoformat(), 'capacity': 10})

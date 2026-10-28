@@ -57,8 +57,10 @@ def run_agent(db: Session, user_id: UUID | None, message: str, session_id: UUID 
     role = actor.role if actor is not None else GUEST_ROLE
     session = memory.get_or_create_session(db=db, user_id=user_id, session_id=session_id, first_message=message)
     run = start_agent_run(db=db, session_id=session.session_id, user_id=user_id, user_request=message)
+    agent_session_id = session.session_id
+    run_id = run.run_id
     db.commit()
-    state = new_state(user_id=user_id, session_id=session.session_id, run_id=run.run_id, message=message)
+    state = new_state(user_id=user_id, session_id=agent_session_id, run_id=run_id, message=message)
     context = ToolContext(db=db, user_id=user_id, role=role)
     try:
         with langsmith_trace('agent'), use_tool_context(context):
@@ -68,18 +70,18 @@ def run_agent(db: Session, user_id: UUID | None, message: str, session_id: UUID 
         tools_used = [call['name'] for call in final_state.get('tool_calls', [])]
         error = final_state.get('error', '')
         status = 'error' if error else 'success'
-        finish_agent_run(db=db, run=run, final_response=reply, intent=final_state.get('intent', ''), tool_loop_count=final_state.get('loop_count', 0), latency_ms=latency_ms, status=status, error=error or None)
+        finish_agent_run(db=db, run_id=run_id, final_response=reply, intent=final_state.get('intent', ''), tool_loop_count=final_state.get('loop_count', 0), latency_ms=latency_ms, status=status, error=error or None)
         db.commit()
-        logger.info('run=%s status=%s intent=%s tools=%s latency=%.0fms', run.run_id, status, final_state.get('intent'), tools_used, latency_ms)
-        return AgentResult(reply=reply, session_id=session.session_id, run_id=run.run_id, intent=final_state.get('intent', ''), tools_used=tools_used, tool_results=final_state.get('tool_results', []), sources=final_state.get('retrieved_documents', []), latency_ms=latency_ms, status=status, error=error)
+        logger.info('run=%s status=%s intent=%s tools=%s latency=%.0fms', run_id, status, final_state.get('intent'), tools_used, latency_ms)
+        return AgentResult(reply=reply, session_id=agent_session_id, run_id=run_id, intent=final_state.get('intent', ''), tools_used=tools_used, tool_results=final_state.get('tool_results', []), sources=final_state.get('retrieved_documents', []), latency_ms=latency_ms, status=status, error=error)
     except Exception as exc:
-        logger.exception('Agent run %s failed', run.run_id)
+        logger.exception('Agent run %s failed', run_id)
         latency_ms = (time.perf_counter() - started) * 1000
         db.rollback()
         try:
-            finish_agent_run(db=db, run=run, final_response='', intent='', tool_loop_count=0, latency_ms=latency_ms, status='error', error=str(exc))
+            finish_agent_run(db=db, run_id=run_id, final_response='', intent='', tool_loop_count=0, latency_ms=latency_ms, status='error', error=str(exc))
             db.commit()
         except Exception:
             db.rollback()
             logger.exception('Could not record the failed run')
-        return AgentResult(reply='Something went wrong while handling that request. Please try again, or contact an administrator if it keeps happening.', session_id=session.session_id, run_id=run.run_id, intent='', tools_used=[], tool_results=[], sources=[], latency_ms=latency_ms, status='error', error=str(exc))
+        return AgentResult(reply='Something went wrong while handling that request. Please try again, or contact an administrator if it keeps happening.', session_id=agent_session_id, run_id=run_id, intent='', tools_used=[], tool_results=[], sources=[], latency_ms=latency_ms, status='error', error=str(exc))

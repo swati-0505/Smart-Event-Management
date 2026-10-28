@@ -54,7 +54,7 @@ def reason(state: AgentState) -> dict:
     except LLMProviderError:
         logger.warning('Configured chat providers unavailable during agent reasoning.')
         return {
-            'messages': [AIMessage(content="I'm having trouble reaching all available AI models right now. Our team has been notified. Please try again in a few minutes — the service is usually restored quickly.")],
+            'messages': [AIMessage(content="I'm unable to reach the AI service right now. Please try again in a few minutes.")],
             'error': 'Configured chat providers unavailable.',
         }
     return {'messages': [response], 'loop_count': state.get('loop_count', 0) + 1}

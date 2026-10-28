@@ -1,6 +1,50 @@
 from __future__ import annotations
+import ast
+import json
 from typing import Any
 import httpx
+
+
+_RETRYABLE_STATUS_CODES = {401, 402, 403, 404, 408, 429, 500, 502, 503, 504}
+
+
+def _structured_provider_error(error: Any) -> dict[str, Any] | None:
+    if not isinstance(error, ValueError):
+        return None
+
+    text = str(error).strip()
+    payload: Any = None
+    for parser in (json.loads, ast.literal_eval):
+        try:
+            payload = parser(text)
+            break
+        except (ValueError, SyntaxError, json.JSONDecodeError):
+            continue
+
+    if not isinstance(payload, dict):
+        return None
+
+    detail = payload.get('error', payload)
+    if not isinstance(detail, dict):
+        return None
+
+    code = detail.get('code', detail.get('status_code'))
+    message = detail.get('message')
+    metadata = detail.get('metadata')
+    has_error_type = isinstance(metadata, dict) and isinstance(metadata.get('error_type'), str)
+    if (
+        isinstance(code, int)
+        and code in _RETRYABLE_STATUS_CODES
+        and isinstance(message, str)
+    ) or has_error_type:
+        return detail
+    return None
+
+
+def is_structured_provider_error(error: Exception) -> bool:
+    return _structured_provider_error(error) is not None
+
+
 class LLMProviderError(RuntimeError):
     def __init__(
         self,
@@ -58,6 +102,12 @@ def _is_invalid_api_key_response(error: Any) -> bool:
 def is_retryable_provider_error(error: Any) -> bool:
     if isinstance(error, LLMProviderError):
         return error.retryable
+    payload = _structured_provider_error(error)
+    if payload is not None:
+        code = payload.get('code', payload.get('status_code'))
+        metadata = payload.get('metadata')
+        error_type = metadata.get('error_type') if isinstance(metadata, dict) else None
+        return code in _RETRYABLE_STATUS_CODES or bool(error_type)
     if isinstance(error, (TimeoutError, ConnectionError, OSError)):
         return True
 
@@ -108,8 +158,13 @@ def normalize_provider_exception(error: Exception, *, provider: str | None = Non
     response = getattr(error, 'response', None)
     if response is not None:
         status_code = getattr(response, 'status_code', None)
+    structured_error = _structured_provider_error(error)
+    if status_code is None and structured_error is not None:
+        code = structured_error.get('code', structured_error.get('status_code'))
+        if isinstance(code, int):
+            status_code = code
     if status_code is None:
-        for code in (401, 402, 403, 404, 408, 429, 500, 502, 503, 504):
+        for code in _RETRYABLE_STATUS_CODES:
             if f'http {code}' in str(error).lower() or f' {code} ' in str(error):
                 status_code = code
                 break
@@ -139,6 +194,7 @@ def safe_error_category(error: Exception) -> str:
         404: 'model_or_endpoint_not_found',
         408: 'provider_timeout',
         429: 'rate_limited',
+        504: 'provider_timeout',
     }
     if status_code in status_categories:
         return status_categories[status_code]

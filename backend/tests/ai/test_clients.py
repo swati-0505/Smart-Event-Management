@@ -41,7 +41,7 @@ def test_openrouter_embedding_dimension_loads_from_env_as_integer(monkeypatch):
 
 
 def test_openrouter_embedding_dimension_rejects_schema_mismatch():
-    with pytest.raises(ValueError, match='requires 2048-dimensional vectors'):
+    with pytest.raises(ValueError, match='embedding dimension must match the selected model'):
         AISettings(
             _env_file=None,
             OPENROUTER_EMBEDDING_MODEL='test/model',

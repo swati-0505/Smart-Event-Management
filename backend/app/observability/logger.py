@@ -13,15 +13,22 @@ def start_agent_run(db: Session, session_id: UUID, user_id: UUID | None, user_re
     db.flush()
     return run
 
-def finish_agent_run(db: Session, run: AgentRun, final_response: str, intent: str, tool_loop_count: int, latency_ms: float, status: str='success', error: str | None=None, grounded: bool | None=None, retry_count: int=0) -> None:
-    run.final_response = final_response or None
-    run.detected_intent = intent or None
-    run.tool_loop_count = tool_loop_count
-    run.latency_ms = round(latency_ms, 2)
-    run.status = status
-    run.error = error
-    run.grounded = grounded
-    run.retry_count = retry_count
+def finish_agent_run(db: Session, run_id: UUID, final_response: str, intent: str, tool_loop_count: int, latency_ms: float, status: str='success', error: str | None=None, grounded: bool | None=None, retry_count: int=0) -> None:
+    updated_count = db.query(AgentRun).filter(AgentRun.run_id == run_id).update(
+        {
+            AgentRun.final_response: final_response or None,
+            AgentRun.detected_intent: intent or None,
+            AgentRun.tool_loop_count: tool_loop_count,
+            AgentRun.latency_ms: round(latency_ms, 2),
+            AgentRun.status: status,
+            AgentRun.error: error,
+            AgentRun.grounded: grounded,
+            AgentRun.retry_count: retry_count,
+        },
+        synchronize_session=False,
+    )
+    if updated_count == 0:
+        logger.info('Agent run %s was deleted before it could be finalized', run_id)
     db.flush()
 
 def log_tool_call(db: Session, run_id: UUID, tool_name: str, tool_input: dict, tool_output: str, latency_ms: float, status: str='success', error: str | None=None, sequence: int=0) -> None:

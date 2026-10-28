@@ -1,8 +1,5 @@
 from datetime import datetime, timedelta, timezone
-import socket
 from uuid import uuid4
-
-import pytest
 
 from app.core.security import hash_password
 from app.models.user import User
@@ -10,24 +7,10 @@ from app.models.venue import Venue
 from tests.conftest import TestingSessionLocal
 
 
-def _postgres_available() -> bool:
-    try:
-        with socket.create_connection(('127.0.0.1', 5432), timeout=0.2):
-            return True
-    except OSError:
-        return False
-
-
-pytestmark = pytest.mark.skipif(
-    not _postgres_available(),
-    reason='PostgreSQL on localhost:5432 is required for database-backed API tests.',
-)
-
-
 def test_event_custom_address_is_stored_only_on_that_event(client):
     admin = User(
         name='Address Admin',
-        email=f'address-admin-{uuid4()}@example.test',
+        email=f'address-admin-{uuid4()}@example.com',
         password_hash=hash_password('test-password'),
         role='ADMIN',
     )
@@ -35,12 +18,13 @@ def test_event_custom_address_is_stored_only_on_that_event(client):
     try:
         db.add(admin)
         db.commit()
+        admin_email = admin.email
     finally:
         db.close()
 
     login = client.post(
         '/api/auth/login',
-        json={'email': admin.email, 'password': 'test-password'},
+        json={'email': admin_email, 'password': 'test-password'},
     )
     token = login.json()['access_token']
     address = '123 Custom Event Road, Example City'
