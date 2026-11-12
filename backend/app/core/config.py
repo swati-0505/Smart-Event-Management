@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file='.env', extra='ignore')
 
     DATABASE_URL: str = 'postgresql://postgres:password@localhost:5432/eventdb'
-    SECRET_KEY: str = 'change-this-in-production'
+    SECRET_KEY: str = 'E8oCdmA52dAMNcdcnMcMWdj84xk-bYjgNwfUo_eYrDoo6QbBdWDYEOOXWmtVJ3F1'
     ALGORITHM: str = 'HS256'
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     EVENT_DEFAULT_DURATION_HOURS: float = Field(default=3, gt=0)
